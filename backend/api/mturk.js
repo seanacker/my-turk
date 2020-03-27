@@ -26,6 +26,7 @@ app.post('/login', async (req, res) => {
   }
 
   try {
+    // TODO sandbox/live switch.
     AWS.config.update({
       region,
       endpoint,
@@ -357,7 +358,7 @@ app.post('/createQualificationType', async (req, res) => {
   }
 });
 
-const connetctToMturk = () => {
+const connectToMturk = () => {
   AWS.config.update({
     region,
     endpoint,
@@ -380,7 +381,7 @@ const getBalance = () => {
 };
 
 const createHIT = async params => {
-  connetctToMturk();
+  connectToMturk();
   const lifetimeInSeconds = params['hitExpiresAfter (days)'] * 60 * 60 * 24;
   console.log(`params`, lifetimeInSeconds);
 
@@ -437,11 +438,12 @@ const createHIT = async params => {
 };
 
 const getHIT = ({ id }) => {
-  connetctToMturk();
+  connectToMturk();
 
   let params = {
     HITId: id
   };
+  // TODO show error as toast.
   return new Promise((resolve, reject) => {
     mturk.getHIT(params, (err, data) => {
       if (err) {
@@ -456,7 +458,7 @@ const getHIT = ({ id }) => {
 };
 
 const deleteHIT = ({ id }) => {
-  connetctToMturk();
+  connectToMturk();
 
   var params = {
     HITId: id
@@ -475,7 +477,7 @@ const deleteHIT = ({ id }) => {
 };
 
 const createQualificationType = (name, description) => {
-  connetctToMturk();
+  connectToMturk();
 
   let params = {
     Description: description,
@@ -497,7 +499,7 @@ const createQualificationType = (name, description) => {
 };
 
 const listAssignments = ({ id }) => {
-  connetctToMturk();
+  connectToMturk();
 
   let params = {
     HITId: id
@@ -534,7 +536,7 @@ const qualify = ({ awardQualificationID, workerID }) => {
 };
 
 const approveAssignment = ({ id, feedback = '', awardQualificationID, workerID }) => {
-  connetctToMturk();
+  connectToMturk();
 
   let params = {
     AssignmentId: id,
@@ -556,7 +558,7 @@ const approveAssignment = ({ id, feedback = '', awardQualificationID, workerID }
 };
 
 const rejectAssignment = ({ id, feedback }) => {
-  connetctToMturk();
+  connectToMturk();
 
   let params = {
     AssignmentId: id,
