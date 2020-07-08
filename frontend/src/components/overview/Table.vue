@@ -20,9 +20,9 @@
       <span class="is-narrow"></span>
     </BaseRow>
 
-    <BaseRow v-for="experiment in experiments" :key="experiment._id" bold>
+    <BaseRow v-for="experiment in experiments" :key="experiment.id" bold>
       <span class="Anchor" @click="onExperimentClick(experiment)">
-        {{ experiment.experimentName }}&nbsp;
+        {{ experiment.id }}&nbsp;
         <i class="far fa-edit"></i>
       </span>
       <span class="is-wide">{{ experiment.description }}</span>
@@ -82,7 +82,7 @@ export default {
     onExperimentClick(experiment) {
       this.$router.push({
         name: 'settings',
-        query: { id: experiment._id },
+        query: { id: experiment.id },
         params: { experiment: experiment, initial: false },
       })
     },
@@ -93,7 +93,7 @@ export default {
           id: hit.id,
           title: hit.title,
           creationTime: hit.creationTime,
-          awardQualificationID: experiment.awardQualificationId,
+          awardQualificationID: experiment.completedExperimentQualification,
         },
         query: { id: hit.id },
       })

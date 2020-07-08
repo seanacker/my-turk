@@ -1,0 +1,4 @@
+rootProject.name = 'myturk'
+
+include 'backend'
+include 'frontend'

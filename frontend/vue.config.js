@@ -1,5 +1,9 @@
 // vue.config.js
 module.exports = {
+  outputDir: "build/dist",
+  devServer: {
+    port: 9011
+  },
   publicPath: "./",
   chainWebpack: config => {
     config.module

@@ -1,49 +1,66 @@
-const SERVER_URL = 'http://localhost:3000/api/mturk/'
+const SERVER_URL = 'http://localhost:9010/api/v1/'
 
 export default {
-  login: payload => {
-    return sendData('login', payload)
-  },
+    login: payload => {
+        return sendData('login', payload)
+    },
 
-  addExperiment: payload => {
-    return sendData('addExperiment', payload)
-  },
+    addExperiment: payload => {
+        return sendData('addExperiment', payload)
+    },
 
-  saveSettings: payload => {
-    return sendData('saveExperiment', payload)
-  },
+    saveSettings: payload => {
+        return sendData('saveExperiment', payload)
+    },
 
-  getExperiments: payload => {
-    return sendData('getExperiments', payload)
-  },
+    getExperiments: payload => {
+        const options = {
+            endpoint: SERVER_URL + "experiments/",
+            method: 'GET',
+            payload: payload,
+        }
+        return request(options)
+    },
 
-  deleteExperiment: payload => {
-    return sendData('deleteExperiment', payload)
-  },
+    getExperiment: id => {
+        const options = {
+            endpoint: SERVER_URL + "experiments/" + id + "/",
+            method: 'GET',
+        }
+        return request(options)
+    },
 
-  createHIT: payload => {
-    return sendData('createHIT', payload)
-  },
+    deleteExperiment: payload => {
+        return sendData('deleteExperiment', payload)
+    },
 
-  getHIT: payload => {
-    return sendData('getHIT', payload)
-  },
+    createHIT: experimentId => {
+        const options = {
+            endpoint: SERVER_URL + "experiments/" + experimentId + "/hits/",
+            method: 'POST',
+        }
+        return request(options)
+    },
 
-  deleteHIT: payload => {
-    return sendData('deleteHIT', payload)
-  },
+    getHIT: payload => {
+        return sendData('getHIT', payload)
+    },
 
-  listAssignments: payload => {
-    return sendData('listAssignments', payload)
-  },
+    deleteHIT: payload => {
+        return sendData('deleteHIT', payload)
+    },
 
-  approveAssignment: payload => {
-    return sendData('approveAssignment', payload)
-  },
+    listAssignments: payload => {
+        return sendData('listAssignments', payload)
+    },
 
-  rejectAssignment: payload => {
-    return sendData('rejectAssignment', payload)
-  },
+    approveAssignment: payload => {
+        return sendData('approveAssignment', payload)
+    },
+
+    rejectAssignment: payload => {
+        return sendData('rejectAssignment', payload)
+    },
 }
 
 /**
@@ -53,13 +70,13 @@ export default {
  * @return {Object} The result of the request.
  */
 function sendData(endpoint, payload) {
-  let options = {
-    endpoint: SERVER_URL + endpoint,
-    method: 'POST',
-    payload: payload,
-  }
+    let options = {
+        endpoint: SERVER_URL + endpoint,
+        method: 'POST',
+        payload: payload,
+    }
 
-  return request(options)
+    return request(options)
 }
 
 /**
@@ -68,39 +85,42 @@ function sendData(endpoint, payload) {
  * @param {options} .
  * @return {Object} The result of the request.
  */
-async function request({ endpoint, method, payload }) {
-  let options = {}
-  if (method === 'GET') {
-    options = {
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+async function request({endpoint, method, payload}) {
+    let options = {}
+    if (method === 'GET') {
+        options = {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        }
+    } else {
+        options = {
+            method: method,
+            body: JSON.stringify(payload) || '',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        }
     }
-  } else {
-    options = {
-      method: method,
-      body: JSON.stringify(payload) || '',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }
-  }
 
-  let response = fetch(endpoint, options)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Not 200 response')
-      }
-      return response.json()
-    })
-    .then(json => {
-      return json
-    })
-    .catch(error => {
-      console.error('Error:', error)
-      return false
-    })
+    let response = fetch(endpoint, options)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Not 200 response')
+            }
+            return response.json()
+        })
+        .then(data => {
+            return {
+                success: true,
+                data: data
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error)
+            return false
+        })
 
-  return response
+    return response
 }

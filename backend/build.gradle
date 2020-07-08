@@ -1,0 +1,48 @@
+plugins {
+	id 'org.springframework.boot' version '2.3.1.RELEASE'
+	id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+	id 'java'
+}
+
+group = 'de.mackeprm'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '14'
+
+//TODO docker integration
+
+configurations {
+	compile.exclude module: 'spring-boot-starter-tomcat'
+	compile.exclude group: 'org.apache.tomcat'
+}
+
+dependencies {
+	//TODO this does not work.
+	runtimeOnly project(':frontend')
+
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-jetty'
+
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	runtimeOnly 'com.h2database:h2'
+
+	implementation 'org.springdoc:springdoc-openapi-ui:1.4.3'
+
+	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+	//AWS stuff
+	implementation platform('software.amazon.awssdk:bom:2.13.51')
+	implementation 'software.amazon.awssdk:mturk'
+
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+}
+
+
+
+test {
+	useJUnitPlatform()
+}

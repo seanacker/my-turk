@@ -95,7 +95,7 @@ export default {
     },
     async createHIT(experiment) {
       console.log(experiment)
-      let res = await api.createHIT(experiment)
+      let res = await api.createHIT(experiment.id)
       console.log(res)
 
       if (res.success) {
