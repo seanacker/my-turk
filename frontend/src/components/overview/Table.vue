@@ -42,12 +42,13 @@
         />
       </span>
 
-      <BaseRow v-for="hit in experiment.hits" :key="hit.id">
+      <BaseRow v-for="hit in experiment.localHits" :key="hit.hitId">
         <span class="" @click="onHitClick(hit, experiment)">HIT</span>
         <span class="is-wide">
-          {{ hit.id }}&nbsp;
-          <BaseCopy :value="hit.id" />
+          {{ hit.hitId }}&nbsp;
+          <BaseCopy :value="hit.hitId" />
         </span>
+        <!-- TODO include "2/2" logic here -->
         <span class="is-narrow align-right">{{ hit.available }}</span>
         <span class="is-narrow align-right">{{ hit.pending }}</span>
         <span class="is-narrow align-right">{{ hit.waitingForApproval }}</span>
@@ -90,12 +91,12 @@ export default {
       this.$router.push({
         name: 'workers',
         params: {
-          id: hit.id,
+          id: hit.hitId,
           title: hit.title,
           creationTime: hit.creationTime,
           awardQualificationID: experiment.completedExperimentQualification,
         },
-        query: { id: hit.id },
+        query: { id: hit.hitId },
       })
     },
     onNewHitClick(experiment) {

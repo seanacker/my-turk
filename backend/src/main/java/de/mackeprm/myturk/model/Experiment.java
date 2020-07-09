@@ -5,11 +5,12 @@ import de.mackeprm.myturk.mturk.Endpoint;
 import javax.persistence.*;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @Entity
 public class Experiment {
+
+    public static final String UNKNOWN_EXPERIMENT = "unknown";
 
     //TODO experiment state: hasHits, already begun? finished?
 
@@ -50,7 +51,7 @@ public class Experiment {
     private Endpoint endpoint;
 
     @OneToMany
-    private List<HIT> hits;
+    private List<LocalHIT> localHits;
 
     //Hibernate
     public Experiment() {
@@ -69,7 +70,7 @@ public class Experiment {
         this.includeDefaultRequirements = includeDefaultRequirements;
         this.entrypoint = entrypoint;
         this.endpoint = endpoint;
-        this.hits = new ArrayList<>();
+        this.localHits = new ArrayList<>();
     }
 
 
@@ -121,24 +122,32 @@ public class Experiment {
         return endpoint;
     }
 
-    public List<HIT> getHits() {
-        return hits;
+    public List<LocalHIT> getLocalHits() {
+        return localHits;
+    }
+
+    public int getNumAssignments() {
+        return this.localHits.stream().mapToInt(LocalHIT::getMaxAssignments).sum();
     }
 
     public String getAvailable() {
-        return "0/0";
+        final int available = this.localHits.stream().mapToInt(LocalHIT::getAvailable).sum();
+        return available + "/" + getNumAssignments();
     }
 
     public String getPending() {
-        return "0/0";
+        final int pending = this.localHits.stream().mapToInt(LocalHIT::getPending).sum();
+        return pending + "/" + getNumAssignments();
     }
 
     public String getCompleted() {
-        return "0/0";
+        final int completed = this.localHits.stream().mapToInt(LocalHIT::getCompleted).sum();
+        return completed + "/" + getNumAssignments();
     }
 
     public String getWaitingForApproval() {
-        return "0/0";
+        final int waitingForApproval = this.localHits.stream().mapToInt(LocalHIT::getWaitingForApproval).sum();
+        return waitingForApproval + "/" + getNumAssignments();
     }
 
 }

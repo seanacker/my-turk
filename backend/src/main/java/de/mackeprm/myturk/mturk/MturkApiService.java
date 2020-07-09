@@ -2,6 +2,7 @@ package de.mackeprm.myturk.mturk;
 
 import de.mackeprm.myturk.model.Experiment;
 import de.mackeprm.myturk.mturk.externalhit.MturkExternalHITXmlGenerator;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,10 +11,9 @@ import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.mturk.MTurkClient;
-import software.amazon.awssdk.services.mturk.model.*;
 import software.amazon.awssdk.services.mturk.model.Comparator;
 import software.amazon.awssdk.services.mturk.model.Locale;
-import software.amazon.awssdk.services.mturk.paginators.ListHITsIterable;
+import software.amazon.awssdk.services.mturk.model.*;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -28,6 +28,7 @@ public class MturkApiService {
     public static final String NUMBER_OF_HITS_FINISHED = "00000000000000000040";
     public static final String APPROVAL_PERCENTAGE = "000000000000000000L0";
     public static final String LOCATION = "00000000000000000071";
+    private static final Integer DEFAULT_PAGE_SIZE = 50;
 
     private final MturkExternalHITXmlGenerator xmlGenerator;
 
@@ -83,10 +84,16 @@ public class MturkApiService {
         if (endpointClients.get(endpoint) == null) {
             throw new IllegalStateException("Cannot connect to " + endpoint.name() + " because it's not configured");
         }
-        ListHITsIterable listHiTsResponses = endpointClients.get(endpoint).listHITsPaginator();
         List<HIT> result = new ArrayList<>();
-        for (ListHiTsResponse response : listHiTsResponses) {
-            result.addAll(response.hiTs());
+        //Start
+        ListHiTsRequest.Builder builder = ListHiTsRequest.builder().maxResults(DEFAULT_PAGE_SIZE);
+        ListHiTsResponse listHiTsResponse = endpointClients.get(endpoint).listHITs(builder.build());
+        String responseToken = listHiTsResponse.nextToken();
+        while (isNotBlank(responseToken)) {
+            result.addAll(listHiTsResponse.hiTs());
+            builder = ListHiTsRequest.builder().nextToken(responseToken).maxResults(DEFAULT_PAGE_SIZE);
+            listHiTsResponse = endpointClients.get(endpoint).listHITs(builder.build());
+            responseToken = listHiTsResponse.nextToken();
         }
         return result;
     }
@@ -98,6 +105,9 @@ public class MturkApiService {
         if (mTurkClient == null) {
             throw new IllegalStateException("Cannot connect to " + endpoint.name() + " because it's not configured");
         }
+        final JSONObject requesterAnnotation = new JSONObject();
+        //TODO metadata: seeAlso?
+        requesterAnnotation.put("createdForExperiment", experiment.getId());
         final CreateHitRequest.Builder builder = CreateHitRequest.builder()
                 .title(experiment.getTitle())
                 .description(experiment.getDescription())
@@ -107,8 +117,7 @@ public class MturkApiService {
                 .lifetimeInSeconds(experiment.getHitExpiration().toSeconds())
                 .assignmentDurationInSeconds(experiment.getAssignmentDuration().toSeconds())
                 .reward(Double.toString(experiment.getReward()))
-                //TODO metadata: seeAlso?
-                .requesterAnnotation(experiment.getId())
+                .requesterAnnotation(requesterAnnotation.toString())
                 .qualificationRequirements(buildRequirements(experiment));
         //actually create the hit:
         final CreateHitResponse response = mTurkClient.createHIT(builder.build());
@@ -168,6 +177,15 @@ public class MturkApiService {
             qualificationRequirements.add(userHasNotParticipatedBefore);
         }
         return qualificationRequirements;
+    }
+
+    public Optional<HIT> findHitById(Endpoint endpoint, String hitId) {
+        final MTurkClient mTurkClient = endpointClients.get(endpoint);
+        if (mTurkClient == null) {
+            throw new IllegalStateException("Cannot connect to " + endpoint.name() + " because it's not configured");
+        }
+        //TODO test nonexisting hits
+        return Optional.of(mTurkClient.getHIT(GetHitRequest.builder().hitId(hitId).build()).hit());
     }
 
     //TODO findById

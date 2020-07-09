@@ -34,6 +34,10 @@ dependencies {
 	implementation platform('software.amazon.awssdk:bom:2.13.51')
 	implementation 'software.amazon.awssdk:mturk'
 
+	//Adding json to HIT requester annotation
+	implementation group: 'org.json', name: 'json', version: '20200518'
+
+
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
 	testImplementation('org.springframework.boot:spring-boot-starter-test') {

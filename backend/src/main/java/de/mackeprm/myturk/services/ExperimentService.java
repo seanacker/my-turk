@@ -2,7 +2,7 @@ package de.mackeprm.myturk.services;
 
 import de.mackeprm.myturk.model.Experiment;
 import de.mackeprm.myturk.model.ExperimentRepository;
-import de.mackeprm.myturk.model.HIT;
+import de.mackeprm.myturk.model.LocalHIT;
 import de.mackeprm.myturk.mturk.Endpoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,10 +27,17 @@ public class ExperimentService {
         return experimentRepository.findById(id);
     }
 
-    public Experiment addHitToExperiment(HIT result, Experiment experiment) {
-        experiment.getHits().add(result);
-        experimentRepository.save(experiment);
-        return experiment;
+    public Experiment addHitToExperiment(LocalHIT localHIT, Experiment experiment) {
+        Experiment experiment1 = experimentRepository.findById(experiment.getId()).get();
+        if(!experiment1.getLocalHits().contains(localHIT)) {
+            experiment1.getLocalHits().add(localHIT);
+            experimentRepository.save(experiment1);
+        }
+        return experiment1;
+    }
+
+    public List<Experiment> findByHitsContaining(LocalHIT hit) {
+        return experimentRepository.findByLocalHitsContaining(hit);
     }
 
     //TODO add experiment to database

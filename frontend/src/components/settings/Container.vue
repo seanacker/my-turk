@@ -92,6 +92,7 @@ export default {
   },
   methods: {
     handleKeyPress(option) {
+      //TODO handle error when empty && required.
       Object.assign(this.settings, option)
       this.$emit('updateSettings', this.settings)
     },

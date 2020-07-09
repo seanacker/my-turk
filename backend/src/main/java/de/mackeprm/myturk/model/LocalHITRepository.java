@@ -7,7 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ExperimentRepository extends CrudRepository<Experiment, String> {
-    List<Experiment> findAllByEndpoint(Endpoint endpoint);
-    List<Experiment> findByLocalHitsContaining(LocalHIT localHit);
+public interface LocalHITRepository extends CrudRepository<LocalHIT, String> {
+    List<LocalHIT> findAllByEndpoint(Endpoint endpoint);
 }

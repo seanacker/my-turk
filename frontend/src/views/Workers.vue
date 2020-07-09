@@ -4,7 +4,7 @@
       :route="backbutton"
       :title="title"
       :description="`Started: ${date}`"
-      :meta="`HIT: ${id}`"
+      :meta="`HIT: ${hitId}`"
     />
     <BaseWrapper title="Workers waiting for approval" gray-dark>
       <TableSubmitted
@@ -20,6 +20,7 @@
       <TableRejected :workers="rejected" />
     </BaseWrapper>
     <BaseButton prime title="refresh" @click="refreshPage" />
+    <BaseButton second title="abort" @click="refreshPage" />
 
     <BaseModal
       :visible="modalApproveIsVisible"
@@ -91,7 +92,7 @@ export default {
     },
   },
   data: () => ({
-    id: '',
+    hitId: '',
     title: '',
     modalRejectIsVisible: false,
     modalApproveIsVisible: false,
@@ -122,13 +123,13 @@ export default {
   },
   methods: {
     async getHIT() {
-      let id = this.$route.query.id || ''
-      let res = await api.getHIT({ id })
+      let hitId = this.$route.query.id || ''
+      let res = await api.getHIT(hitId)
 
       if (res.success) {
-        let hit = res.data
-        this.id = hit.HITId
-        this.title = hit.Title
+        let localHit = res.data
+        this.hitId = localHit.hitId
+        this.title = localHit.Title
       } else {
         this.$toasted.show(res.message, {
           type: 'error',
@@ -295,6 +296,12 @@ export default {
     position: absolute;
     top: 0;
     right: 0;
+  }
+
+  > .BaseButton.is-second {
+    position: absolute;
+    top: 50px;
+    right: 5px;
   }
 }
 </style>

@@ -1,7 +1,7 @@
 package de.mackeprm.myturk.api;
 
 import de.mackeprm.myturk.model.Experiment;
-import de.mackeprm.myturk.model.HIT;
+import de.mackeprm.myturk.model.LocalHIT;
 import de.mackeprm.myturk.mturk.Endpoint;
 import de.mackeprm.myturk.services.ExperimentService;
 import de.mackeprm.myturk.services.HITService;
@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,7 @@ public class ExperimentsController {
 
     //TODO put?
     @PostMapping("/{id}/hits/")
-    public ResponseEntity<HIT> createHitForExperiment(@PathVariable String id) throws Exception {
+    public ResponseEntity<LocalHIT> createHitForExperiment(@PathVariable String id) throws Exception {
         final Optional<Experiment> byId = experimentService.findById(id);
         if (byId.isPresent()) {
             return new ResponseEntity<>(hitService.createHitForExperiment(byId.get()), HttpStatus.CREATED);
@@ -57,7 +58,7 @@ public class ExperimentsController {
 
 
     @PostMapping("/")
-    public ResponseEntity<String> saveExperiment() {
+    public ResponseEntity<String> saveExperiment(@Valid @RequestBody(required = false) Experiment experiment) {
         throw new IllegalStateException("not implemented");
     }
 
@@ -66,4 +67,5 @@ public class ExperimentsController {
         throw new IllegalStateException("not implemented");
     }
 
+    //TODO add HIT to experiment manually
 }

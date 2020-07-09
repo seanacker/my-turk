@@ -2,6 +2,7 @@ package de.mackeprm.myturk.api.auth;
 
 import de.mackeprm.myturk.mturk.Endpoint;
 import de.mackeprm.myturk.mturk.MturkApiService;
+import de.mackeprm.myturk.sync.MturkSyncService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +18,12 @@ import javax.validation.Valid;
 @RequestMapping("/api/v1")
 public class LoginController {
     private final MturkApiService mturkApiService;
+    private final MturkSyncService mturkSyncService;
 
     @Autowired
-    public LoginController(MturkApiService mturkApiService) {
+    public LoginController(MturkApiService mturkApiService, MturkSyncService mturkSyncService) {
         this.mturkApiService = mturkApiService;
+        this.mturkSyncService = mturkSyncService;
     }
 
     @PostMapping("/login")
@@ -29,6 +32,7 @@ public class LoginController {
             mturkApiService.login(Endpoint.sandbox, loginRequest.getAwsAccessKeyId(), loginRequest.getAwsSecretAccessKey());
             final String balance = mturkApiService.login(Endpoint.production, loginRequest.getAwsAccessKeyId(), loginRequest.getAwsSecretAccessKey());
             //TODO success:true
+            mturkSyncService.initialSync();
             //token: accessKeyId
             return new ResponseEntity<>(new LoginResponse("You can pass", balance, loginRequest.getAwsAccessKeyId()), HttpStatus.OK);
         } catch (final MTurkException e) {

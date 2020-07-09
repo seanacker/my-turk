@@ -6,11 +6,11 @@ export default {
     },
 
     addExperiment: payload => {
-        return sendData('addExperiment', payload)
+        return sendData('experiments/', payload)
     },
 
     saveSettings: payload => {
-        return sendData('saveExperiment', payload)
+        return sendData('experiments/', payload)
     },
 
     getExperiments: payload => {
@@ -30,6 +30,7 @@ export default {
         return request(options)
     },
 
+    //TODO overwrite
     deleteExperiment: payload => {
         return sendData('deleteExperiment', payload)
     },
@@ -42,22 +43,30 @@ export default {
         return request(options)
     },
 
-    getHIT: payload => {
-        return sendData('getHIT', payload)
+    getHIT: hitId => {
+        const options = {
+            endpoint: SERVER_URL + "HITs/" + hitId + "/",
+            method: 'GET',
+        }
+        return request(options)
     },
 
+    //TODO overwrite
     deleteHIT: payload => {
         return sendData('deleteHIT', payload)
     },
 
+    //TODO overwrite
     listAssignments: payload => {
         return sendData('listAssignments', payload)
     },
 
+    //TODO overwrite
     approveAssignment: payload => {
         return sendData('approveAssignment', payload)
     },
 
+    //TODO overwrite
     rejectAssignment: payload => {
         return sendData('rejectAssignment', payload)
     },

@@ -9,7 +9,7 @@
         <Container
                 :groups="settingsInput"
                 :endpoint="settings.endpoint"
-                :has-hits="experiment.hits.length > 0"
+                :has-hits="experiment.localHits.length > 0"
                 @updateSettings="updateSettings"
         />
 
@@ -80,7 +80,7 @@
                         assignmentsPerHit: '',
                         defaultRequirements: false,
                         rewardPerAssignment: '',
-                        hits: [],
+                        localHits: [],
                         endpoint: 'sandbox',
                     }
                 },
@@ -106,6 +106,7 @@
                             name: 'Id',
                             value: '',
                             placeholder: 'This is the experiment name for the overview page',
+                            required: true,
                         },
                     ],
                 },
