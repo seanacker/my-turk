@@ -57,19 +57,28 @@ public class ExperimentsController {
     }
 
 
-    @PostMapping("/")
-    public ResponseEntity<Experiment> saveExperiment(@Valid @RequestBody Experiment input) {
-        //TODO include parameter fail on existing id.
-        Optional<Experiment> byId = experimentService.findById(input.getId());
-        if (byId.isPresent()) {
-            //Does the experiment exist? -> update
-            final Experiment existing = byId.get();
-            update(input, existing);
-            return new ResponseEntity<>(experimentService.save(existing), HttpStatus.OK);
+    @PutMapping("/")
+    public ResponseEntity<Experiment> createExperiment(@Valid @RequestBody Experiment input) {
+        final boolean exists = experimentService.exists(input.getId());
+        if (exists) {
+            throw new IllegalStateException("Element with id " + input.getId() + " already exists. Please use another id, or, if you want to update, use POST");
         } else {
             final Experiment toSave = new Experiment();
             update(input, toSave);
             return new ResponseEntity<>(experimentService.save(toSave), HttpStatus.CREATED);
+        }
+    }
+
+    @PostMapping("/")
+    public ResponseEntity<Experiment> saveExperiment(@Valid @RequestBody Experiment input) {
+        final Optional<Experiment> byId = experimentService.findById(input.getId());
+        if (byId.isEmpty()) {
+            throw new IllegalStateException("Element with id " + input.getId() + " already exists. Please use another id, or, if you want to update, use POST");
+        } else {
+            //Does the experiment exist? -> update
+            final Experiment existing = byId.get();
+            update(input, existing);
+            return new ResponseEntity<>(experimentService.save(existing), HttpStatus.OK);
         }
     }
 
@@ -90,7 +99,13 @@ public class ExperimentsController {
 
     @DeleteMapping("/{id}/")
     public ResponseEntity<String> deleteExperimentById(@PathVariable String id) {
-        throw new IllegalStateException("not implemented");
+        final boolean exists = experimentService.exists(id);
+        if (exists) {
+            experimentService.deleteById(id);
+            return new ResponseEntity<>("{\"deleted\":\"" + id + "\"}", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     //TODO add HIT to experiment manually

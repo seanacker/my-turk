@@ -49,6 +49,7 @@
     import Container from '@/components/settings/Container.vue'
 
     import api from '@/api'
+    import utils from '@/utils'
 
     var moment = require('moment')
 
@@ -242,18 +243,24 @@
                 let settings = this.settings
                 let experiment = this.parseFields(settings);
                 console.log(JSON.stringify(experiment))
-                let res = await api.saveExperiment(experiment)
-
-                if (res.success) {
+                let res;
+                try {
+                    if (this.addExperiment) {
+                        res = await api.createNewExperiment(experiment)
+                    } else {
+                        res = await api.saveExperiment(experiment)
+                    }
                     this.$toasted.success(res.message, {
                         position: 'bottom-right',
                         duration: 3000,
                     })
                     this.$router.push({name: 'overview'});
-                } else {
-                    this.$toasted.error(res.message, {
+                } catch (errorResponse) {
+                    let errorMessage = await utils.resolveErrorMessage(errorResponse);
+
+                    this.$toasted.error(errorMessage, {
                         position: 'bottom-right',
-                        duration: 5000,
+                        duration: 3000,
                     })
                 }
             },
@@ -265,11 +272,17 @@
             },
             async deleteExperiment() {
                 let id = this.$route.query.id || ''
-                let res = await api.deleteExperiment({id})
-
-                if (res.success) {
+                try {
+                    let res = await api.deleteExperiment(id)
                     this.$router.push({name: 'overview'})
                     this.$toasted.error(res.message, {
+                        position: 'bottom-right',
+                        duration: 3000,
+                    })
+                } catch (errorResponse) {
+                    let errorMessage = await utils.resolveErrorMessage(errorResponse);
+
+                    this.$toasted.error(errorMessage, {
                         position: 'bottom-right',
                         duration: 3000,
                     })
@@ -278,10 +291,9 @@
             async loadExperimentSettings() {
                 let id = this.$route.query.id
                 if (!this.addExperiment && this.initial && id) {
-                    let result = await api.getExperiment(id)
-                    console.log('result', result)
-
-                    if (result.success) {
+                    try {
+                        let result = await api.getExperiment(id)
+                        console.log('result', result)
                         //TODO post-process for settings:
                         //Keywords -> String
                         //Reward per Assignment
@@ -289,6 +301,12 @@
                         //Assignment Duration -> Parse Duration using moment
                         //Assignments per Hit -> toString
                         this.settings = result.data
+                    } catch (errorResponse) {
+                        let errorMessage = await utils.resolveErrorMessage(errorResponse);
+                        this.$toasted.error(errorMessage, {
+                            position: 'bottom-right',
+                            duration: 3000,
+                        })
                     }
                 }
                 this.settingsInput.map(elem => {

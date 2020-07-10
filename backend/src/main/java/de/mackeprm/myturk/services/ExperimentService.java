@@ -44,6 +44,12 @@ public class ExperimentService {
         return experimentRepository.save(toSave);
     }
 
-    //TODO delete experiment by id
+    public boolean exists(String id) {
+        return experimentRepository.existsById(id);
+    }
 
+    public void deleteById(String s) {
+        //TODO update hits -> detached
+        experimentRepository.deleteById(s);
+    }
 }

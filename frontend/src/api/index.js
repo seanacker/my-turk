@@ -5,6 +5,15 @@ export default {
         return sendData('login', payload)
     },
 
+    createNewExperiment: payload => {
+        const options = {
+            endpoint: SERVER_URL + "experiments/",
+            method: 'PUT',
+            payload: payload,
+        }
+        return request(options)
+    },
+
     saveExperiment: payload => {
         return sendData('experiments/', payload)
     },
@@ -26,9 +35,12 @@ export default {
         return request(options)
     },
 
-    //TODO overwrite
-    deleteExperiment: payload => {
-        return sendData('deleteExperiment', payload)
+    deleteExperiment: id => {
+        const options = {
+            endpoint: SERVER_URL + "experiments/" + id + "/",
+            method: 'DELETE',
+        }
+        return request(options)
     },
 
     createHIT: experimentId => {
@@ -112,20 +124,14 @@ async function request({endpoint, method, payload}) {
     let response = fetch(endpoint, options)
         .then(response => {
             if (!response.ok) {
-                throw new Error('Not 200 response')
+                throw response;
             }
             return response.json()
         })
         .then(data => {
             return {
-                success: true,
                 data: data
             }
         })
-        .catch(error => {
-            console.error('Error:', error)
-            return false
-        })
-
     return response
 }

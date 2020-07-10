@@ -43,6 +43,7 @@
     import BaseWrapper from '@/components/BaseWrapper.vue'
     import Table from '@/components/overview/Table.vue'
     import api from '@/api'
+    import utils from '@/utils'
 
     export default {
         name: 'Tags',
@@ -68,12 +69,18 @@
         },
         methods: {
             async getExperiments() {
-                let result = await api.getExperiments({groupBy: 'endpoint'})
-                console.log(result)
-                if (result.success) {
+                try {
+                    let result = await api.getExperiments({groupBy: 'endpoint'})
                     this.experiments = result.data
                     this.experiments.production = result.data.production || []
                     this.experiments.sandbox = result.data.sandbox || []
+                } catch (errorResponse) {
+                    let errorMessage = await utils.resolveErrorMessage(errorResponse);
+
+                    this.$toasted.error(errorMessage, {
+                        position: 'bottom-right',
+                        duration: 3000,
+                    })
                 }
             },
             async addExperiment() {
@@ -84,10 +91,9 @@
             },
             async createHIT(experiment) {
                 console.log(experiment)
-                let res = await api.createHIT(experiment.id)
-                console.log(res)
-
-                if (res.success) {
+                try {
+                    let res = await api.createHIT(experiment.id)
+                    console.log(res)
                     this.$toasted.success(res.message, {
                         position: 'bottom-right',
                         duration: 3000,
@@ -98,10 +104,12 @@
                     let id = experiment.id
                     await api.saveExperiment({id, experiment})
                     this.getExperiments()
-                } else {
-                    this.$toasted.error(res.message, {
+                } catch (errorResponse) {
+                    let errorMessage = await utils.resolveErrorMessage(errorResponse);
+
+                    this.$toasted.error(errorMessage, {
                         position: 'bottom-right',
-                        duration: 5000,
+                        duration: 3000,
                     })
                 }
             },
@@ -141,25 +149,26 @@
             },
             async deleteHIT() {
                 let id = this.hit.id
-                console.log(api)
-                let res = await api.deleteHIT({id})
-
-                this.modalIsVisible = false
-                this.hit = {}
-
-                if (res.success) {
+                try {
+                    let res = await api.deleteHIT({id})
                     this.getExperiments()
 
                     this.$toasted.success(res.message, {
                         position: 'bottom-right',
                         duration: 3000,
                     })
-                } else {
-                    this.$toasted.error(res.message, {
+                } catch (errorResponse) {
+                    let errorMessage = await utils.resolveErrorMessage(errorResponse);
+
+                    this.$toasted.error(errorMessage, {
                         position: 'bottom-right',
-                        duration: 5000,
+                        duration: 3000,
                     })
+                } finally {
+                    this.modalIsVisible = false
+                    this.hit = {}
                 }
+
             },
             closeModal() {
                 this.modalIsVisible = false
