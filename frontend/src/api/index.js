@@ -5,11 +5,7 @@ export default {
         return sendData('login', payload)
     },
 
-    addExperiment: payload => {
-        return sendData('experiments/', payload)
-    },
-
-    saveSettings: payload => {
+    saveExperiment: payload => {
         return sendData('experiments/', payload)
     },
 

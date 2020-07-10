@@ -50,6 +50,8 @@
 
     import api from '@/api'
 
+    var moment = require('moment')
+
     export default {
         name: 'Tags',
         components: {
@@ -217,12 +219,30 @@
                 key = key.replace(/ ([a-z])/g, (m, w) => w.toUpperCase())
                 return key
             },
-            async handleSave() {
-                let id = this.$route.query.id || ''
-                let settings = this.settings
-                console.log(settings)
+            parseFields(settings) {
+                //TODO update without destruction of old?
+                let keywordArray = settings.keywords.split(",")
+                keywordArray.forEach(keyword => keyword.trim())
+                settings.keywords = keywordArray
+                //hitExpiresAfterDays
+                let hitExpiration = moment.duration(parseFloat(settings['hitExpiresAfter (days)']), "days")
+                settings.hitExpiration = hitExpiration.toISOString()
 
-                let res = await api.saveSettings({id, experiment: settings})
+                //assignmentDurationInMinutes
+                let assignmentDuration = moment.duration(parseFloat(settings.assignmentDurationInMinutes), "minutes")
+                settings.assignmentDuration = assignmentDuration.toISOString()
+
+                settings.reward = parseFloat(settings.rewardPerAssignment);
+                settings.assignmentsPerHit = parseInt(settings.assignmentsPerHit);
+                settings.includeDefaultRequirements = settings.defaultRequirements;
+
+                return settings;
+            },
+            async handleSave() {
+                let settings = this.settings
+                let experiment = this.parseFields(settings);
+                console.log(JSON.stringify(experiment))
+                let res = await api.saveExperiment(experiment)
 
                 if (res.success) {
                     this.$toasted.success(res.message, {

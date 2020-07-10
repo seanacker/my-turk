@@ -96,7 +96,7 @@
                     experiment = this.addHITtoExperiment(experiment, hit)
 
                     let id = experiment.id
-                    await api.saveSettings({id, experiment})
+                    await api.saveExperiment({id, experiment})
                     this.getExperiments()
                 } else {
                     this.$toasted.error(res.message, {

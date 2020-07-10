@@ -3,6 +3,10 @@ package de.mackeprm.myturk.model;
 import de.mackeprm.myturk.mturk.Endpoint;
 
 import javax.persistence.*;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,21 +20,28 @@ public class Experiment {
 
     //Internal name
     @Id
+    @NotBlank
+    @Size(min = 2, max = 1_000)
     private String id;
 
     //Information for mturk workers
-    //TODO Nonnull
+    @Size(min = 2, max = 1_000)
     @Column(length = 1_000)
     private String title;
+    @Size(min = 2, max = 5_000)
     @Column(length = 5_000)
     private String description;
     @ElementCollection
     private List<String> keywords;
 
     //HIT and Assignments
+    @NotNull
     private Duration hitExpiration;
+    @NotNull
     private Duration assignmentDuration;
+    @Min(value = 1)
     private int assignmentsPerHit;
+    @Min(value = 0)
     private double reward;
 
     //Qualifications
@@ -43,6 +54,7 @@ public class Experiment {
 
     //Entrypoint
     @Column(length = 5_000)
+    @Size(min = 2, max = 5_000)
     private String entrypoint;
 
     //Endpoint
@@ -55,6 +67,7 @@ public class Experiment {
 
     //Hibernate
     public Experiment() {
+        this.localHits = new ArrayList<>();
     }
 
     public Experiment(String id, String title, String description, List<String> keywords, Duration hitExpiration, Duration assignmentDuration, int assignmentsPerHit, double reward, QualificationType completedExperimentQualification, boolean includeDefaultRequirements, String entrypoint, Endpoint endpoint) {
@@ -149,5 +162,58 @@ public class Experiment {
         final int waitingForApproval = this.localHits.stream().mapToInt(LocalHIT::getWaitingForApproval).sum();
         return waitingForApproval + "/" + getNumAssignments();
     }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setKeywords(List<String> keywords) {
+        this.keywords = keywords;
+    }
+
+    public void setHitExpiration(Duration hitExpiration) {
+        this.hitExpiration = hitExpiration;
+    }
+
+    public void setAssignmentDuration(Duration assignmentDuration) {
+        this.assignmentDuration = assignmentDuration;
+    }
+
+    public void setAssignmentsPerHit(int assignmentsPerHit) {
+        this.assignmentsPerHit = assignmentsPerHit;
+    }
+
+    public void setReward(double reward) {
+        this.reward = reward;
+    }
+
+    public void setCompletedExperimentQualification(QualificationType completedExperimentQualification) {
+        this.completedExperimentQualification = completedExperimentQualification;
+    }
+
+    public void setIncludeDefaultRequirements(boolean includeDefaultRequirements) {
+        this.includeDefaultRequirements = includeDefaultRequirements;
+    }
+
+    public void setEntrypoint(String entrypoint) {
+        this.entrypoint = entrypoint;
+    }
+
+    public void setEndpoint(Endpoint endpoint) {
+        this.endpoint = endpoint;
+    }
+
+    public void setLocalHits(List<LocalHIT> localHits) {
+        this.localHits = localHits;
+    }
+
 
 }

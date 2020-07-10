@@ -29,7 +29,7 @@ public class ExperimentService {
 
     public Experiment addHitToExperiment(LocalHIT localHIT, Experiment experiment) {
         Experiment experiment1 = experimentRepository.findById(experiment.getId()).get();
-        if(!experiment1.getLocalHits().contains(localHIT)) {
+        if (!experiment1.getLocalHits().contains(localHIT)) {
             experiment1.getLocalHits().add(localHIT);
             experimentRepository.save(experiment1);
         }
@@ -40,8 +40,9 @@ public class ExperimentService {
         return experimentRepository.findByLocalHitsContaining(hit);
     }
 
-    //TODO add experiment to database
-    //TODO update experiment
+    public Experiment save(Experiment toSave) {
+        return experimentRepository.save(toSave);
+    }
 
     //TODO delete experiment by id
 

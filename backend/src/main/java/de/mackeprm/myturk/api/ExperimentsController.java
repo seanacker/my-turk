@@ -58,8 +58,34 @@ public class ExperimentsController {
 
 
     @PostMapping("/")
-    public ResponseEntity<String> saveExperiment(@Valid @RequestBody(required = false) Experiment experiment) {
-        throw new IllegalStateException("not implemented");
+    public ResponseEntity<Experiment> saveExperiment(@Valid @RequestBody Experiment input) {
+        //TODO include parameter fail on existing id.
+        Optional<Experiment> byId = experimentService.findById(input.getId());
+        if (byId.isPresent()) {
+            //Does the experiment exist? -> update
+            final Experiment existing = byId.get();
+            update(input, existing);
+            return new ResponseEntity<>(experimentService.save(existing), HttpStatus.OK);
+        } else {
+            final Experiment toSave = new Experiment();
+            update(input, toSave);
+            return new ResponseEntity<>(experimentService.save(toSave), HttpStatus.CREATED);
+        }
+    }
+
+    private void update(Experiment input, Experiment toSave) {
+        toSave.setId(input.getId());
+        toSave.setTitle(input.getTitle());
+        toSave.setDescription(input.getDescription());
+        toSave.setKeywords(input.getKeywords());
+        //TODO award qualification
+        toSave.setReward(input.getReward());
+        toSave.setHitExpiration(input.getHitExpiration());
+        toSave.setAssignmentDuration(input.getAssignmentDuration());
+        toSave.setAssignmentsPerHit(input.getAssignmentsPerHit());
+        toSave.setIncludeDefaultRequirements(input.isIncludeDefaultRequirements());
+        toSave.setEntrypoint(input.getEntrypoint());
+        toSave.setEndpoint(input.getEndpoint());
     }
 
     @DeleteMapping("/{id}/")
