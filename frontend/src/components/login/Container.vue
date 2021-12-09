@@ -25,6 +25,11 @@
         type="password"
         @keyPress="handleKeyPress"
       />
+      <BaseSelect
+        :options="options"
+        label="Endpoint"
+        @onChange="handleSelectChange"
+      />
     </div>
     <BaseButton square prime title="sign in" @click="handleLogin" />
   </BaseWrapper>
@@ -33,6 +38,7 @@
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
 import BaseWrapper from '../BaseWrapper.vue'
+import BaseSelect from '@/components/BaseSelect.vue'
 
 export default {
   name: 'Grid',
@@ -40,6 +46,7 @@ export default {
     BaseInput,
     BaseButton,
     BaseWrapper,
+    BaseSelect,
   },
   props: {
     items: {
@@ -50,6 +57,10 @@ export default {
   data: () => ({
     awsAccessKeyId: '',
     awsSecretAccessKey: '',
+    options: [
+      { value: 'https://mturk-requester-sandbox.us-east-1.amazonaws.com', label: 'Sandbox', isSelected: true },
+      { value: 'https://mturk-requester.us-east-1.amazonaws.com', label: 'Production', isSelected: false },
+    ],
   }),
   methods: {
     handleKeyPress({ awsAccessKeyId, awsSecretAccessKey }) {
@@ -57,8 +68,13 @@ export default {
       this.awsSecretAccessKey = awsSecretAccessKey || this.awsSecretAccessKey
     },
     handleLogin() {
-      let { awsAccessKeyId, awsSecretAccessKey } = this
-      this.$emit('login', { awsAccessKeyId, awsSecretAccessKey })
+      this.endpoint = this.endpoint || "https://mturk-requester-sandbox.us-east-1.amazonaws.com";
+      let { awsAccessKeyId, awsSecretAccessKey, endpoint } = this
+      this.$emit('login', { awsAccessKeyId, awsSecretAccessKey, endpoint })
+    },
+    handleSelectChange(val) {
+      console.log("Changed endpoint to " + JSON.stringify(val));
+      this.endpoint = val.endpoint;
     },
   },
 }

@@ -28,19 +28,12 @@
           />
         </template>
       </div>
-      <BaseSelect
-        :disabled="hasHits && modes.production"
-        :options="options"
-        label="Endpoint"
-        @onChange="handleSelectChange"
-      />
     </div>
   </BaseWrapper>
 </template>
 <script>
 import BaseCheckbox from '@/components/BaseCheckbox.vue'
 import BaseInput from '@/components/BaseInput.vue'
-import BaseSelect from '@/components/BaseSelect.vue'
 import BaseWrapper from '@/components/BaseWrapper.vue'
 
 export default {
@@ -48,7 +41,6 @@ export default {
   components: {
     BaseCheckbox,
     BaseInput,
-    BaseSelect,
     BaseWrapper,
   },
   props: {
@@ -71,10 +63,6 @@ export default {
       sandbox: true,
       production: false,
     },
-    options: [
-      { value: 'sandbox', label: 'Sandbox', isSelected: true },
-      { value: 'production', label: 'Production', isSelected: false },
-    ],
   }),
   watch: {
     endpoint: {
@@ -94,11 +82,7 @@ export default {
     handleKeyPress(option) {
       Object.assign(this.settings, option)
       this.$emit('updateSettings', this.settings)
-    },
-    handleSelectChange(val) {
-      Object.assign(this.settings, val)
-      this.$emit('updateSettings', this.settings)
-    },
+    }
   },
 }
 </script>
@@ -123,11 +107,6 @@ export default {
     margin-top: 0px;
   }
   .BaseInput, .BaseCheckbox {
-    grid-column-start: 1;
-    grid-column-end: 3;
-  }
-  .BaseSelect {
-    width: calc(100% + 20px);
     grid-column-start: 1;
     grid-column-end: 3;
   }

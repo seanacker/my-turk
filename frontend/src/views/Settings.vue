@@ -79,6 +79,7 @@ export default {
           assignmentDurationInMinutes: '',
           assignmentsPerHit: '',
           defaultRequirements: false,
+          guardHitByQualification: false,
           rewardPerAssignment: '',
           hits: [],
           endpoint: 'sandbox',
@@ -182,7 +183,13 @@ export default {
         items: [
           {
             name: 'Default Requirements',
-            hint: 'us-based, 95% approval, more than 1.000 hits',
+            hint: 'US-based, 95% approval, more than 1.000 hits',
+            type: 'checkbox',
+            value: false,
+          },
+          {
+            name: 'Guard Hit by Qualification',
+            hint: 'Make the above qualification an exclusion criteria for this HIT',
             type: 'checkbox',
             value: false,
           },

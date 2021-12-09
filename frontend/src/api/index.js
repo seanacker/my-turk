@@ -37,6 +37,10 @@ export default {
     return sendData('listAssignments', payload)
   },
 
+  qualifyWorker: payload => {
+    return sendData('qualifyWorker', payload)
+  },
+
   approveAssignment: payload => {
     return sendData('approveAssignment', payload)
   },

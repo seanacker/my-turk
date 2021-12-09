@@ -2,8 +2,9 @@ const express = require('express');
 const AWS = require('aws-sdk');
 const mongo = require('../services/mongo');
 const ObjectId = require('mongodb').ObjectId;
-const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
-//const endpoint = 'https://mturk-requester.us-east-1.amazonaws.com';
+//const endpoint = 'https://mturk-requester-sandbox.us-east-1.amazonaws.com';
+const endpoint_default = 'https://mturk-requester.us-east-1.amazonaws.com';
+var endpoint = endpoint_default;
 const region = 'us-east-1';
 const app = express();
 
@@ -14,7 +15,10 @@ app.post('/login', async (req, res) => {
 
   let accessKeyId = data.awsAccessKeyId;
   let secretAccessKey = data.awsSecretAccessKey;
-
+  console.log("endpoint requested " + data.endpoint);
+  endpoint = data.endpoint || endpoint;
+  console.log("endpoint in use will be " + endpoint);
+  
   console.log('accessKeyId', accessKeyId || '');
   console.log('secretAccessKey', secretAccessKey || '');
 
@@ -78,6 +82,7 @@ app.post('/saveExperiment', async (req, res) => {
   let id = data.id;
 
   delete data.experiment._id;
+  data.experiment.endpoint = endpoint.indexOf("sandbox") == -1 ? "production" : "sandbox";
   const { awardQualificationName, awardQualificationDescription, awardQualificationId } = data.experiment;
 
   if (awardQualificationName && awardQualificationDescription) {
@@ -124,7 +129,9 @@ const group = key => array => {
 
 app.post('/getExperiments', async (req, res) => {
   let data = req.body;
-  let id = data.id ? { _id: ObjectId(data.id) } : {};
+  let search_for = endpoint.indexOf("sandbox") == -1? "production" : "sandbox";
+  console.log("Only searching for " + search_for);
+  let id = data.id ? { _id: ObjectId(data.id), endpoint: search_for } : {endpoint: search_for};
   let groupBy = data.groupBy || null;
   let result = await mongo.findData(id);
 
@@ -192,10 +199,11 @@ app.post('/getExperiments', async (req, res) => {
         }
       }
     }
-    let mResult = groupBy ? group(groupBy)(result) : result;
-
+    let mResult = (groupBy) ? group(groupBy)(result) : result;
+    
     return res.send({
       success: true,
+      endpoint: search_for,
       message: `found ${result.length} experiments`,
       data: mResult
     });
@@ -288,6 +296,25 @@ app.post('/approveAssignment', async (req, res) => {
     return res.send({
       success: true,
       message: 'approved assignment',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: result.error.errors,
+      error: 'Something went wrong'
+    });
+  }
+});
+
+app.post('/qualifyWorker', async (req, res) => {
+  let data = req.body;
+  let result = await qualify(data).catch(err => ({ error: err }));
+  console.log(result);
+  if (!result.error) {
+    return res.send({
+      success: true,
+      message: 'Qualification assigned',
       data: result
     });
   } else {
@@ -398,8 +425,12 @@ const createHIT = async params => {
       params.entrypoint
       }</ExternalURL><FrameHeight>0</FrameHeight></ExternalQuestion>`
   };
+  let requirements = {
+    QualificationRequirements: []
+  }
   if (params.defaultRequirements) {
-    let requirements = {
+    requirements = {
+      
       QualificationRequirements: [
         {
           Comparator: 'GreaterThanOrEqualTo',
@@ -422,8 +453,17 @@ const createHIT = async params => {
         }
       ]
     };
-    createHITOptions = Object.assign(createHITOptions, requirements);
   }
+  console.log("Guard is " + params.guardHITbyQualification);
+  if (params.guardHitByQualification) {
+    requirements.QualificationRequirements.push(
+      {
+        QualificationTypeId: params.awardQualificationId,
+        Comparator: 'DoesNotExist',
+      }
+    );
+  }
+  createHITOptions = Object.assign(createHITOptions, requirements);
   return new Promise((resolve, reject) => {
     mturk.createHIT(createHITOptions, (err, data) => {
       if (err) {
@@ -521,6 +561,7 @@ const qualify = ({ awardQualificationID, workerID }) => {
   let params = {
     QualificationTypeId: awardQualificationID,
     WorkerId: workerID,
+    SendNotification: false
   };
   return new Promise((resolve, reject) => {
     mturk.associateQualificationWithWorker(params, (err, data) => {

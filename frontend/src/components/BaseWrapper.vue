@@ -6,6 +6,7 @@
       { 'is-green': green },
       { 'is-gray-dark': grayDark },
       { 'is-gray-light': grayLight },
+      { 'is-hidden': hidden },
     ]"
   >
     <div class="TitleWrapper">
@@ -31,6 +32,10 @@ export default {
     green: Boolean,
     grayDark: Boolean,
     grayLight: Boolean,
+    hidden: {
+      type: Boolean,
+      deafult: false,
+    }
   },
 }
 </script>
@@ -47,6 +52,7 @@ export default {
   overflow: hidden;
   width: 100%;
   margin-bottom: 60px;
+  visibility: visible;
 
   &:last-of-type {
     margin-bottom: 0px;
@@ -62,6 +68,10 @@ export default {
     .TitleWrapper {
       background-color: color(green);
     }
+  }
+
+  &.is-hidden {
+    visibility: hidden;
   }
 
   &.is-gray-light {

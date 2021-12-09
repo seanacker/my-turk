@@ -43,6 +43,10 @@
         <span class="Anchor" @click="onReject(worker.assignmentID)"
           >reject</span
         >
+        &nbsp;/&nbsp;
+        <span class="Anchor" @click="onQualify(worker.id)"
+          >assign Qualification</span
+        >
       </span>
     </BaseRow>
   </div>
@@ -70,6 +74,10 @@ export default {
     },
     onReject(id) {
       this.$emit('onReject', id)
+    },
+    onQualify(id) {
+      console.log("Qualify clicked")
+      this.$emit('onQualify', id)
     },
   },
 }

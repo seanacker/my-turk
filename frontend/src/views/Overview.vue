@@ -7,7 +7,7 @@
       description="Overview of your experiments"
     />
 
-    <BaseWrapper title="Production" red>
+    <BaseWrapper title="Production" red :hidden="prodIsHidden">
       <Table
         :experiments="experiments.production"
         @createHIT="createHIT"
@@ -15,7 +15,7 @@
       />
     </BaseWrapper>
 
-    <BaseWrapper title="Sandbox" green>
+    <BaseWrapper title="Sandbox" green :hidden="sandIsHidden">
       <Table
         :experiments="experiments.sandbox"
         @createHIT="createHIT"
@@ -62,6 +62,8 @@ export default {
     },
     modalIsVisible: false,
     experiments: {},
+    prodIsHidden: false, 
+    sandIsHidden: false,
   }),
   mounted: async function() {
     this.getExperiments()
@@ -70,6 +72,10 @@ export default {
     async getExperiments() {
       let result = await api.getExperiments({ groupBy: 'endpoint' })
       console.log(result)
+      this.prodIsHidden = (result.endpoint == "sandbox");
+      console.log(this.prodIsHidden);
+      this.sandIsHidden = (result.endpoint == "production");
+      console.log(this.sandIsHidden);
       if (result.success) {
         this.experiments = result.data
         this.experiments.production = result.data.production || []

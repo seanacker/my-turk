@@ -1,14 +1,14 @@
 version: "3.7"
 services:
   mongo:
-    container_name: mongo
+    container_name: mongo-prod
     image: mongo
     volumes:
       - ./data:/mongo/data/db
     ports:
       - "27017:27017"
   backend:
-    container_name: backend
+    container_name: backend-prod
     restart: always
     build: ./backend
     ports:
@@ -22,7 +22,7 @@ services:
     environment:
       WAIT_HOSTS: mongo:27017
   app:
-    container_name: app
+    container_name: app-prod
     restart: always
     build: ./frontend
     ports:
