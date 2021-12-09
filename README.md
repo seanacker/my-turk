@@ -11,6 +11,11 @@ docker-compose up
 ```
 Wait for docker to finish and open http://localhost:8080 afterwards
 
+## Modify
+```bash
+docker-compose build
+```
+
 ## Sneak Peek
 ![Screenshot](/design/assets/demo.gif)
 
