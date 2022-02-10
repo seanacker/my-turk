@@ -146,12 +146,39 @@ app.post('/getExperiments', async (req, res) => {
       exp.completed = 0;
       exp.maxAssignments = 0;
 
+      console.log("requesting HIT list");
+      let res = (await listHITs({MaxResults: 100}).catch(err => ({ error: err })));
+      let mHITList = [];
+      if (!res.error) {
+        mHITList = res.HITs;
+        console.log("Got HITList with " + mHITList.length + " entries");
+      } else {
+        console.log("error while requesting HITlist: " + res.error);
+      }
+
+      
+      let mHITs = {}
+      for (var j = 0; j<mHITList.length; j++) {
+        var hitDetail = mHITList[j];
+        mHITs[hitDetail.HITId] = hitDetail;
+      }
+      console.log("HITlist split into HITs");
+
       for (var j = 0; hits && j < hits.length; j++) {
         let hit = hits[j];
-        let mHIT = (await getHIT({ id: hit.id }).catch(err => ({ error: err })))
-          .HIT;
 
-        if (!mHIT.error) {
+        console.log("Searching for HIT " + hit.id);
+        let mHIT = {}
+        if (mHITs.hasOwnProperty(hit.id)) {
+          mHIT = mHITs[hit.id];
+          console.log("HIT found with id " + mHIT.HITId);
+        } else {
+          console.log("HIT not found in list, request via gatHIT")
+          mHIT = (await getHIT({id: hit.id}).catch(err => ({ error: err }))).HIT;
+        }
+
+
+        if (mHIT) {
           let hitID = mHIT.HITId;
           let maxAssignments = mHIT.MaxAssignments;
           let available = mHIT.NumberOfAssignmentsAvailable;
@@ -497,6 +524,23 @@ const getHIT = ({ id }) => {
   });
 };
 
+const listHITs = params => {
+  connectToMturk();
+
+  // TODO show error as toast.
+  return new Promise((resolve, reject) => {
+    mturk.listHITs(params, (err, data) => {
+      if (err) {
+        console.log(err, err.stack); // an error occurred
+        reject(err);
+      } else {
+        console.log(data); // successful response
+        resolve(data);
+      }
+    });
+  });
+};
+
 const deleteHIT = ({ id }) => {
   connectToMturk();
 
@@ -558,6 +602,7 @@ const listAssignments = ({ id }) => {
 };
 
 const qualify = ({ awardQualificationID, workerID }) => {
+  console.log("Qualifying worker " + workerID + " with " + awardQualificationID);
   let params = {
     QualificationTypeId: awardQualificationID,
     WorkerId: workerID,

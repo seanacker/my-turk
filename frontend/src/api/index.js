@@ -29,6 +29,10 @@ export default {
     return sendData('getHIT', payload)
   },
 
+  listHITs: payload => {
+    return sendData('listHITs', payload)
+  },
+
   deleteHIT: payload => {
     return sendData('deleteHIT', payload)
   },

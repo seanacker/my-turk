@@ -22,6 +22,7 @@
         @onHitDeleteClick="handleDeleteHIT"
       />
     </BaseWrapper>
+    <BaseButton prime style="right: 14em" title="refresh" @click="refreshPage" />
     <BaseButton prime title="new experiment" @click="addExperiment" />
 
     <BaseModal
@@ -68,6 +69,7 @@ export default {
   mounted: async function() {
     this.getExperiments()
   },
+  
   methods: {
     async getExperiments() {
       let result = await api.getExperiments({ groupBy: 'endpoint' })
@@ -98,6 +100,11 @@ export default {
           duration: 5000,
         })
       }
+    },
+    async refreshPage() {
+      this.experiments.production = []
+      this.experiments.sandbox = []
+      this.getExperiments();
     },
     async createHIT(experiment) {
       console.log(experiment)

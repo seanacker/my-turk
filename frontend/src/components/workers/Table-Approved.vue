@@ -9,7 +9,7 @@
     </BaseRow>
 
     <BaseRow v-else light>
-      <span class="is-wide">WorkerID</span>
+      <span class="">WorkerID</span>
       <span class="is-wide">AssignmentID</span>
       <span class="is-narrow align-right">Started</span>
       <span class="is-narrow align-right">Finished</span>
@@ -17,7 +17,7 @@
     </BaseRow>
 
     <BaseRow v-for="worker in workers" :key="worker.id">
-      <span class="is-wide">
+      <span class="">
         {{ worker.id }}&nbsp;
         <BaseCopy :value="worker.id" />
       </span>

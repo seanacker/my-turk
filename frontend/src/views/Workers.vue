@@ -83,18 +83,12 @@ export default {
     TableSubmitted,
   },
   props: {
-    creationTime: {
-      type: String,
-      default: '',
-    },
-    awardQualificationID: {
-      type: String,
-      default: '',
-    },
   },
   data: () => ({
     id: '',
     title: '',
+    creationTime: '',
+    awardQualificationID: '',
     modalRejectIsVisible: false,
     modalApproveIsVisible: false,
     rejectFeedback:
@@ -119,6 +113,8 @@ export default {
     },
   },
   mounted: async function() {
+    this.awardQualificationID = this.$route.query.awardQualificationID || ''
+    console.log("Stored QualifivationID: " + this.awardQualificationID);
     await this.getWorkers()
     this.getHIT()
   },
@@ -131,6 +127,7 @@ export default {
         let hit = res.data
         this.id = hit.HITId
         this.title = hit.Title
+        this.creationTime = hit.creationTime
       } else {
         this.$toasted.show(res.message, {
           type: 'error',
@@ -221,19 +218,19 @@ export default {
     handleQualifyAll() {
       console.log("Qualifying submitted Workers: ")
       for (let worker of this.submitted) {
-        console.log("Qualifying Worker " + worker.id);
+        console.log("Asking for Qualifying Worker " + worker.id + " with Qualification " + this.awardQualificationID);
         this.qualifyWorker(worker.id);
       }
 
       console.log("Qualifying approved Workers: ")
       for (let worker of this.approved) {
-        console.log("Qualifying Worker " + worker.id);
+        console.log("Asking for Qualifying Worker " + worker.id + " with Qualification " + this.awardQualificationID);
         this.qualifyWorker(worker.id);
       }
 
       console.log("Qualifying rejected Workers: ")
       for (let worker of this.rejected) {
-        console.log("Qualifying Worker " + worker.id);
+        console.log("Asking for Qualifying Worker " + worker.id + " with Qualification " + this.awardQualificationID);
         this.qualifyWorker(worker.id);
       }
     },
@@ -241,6 +238,7 @@ export default {
       //this.modalRejectIsVisible = true
       this.workerID = workerID
       let awardQualificationID = this.awardQualificationID || ''
+      console.log("Qualifying Worker " + workerID + " with Qualification " + awardQualificationID);
 
       let res = await api.qualifyWorker({ awardQualificationID, workerID })
 
