@@ -1,9 +1,30 @@
-FROM node:14
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
-COPY package.json /usr/src/app/
-RUN npm install --force -g yarn
-RUN yarn install
-COPY . /usr/src/app
+FROM node:lts as builder
+
+WORKDIR /app
+
+COPY . .
+
+RUN yarn install \
+    --prefer-offline \
+    --frozen-lockfile \
+    --non-interactive \
+    --production=false
+
+RUN yarn build
+
+RUN rm -rf node_modules && \
+    NODE_ENV=production yarn install \
+    --prefer-offline \
+    --pure-lockfile \
+    --non-interactive \
+    --production=true
+
+FROM node:lts
+
+WORKDIR /app
+
+COPY --from=builder /app  .
+
 EXPOSE 8080
-CMD ["yarn", "serve"]
+
+CMD [ "yarn", "start" ]
