@@ -63,14 +63,26 @@ export default {
       sandbox: true,
       production: false,
     },
+        options: [
+      {
+        value: 'https://mturk-requester-sandbox.us-east-1.amazonaws.com',
+        label: 'Sandbox',
+        isSelected: true,
+      },
+      {
+        value: 'https://mturk-requester.us-east-1.amazonaws.com',
+        label: 'Production',
+        isSelected: false,
+      },
+    ],
   }),
   watch: {
     endpoint: {
       immediate: true,
-      handler(val) {
-        // this.options.forEach(o => {
-        //   o.value === val ? (o.isSelected = true) : (o.isSelected = false)
-        // })
+      handler: function(val) {
+        this.options.forEach(o => {
+          o.value === val ? (o.isSelected = true) : (o.isSelected = false)
+        })
         for (const mode in this.modes) {
           this.modes[mode] = false
         }

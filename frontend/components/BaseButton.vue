@@ -16,7 +16,7 @@
     <span>{{ title }}</span>
   </div>
 </template>
-<script lang="ts">
+<script>
 export default {
   name: 'BaseButton',
   props: {

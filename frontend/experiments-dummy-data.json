@@ -1,0 +1,100 @@
+{
+	"production": [
+	{
+		"title": "WebConf Study 1: Recoin Original with Onboarding",
+		"description": "This is the description of the experiment",
+		"available": "2 / 10",
+		"pending": "3 / 10",
+		"waitingForApproval": "5 / 10",
+		"completed": "0 / 10",
+		"id": "generate('1234567890ABCDEFGHIJKLMNOPKR', 25)",
+
+		"hits": [
+		{
+			"id": "generate('1234567890ABCDEFGHIJKLMNOPKR', 25)",
+			"available": "2 / 10",
+			"pending": "3 / 10",
+			"waitingForApproval": "5 / 10",
+			"completed": "0 / 10"
+		},
+		{
+			"id": "generate('1234567890ABCDEFGHIJKLMNOPKR', 25)",
+			"available": "2 / 10",
+			"pending": "3 / 10",
+			"waitingForApproval": "5 / 10",
+			"completed": "0 / 10"
+		}]
+	},
+	{
+		"title": "WebConf Study 1: Recoin Original with Onboarding",
+		"description": "This is the description of the experiment",
+		"available": "2 / 10",
+		"pending": "3 / 10",
+		"waitingForApproval": "5 / 10",
+		"completed": "0 / 10",
+		"id": "generate('1234567890ABCDEFGHIJKLMNOPKR', 25)",
+
+		"hits": [
+		{
+			"id": "generate('1234567890ABCDEFGHIJKLMNOPKR', 25)",
+			"available": "2 / 10",
+			"pending": "3 / 10",
+			"waitingForApproval": "5 / 10",
+			"completed": "0 / 10"
+		},
+		{
+			"id": "generate('1234567890ABCDEFGHIJKLMNOPKR', 25)",
+			"available": "2 / 10",
+			"pending": "3 / 10",
+			"waitingForApproval": "5 / 10",
+			"completed": "0 / 10"
+		}]
+	}],
+	"sandbox": [
+	{
+		"title": "WebConf Study 1: Recoin Original with Onboarding",
+		"description": "This is the description of the experiment",
+		"available": "2 / 10",
+		"pending": "3 / 10",
+		"waitingForApproval": "5 / 10",
+		"completed": "0 / 10",
+		"id": "generate('1234567890ABCDEFGHIJKLMNOPKR', 25)",
+
+		"hits": [
+		{
+			"id": "generate('1234567890ABCDEFGHIJKLMNOPKR', 25)",
+			"available": "2 / 10",
+			"pending": "3 / 10",
+			"waitingForApproval": "5 / 10",
+			"completed": "0 / 10"
+		} ]
+	}],
+	"inactive": [
+	{
+		"title": "WebConf Study 1: Wikidata Only",
+		"description": "This is the description of the experiment",
+		"available": "2 / 10",
+		"pending": "3 / 10",
+		"waitingForApproval": "5 / 10",
+		"completed": "0 / 10",
+		"id": "generate('1234567890ABCDEFGHIJKLMNOPKR', 25)",
+
+		"hits": [
+		{
+			"id": "generate('1234567890ABCDEFGHIJKLMNOPKR', 25)",
+			"available": "2 / 10",
+			"pending": "3 / 10",
+			"waitingForApproval": "5 / 10",
+			"completed": "0 / 10"
+		},
+		{
+			"id": "generate('1234567890ABCDEFGHIJKLMNOPKR', 25)",
+			"available": "2 / 10",
+			"pending": "3 / 10",
+			"waitingForApproval": "5 / 10",
+			"completed": "0 / 10"
+		}]
+	}]
+}
+
+
