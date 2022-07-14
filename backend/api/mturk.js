@@ -271,6 +271,7 @@ app.post('/createHIT', async (req, res) => {
       data: result
     });
   } else {
+    console.log("creating hit failed")
     return res.send({
       success: false,
       message: result.error.message,
