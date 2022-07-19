@@ -16,8 +16,10 @@
     <slot></slot>
   </div>
 </template>
-<script>
-export default {
+<script lang='ts'>
+import Vue from 'vue'
+
+export default Vue.extend({
   name: 'BaseWrapper',
   props: {
     title: {
@@ -34,10 +36,10 @@ export default {
     grayLight: Boolean,
     hidden: {
       type: Boolean,
-      deafult: false,
+      default: false,
     },
   },
-}
+})
 </script>
 <style lang="scss">
 .BaseWrapper {

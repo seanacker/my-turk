@@ -25,7 +25,7 @@ app.post('/login', async (req, res) => {
   if (!accessKeyId || !secretAccessKey) {
     return res.send({
       success: false,
-      message: 'Your Access-Key-ID or your Secret-Access-Key is wrong'
+      message: 'Your Access-Key-ID or your Secret-Access-Key is empty'
     });
   }
 

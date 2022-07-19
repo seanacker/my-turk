@@ -10,8 +10,10 @@
     <label class="Label">{{ label }}</label>
   </div>
 </template>
-<script>
-export default {
+<script lang="ts">
+import Vue from 'vue'
+
+export default Vue.extend({
   name: 'BaseInput',
   props: {
     label: {
@@ -38,10 +40,10 @@ export default {
   data: () => ({}),
   computed: {
     mValue: {
-      get() {
+      get(): string {
         return this.value
       },
-      set(value) {
+      set(value: string): void {
         // convert the label name to camelCase
         // eg:  AWS Access Key ID -> awsAccessKeyId
         let key = this.label.toLowerCase()
@@ -55,7 +57,7 @@ export default {
   methods: {
     handleKeyPress() {},
   },
-}
+})
 </script>
 <style lang="scss">
 .BaseInput {

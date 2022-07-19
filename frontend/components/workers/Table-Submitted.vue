@@ -51,11 +51,13 @@
     </BaseRow>
   </div>
 </template>
-<script>
+<script lang="ts">
+import Vue from 'vue'
+
 import BaseCopy from '@/components/BaseCopy.vue'
 import BaseRow from '@/components/BaseRow.vue'
 
-export default {
+export default Vue.extend({
   name: 'TableWaiting',
   components: {
     BaseCopy,
@@ -69,18 +71,18 @@ export default {
   },
   data: () => ({}),
   methods: {
-    onApprove(workerID, assignmentID) {
+    onApprove(workerID: string, assignmentID: string) {
       this.$emit('onApprove', { workerID, assignmentID })
     },
-    onReject(id) {
+    onReject(id: string) {
       this.$emit('onReject', id)
     },
-    onQualify(id) {
+    onQualify(id: string) {
       console.log('Qualify clicked')
       this.$emit('onQualify', id)
     },
   },
-}
+})
 </script>
 <style lang="scss">
 .Table {

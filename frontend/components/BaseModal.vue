@@ -28,10 +28,12 @@
     </div>
   </div>
 </template>
-<script>
+<script lang="ts">
+import Vue from 'vue'
+
 import BaseButton from '@/components/BaseButton.vue'
 
-export default {
+export default Vue.extend({
   name: 'BaseModal',
   components: {
     BaseButton,
@@ -60,20 +62,20 @@ export default {
   },
   data: () => ({}),
   methods: {
-    onCancel() {
+    onCancel(): void {
       this.$emit('onCancel')
     },
-    onAccept() {
+    onAccept():void {
       this.$emit('onAccept')
     },
-    closeModal(e) {
+    closeModal(e: any) {
       const target = e.target
       if (target === this.$refs.modal) {
         this.$emit('onCancel')
       }
     },
   },
-}
+})
 </script>
 <style lang="scss">
 .BaseModal {

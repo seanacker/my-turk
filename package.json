@@ -19,5 +19,7 @@
     "description": "A tool driven approach to Mechanical Turk user experiments",
     "private": true,
     "license": "MIT",
-    "dependencies": {}
+    "dependencies": {
+        "@nuxt/types": "^2.15.8"
+    }
 }

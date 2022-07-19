@@ -43,11 +43,13 @@
     </BaseRow>
   </div>
 </template>
-<script>
+<script lang="ts">
+import Vue from 'vue'
+
 import BaseCopy from '@/components/BaseCopy.vue'
 import BaseRow from '@/components/BaseRow.vue'
 
-export default {
+export default Vue.extend({
   name: 'TableWaiting',
   components: {
     BaseCopy,
@@ -60,7 +62,7 @@ export default {
     },
   },
   data: () => ({}),
-}
+})
 </script>
 <style lang="scss">
 .Table {

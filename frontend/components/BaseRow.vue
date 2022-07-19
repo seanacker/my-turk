@@ -3,8 +3,10 @@
     <slot></slot>
   </div>
 </template>
-<script>
-export default {
+<script lang="ts">
+import Vue from "vue"
+
+export default Vue.extend({
   name: 'BaseRow',
   props: {
     title: {
@@ -14,7 +16,7 @@ export default {
     light: Boolean,
     bold: Boolean,
   },
-}
+})
 </script>
 <style lang="scss">
 .BaseRow {

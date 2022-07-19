@@ -1,7 +1,7 @@
 <template>
   <div class="Workers">
     <BaseHeadline
-      :route="backbutton"
+      :route="route"
       :title="title"
       :description="`Started: ${date}`"
       :meta="`HIT: ${id}`"
@@ -56,21 +56,22 @@
     </BaseModal>
   </div>
 </template>
-<script>
+<script lang="ts">
+import Vue from 'vue'
+import Moment from 'moment' 
+
 import BaseButton from '@/components/BaseButton.vue'
 import BaseHeadline from '@/components/BaseHeadline.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import BaseTextarea from '@/components/BaseTextarea.vue'
 import BaseWrapper from '@/components/BaseWrapper.vue'
-
 import TableApproved from '@/components/workers/Table-Approved.vue'
 import TableRejected from '@/components/workers/Table-Rejected.vue'
 import TableSubmitted from '@/components/workers/Table-Submitted.vue'
 import api from '@/api'
+import { BaseText, WorkersData, Worker } from '@/lib/types'
 
-const moment = require('moment')
-
-export default {
+export default Vue.extend({
   name: 'Tags',
   components: {
     BaseButton,
@@ -83,7 +84,7 @@ export default {
     TableSubmitted,
   },
   props: {},
-  data: () => ({
+  data: (): WorkersData => ({
     id: '',
     title: '',
     creationTime: '',
@@ -95,30 +96,32 @@ export default {
     approvalFeedback: 'Thank you very much for participating!',
     assignmentID: '',
     workerID: '',
-    backbutton: {
-      paths: 'overview',
+    route: {
+      path: 'Overview',
       name: 'back to Overview',
     },
     submitted: null,
     approved: null,
     rejected: null,
+    status: undefined
   }),
+
   computed: {
     date: {
-      get() {
-        return moment(this.creationTime).format('DD.MM.YYYY - HH:mm:ss')
+      get(): string {
+        return Moment(this.creationTime).format('DD.MM.YYYY - HH:mm:ss')
       },
       set() {},
     },
   },
-  async mounted() {
-    this.awardQualificationID = this.$route.query.awardQualificationID || ''
+  async mounted(): Promise<void> {
+    this.awardQualificationID = this.$route.query.awardQualificationID as string || ''
     console.log('Stored QualifivationID: ' + this.awardQualificationID)
     await this.getWorkers()
     this.getHIT()
   },
   methods: {
-    async getHIT() {
+    async getHIT(): Promise<void> {
       const id = this.$route.query.id || ''
       const res = await api.getHIT({ id })
 
@@ -135,31 +138,28 @@ export default {
         })
       }
     },
-    clearWorkers() {
+    clearWorkers(): void {
       this.submitted = []
       this.approved = []
       this.rejected = []
     },
-    async getWorkers() {
+    async getWorkers(): Promise<void> {
       const id = this.$route.query.id || ''
 
       const res = await api.listAssignments({ id })
       this.clearWorkers()
-
-      console.log(res)
-
       if (res.success) {
         const assignments = res.data
         for (const assignment of assignments) {
           const id = assignment.WorkerId
           const assignmentID = assignment.AssignmentId
-          const startTime = moment(assignment.AcceptTime).format('HH:mm:ss')
-          const startDate = moment(assignment.AcceptTime).format('DD.MM.YYYY')
-          const finishTime = moment(assignment.SubmitTime).format('HH:mm:ss')
-          const finishDate = moment(assignment.SubmitTime).format('DD.MM.YYYY')
+          const startTime = Moment(assignment.AcceptTime).format('HH:mm:ss')
+          const startDate = Moment(assignment.AcceptTime).format('DD.MM.YYYY')
+          const finishTime = Moment(assignment.SubmitTime).format('HH:mm:ss')
+          const finishDate = Moment(assignment.SubmitTime).format('DD.MM.YYYY')
           const status = assignment.AssignmentStatus.toLowerCase()
 
-          const worker = {
+          const worker: Worker = {
             id,
             assignmentID,
             started: {
@@ -173,10 +173,10 @@ export default {
           }
 
           if (status === 'rejected') {
-            const rejectionTime = moment(assignment.RejectionTime).format(
+            const rejectionTime = Moment(assignment.RejectionTime).format(
               'HH:mm:ss'
             )
-            const rejectionDate = moment(assignment.RejectionTime).format(
+            const rejectionDate = Moment(assignment.RejectionTime).format(
               'DD.MM.YYYY'
             )
             worker.rejected = {
@@ -184,10 +184,10 @@ export default {
               date: rejectionDate,
             }
           } else if (status === 'approved') {
-            const approvedTime = moment(assignment.ApprovalTime).format(
+            const approvedTime = Moment(assignment.ApprovalTime).format(
               'HH:mm:ss'
             )
-            const approvedDate = moment(assignment.ApprovalTime).format(
+            const approvedDate = Moment(assignment.ApprovalTime).format(
               'DD.MM.YYYY'
             )
             worker.approved = {
@@ -195,60 +195,64 @@ export default {
               date: approvedDate,
             }
           }
-          this[status].push(worker)
+          this.status.push(worker)
         }
       }
       console.log(this.submitted)
       console.log(this.approved)
       console.log(this.rejected)
     },
-    handleApprove({ workerID, assignmentID }) {
+    handleApprove({ workerID, assignmentID }: { workerID: string, assignmentID: string}): void {
       this.modalApproveIsVisible = true
       this.workerID = workerID
       this.assignmentID = assignmentID
     },
-    handleReject(id) {
+    handleReject(workerID: string): void {
       this.modalRejectIsVisible = true
-      this.assignmentID = id
+      this.assignmentID = workerID
     },
-    handleQualify(workerID) {
+    handleQualify(workerID: string): void {
       this.qualifyWorker(workerID)
     },
-    handleQualifyAll() {
-      console.log('Qualifying submitted Workers: ')
-      for (const worker of this.submitted) {
-        console.log(
-          'Asking for Qualifying Worker ' +
-            worker.id +
-            ' with Qualification ' +
-            this.awardQualificationID
-        )
-        this.qualifyWorker(worker.id)
+    handleQualifyAll(): void {    
+      if (this.submitted != null) {
+        console.log('Qualifying submitted Workers: ')
+        for (const worker of this.submitted) {
+          console.log(
+            'Asking for Qualifying Worker ' +
+              worker.id +
+              ' with Qualification ' +
+              this.awardQualificationID
+          )
+          this.qualifyWorker(worker.id)
+        }
       }
-
-      console.log('Qualifying approved Workers: ')
-      for (const worker of this.approved) {
-        console.log(
-          'Asking for Qualifying Worker ' +
-            worker.id +
-            ' with Qualification ' +
-            this.awardQualificationID
-        )
-        this.qualifyWorker(worker.id)
+      if (this.approved != null) {
+        console.log('Qualifying approved Workers: ')
+        for (const worker of this.approved) {
+          console.log(
+            'Asking for Qualifying Worker ' +
+              worker.id +
+              ' with Qualification ' +
+              this.awardQualificationID
+          )
+          this.qualifyWorker(worker.id)
+        }
       }
-
-      console.log('Qualifying rejected Workers: ')
-      for (const worker of this.rejected) {
-        console.log(
-          'Asking for Qualifying Worker ' +
-            worker.id +
-            ' with Qualification ' +
-            this.awardQualificationID
-        )
-        this.qualifyWorker(worker.id)
+      if (this.rejected != null) {
+        console.log('Qualifying rejected Workers: ')
+        for (const worker of this.rejected) {
+          console.log(
+            'Asking for Qualifying Worker ' +
+              worker.id +
+              ' with Qualification ' +
+              this.awardQualificationID
+          )
+          this.qualifyWorker(worker.id)
+        }
       }
     },
-    async qualifyWorker(workerID) {
+    async qualifyWorker(workerID: string): Promise<void> {
       // this.modalRejectIsVisible = true
       this.workerID = workerID
       const awardQualificationID = this.awardQualificationID || ''
@@ -277,13 +281,13 @@ export default {
         })
       }
     },
-    closeModal() {
+    closeModal(): void {
       this.feedback = ''
       this.assignmentID = ''
       this.modalApproveIsVisible = false
       this.modalRejectIsVisible = false
     },
-    async approveAssignment() {
+    async approveAssignment(): Promise<void> {
       const id = this.assignmentID
       const feedback = this.approvalFeedback
       const awardQualificationID = this.awardQualificationID || ''
@@ -313,7 +317,7 @@ export default {
         })
       }
     },
-    async rejectAssignment() {
+    async rejectAssignment(): Promise<void> {
       const id = this.assignmentID
       const feedback = this.rejectFeedback
       console.log(feedback)
@@ -335,13 +339,15 @@ export default {
         })
       }
     },
-    setApprovalFeedback(val) {
+    // I dont think that works
+    setApprovalFeedback(val: any): void {
       this.approvalFeedback = val.feedback
     },
-    setRejectionFeedback(val) {
+    // I dont think that works
+    setRejectionFeedback(val: any): void {
       this.rejectFeedback = val.feedback
     },
-    async refreshPage() {
+    async refreshPage(): Promise<void> {
       this.submitted = null
       this.approved = null
       this.rejected = null
@@ -349,7 +355,7 @@ export default {
       await this.getWorkers()
     },
   },
-}
+})
 </script>
 <style lang="scss">
 .Workers {

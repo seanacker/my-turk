@@ -74,13 +74,17 @@
     </BaseRow>
   </div>
 </template>
-<script>
+
+<script lang="ts">
+import Vue from 'vue'
+
 import BaseButtons from '../BaseButton.vue'
 import BaseCopy from '../BaseCopy.vue'
 import BaseRow from '../BaseRow.vue'
 import WorkersInline from '../../pages/WorkersInline.vue'
+import { Experiment, Hit } from '../../lib/types'
 
-export default {
+export default Vue.extend({
   name: 'Tags',
   components: {
     BaseButtons,
@@ -96,14 +100,14 @@ export default {
   },
   data: () => ({}),
   methods: {
-    onExperimentClick(experiment) {
+    onExperimentClick(experiment: Experiment) {
       this.$router.push({
         name: 'Settings',
         query: { id: experiment._id },
         params: { experiment, initial: false },
       })
     },
-    onHitClick(hit, experiment) {
+    onHitClick(hit: Hit, experiment: Experiment) {
       this.$router.push({
         name: 'Workers',
         params: {},
@@ -113,22 +117,23 @@ export default {
         },
       })
     },
-    onNewHitClick(experiment) {
+    onNewHitClick(experiment: Experiment) {
       this.$emit('createHIT', experiment)
     },
-    onHitDeleteClick(hit) {
-      this.$emit('onHitDeleteClick', hit)
-    },
+    // todo: Implement Button that deletes hit
+    // onHitDeleteClick(hit: Hit) {
+    //   this.$emit('onHitDeleteClick', hit)
+    // },
     onQualifyAllClick() {
       // TODO: actually keep track of who is qualified already
       // TODO: Approve Workers from datastructure instead of simulating button presses
-      const btns = document.getElementsByClassName('QualifyBtn')
+      const btns = document.getElementsByClassName('QualifyBtn') as HTMLCollectionOf<HTMLButtonElement>
       for (let i = 0; i < btns.length; i++) {
         btns[i].click()
       }
     },
   },
-}
+})
 </script>
 <style lang="scss">
 .Table {

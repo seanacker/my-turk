@@ -11,8 +11,10 @@
     <label class="Hint" :for="hint">{{ hint }}</label>
   </div>
 </template>
-<script>
-export default {
+<script lang="ts">
+import Vue from 'vue'
+
+export default Vue.extend({
   name: 'BaseCheckbox',
   props: {
     label: {
@@ -32,17 +34,16 @@ export default {
       default: false,
     },
   },
-  data: () => ({}),
   computed: {
     mValue: {
-      get() {
+      get(): boolean {
         return this.value
       },
-      set(value) {
+      set(value: boolean): void {
         // convert the label name to camelCase
         // eg:  AWS Access Key ID -> awsAccessKeyId
         let key = this.label.toLowerCase()
-        key = key.replace(/ ([a-z])/g, (_, w) => w.toUpperCase())
+        key = key.replace(/ ([a-z])/g, (_: string, w: string) => w.toUpperCase())
         this.$emit('keyPress', {
           [key]: value,
         })
@@ -50,7 +51,7 @@ export default {
     },
   },
   methods: {
-    handleCheck() {
+    handleCheck(): void {
       const key = this.label.toLowerCase()
 
       this.$emit('keyPress', {
@@ -58,7 +59,7 @@ export default {
       })
     },
   },
-}
+})
 </script>
 <style lang="scss">
 .BaseCheckbox {
