@@ -104,7 +104,7 @@ export default Vue.extend({
       this.$router.push({
         name: 'Settings',
         query: { id: experiment._id },
-        params: { experiment, initial: false },
+        params: { experiment: experiment as any, initial: 'false' },
       })
     },
     onHitClick(hit: Hit, experiment: Experiment) {

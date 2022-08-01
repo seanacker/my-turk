@@ -137,7 +137,7 @@ app.post('/getExperiments', async (req, res) => {
 
   if (result) {
     for (var i = 0; i < result.length; i++) {
-      let hits = result[i].hits;
+      let hits = result[i].hits;      
       let exp = {};
 
       exp.available = 0;
@@ -167,13 +167,13 @@ app.post('/getExperiments', async (req, res) => {
       for (var j = 0; hits && j < hits.length; j++) {
         let hit = hits[j];
 
-        console.log("Searching for HIT " + hit.id);
+        console.log("Searching for HIT " + JSON.stringify(hit) , hit.id);
         let mHIT = {}
         if (mHITs.hasOwnProperty(hit.id)) {
           mHIT = mHITs[hit.id];
           console.log("HIT found with id " + mHIT.HITId);
         } else {
-          console.log("HIT not found in list, request via gatHIT")
+          console.log("HIT not found in list, request via getHIT")
           mHIT = (await getHIT({id: hit.id}).catch(err => ({ error: err }))).HIT;
         }
 
@@ -481,7 +481,7 @@ const createHIT = async params => {
       ]
     };
   }
-  console.log("Guard is " + params.guardHITbyQualification);
+  console.log("Guard is " + params.guardHitbyQualification);
   if (params.guardHitByQualification) {
     requirements.QualificationRequirements.push(
       {

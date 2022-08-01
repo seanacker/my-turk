@@ -3,3 +3,4 @@
 /data
 /mongo
 node_modules
+.vscode
