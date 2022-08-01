@@ -16,8 +16,10 @@
     <span>{{ title }}</span>
   </div>
 </template>
-<script>
-export default {
+<script lang="ts">
+import Vue from 'vue'
+
+export default Vue.extend({
   name: 'BaseButton',
   props: {
     prime: {
@@ -53,7 +55,7 @@ export default {
       default: false,
     },
   },
-}
+})
 </script>
 <style lang="scss">
 .BaseButton {

@@ -31,12 +31,28 @@
     </div>
   </BaseWrapper>
 </template>
-<script>
+<script lang="ts">
+import Vue from 'vue'
+
 import BaseCheckbox from '@/components/BaseCheckbox.vue'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseWrapper from '@/components/BaseWrapper.vue'
+import { Experiment } from '@/lib/types'
 
-export default {
+type SettingsContainerData = {
+  settings: Partial<Experiment>,
+  modes: {
+    sandbox: boolean,
+    production: boolean,
+  },
+  options: {
+    value: string,
+    label: string,
+    isSelected: boolean,
+  }[]
+}
+
+export default Vue.extend({
   name: 'Grid',
   components: {
     BaseCheckbox,
@@ -57,7 +73,7 @@ export default {
       default: false,
     },
   },
-  data: () => ({
+  data: (): SettingsContainerData => ({
     settings: {},
     modes: {
       sandbox: true,
@@ -84,19 +100,21 @@ export default {
           o.value === val ? (o.isSelected = true) : (o.isSelected = false)
         })
         for (const mode in this.modes) {
+          // @ts-ignore
           this.modes[mode] = false
         }
+        // @ts-ignore
         this.modes[val] = true
       },
     },
   },
   methods: {
-    handleKeyPress(option) {
+    handleKeyPress(option: any) {
       Object.assign(this.settings, option)
       this.$emit('updateSettings', this.settings)
     },
   },
-}
+})
 </script>
 <style scoped lang="scss">
 .Container {

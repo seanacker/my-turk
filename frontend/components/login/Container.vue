@@ -34,13 +34,35 @@
     <BaseButton square prime title="sign in" @click="handleLogin" />
   </BaseWrapper>
 </template>
-<script>
+
+<script lang="ts">
+import Vue from 'vue'
+
 import BaseInput from '../BaseInput.vue'
 import BaseButton from '../BaseButton.vue'
 import BaseWrapper from '../BaseWrapper.vue'
-import BaseSelect from '@/components/BaseSelect.vue'
+import BaseSelect from '../../components/BaseSelect.vue'
+import { Credentials } from '../../lib/types'
 
-export default {
+type LoginContainerData = {
+  awsAccessKeyId: string,
+  awsSecretAccessKey: string,
+  endpoint: string
+    options: [
+      {
+        value: string,
+        label: string,
+        isSelected: boolean,
+      },
+      {
+        value: string,
+        label: string,
+        isSelected: boolean,
+      },
+    ],
+}
+
+export default Vue.extend({
   name: 'Grid',
   components: {
     BaseInput,
@@ -54,9 +76,10 @@ export default {
       default: () => [],
     },
   },
-  data: () => ({
+  data: (): LoginContainerData => ({
     awsAccessKeyId: '',
     awsSecretAccessKey: '',
+    endpoint: '',
     options: [
       {
         value: 'https://mturk-requester-sandbox.us-east-1.amazonaws.com',
@@ -71,7 +94,7 @@ export default {
     ],
   }),
   methods: {
-    handleKeyPress({ awsAccessKeyId, awsSecretAccessKey }) {
+    handleKeyPress({ awsAccessKeyId, awsSecretAccessKey }: Partial<Credentials>) {
       this.awsAccessKeyId = awsAccessKeyId || this.awsAccessKeyId
       this.awsSecretAccessKey = awsSecretAccessKey || this.awsSecretAccessKey
     },
@@ -82,12 +105,12 @@ export default {
       const { awsAccessKeyId, awsSecretAccessKey, endpoint } = this
       this.$emit('login', { awsAccessKeyId, awsSecretAccessKey, endpoint })
     },
-    handleSelectChange(val) {
+    handleSelectChange(val: { endpoint: string }) {
       console.log('Changed endpoint to ' + JSON.stringify(val))
       this.endpoint = val.endpoint
     },
   },
-}
+})
 </script>
 <style scoped lang="scss">
 .BaseWrapper {

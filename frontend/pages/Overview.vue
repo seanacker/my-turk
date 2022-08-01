@@ -1,7 +1,7 @@
 <template>
   <div class="Overview">
     <BaseHeadline
-      :route="backbutton"
+      :route="route"
       prime
       title="myTurk"
       description="Overview of your experiments"
@@ -42,15 +42,27 @@
     </BaseModal>
   </div>
 </template>
-<script>
+<script lang="ts">
+import Vue from 'vue'
+
 import BaseButton from '@/components/BaseButton.vue'
 import BaseHeadline from '@/components/BaseHeadline.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import BaseWrapper from '@/components/BaseWrapper.vue'
 import Table from '@/components/overview/Table.vue'
-import api from '@/api'
+import api from '@/api/index'
+import { Experiment, Hit, Route } from '@/lib/types'
 
-export default {
+type OverviewData = {
+  route: Route
+  hit: Hit | undefined
+  modalIsVisible: boolean
+  experiments: { production: Experiment[], sandbox: Experiment[] }
+  prodIsHidden: boolean
+  sandIsHidden: boolean
+}
+
+export default Vue.extend({
   name: 'Tags',
   components: {
     BaseHeadline,
@@ -59,44 +71,44 @@ export default {
     BaseButton,
     Table,
   },
-  data: () => ({
-    backbutton: {
-      paths: 'index',
+  data: (): OverviewData => ({
+    route: {
+      path: 'index',
       name: 'Click here to SignOut',
       params: { loggedOut: true },
-      hit: {},
     },
     modalIsVisible: false,
-    experiments: {},
+    experiments: { production: [], sandbox: []},
     prodIsHidden: false,
     sandIsHidden: false,
+    hit: undefined
   }),
   mounted() {
     this.getExperiments()
   },
 
   methods: {
-    async getExperiments() {
+    async getExperiments(): Promise<void> {
       const result = await api.getExperiments({ groupBy: 'endpoint' })
-      console.log(result)
       this.prodIsHidden = result.endpoint === 'sandbox'
       console.log(this.prodIsHidden)
       this.sandIsHidden = result.endpoint === 'production'
       console.log(this.sandIsHidden)
       if (result.success) {
+        console.log("data: ", result.data)
         this.experiments = result.data
         this.experiments.production = result.data.production || []
         this.experiments.sandbox = result.data.sandbox || []
-        console.log('sandbox experiments: ', result.data.sandbox)
+        console.log('sandbox experiments: ', JSON.stringify(result.data.sandbox))
       }
     },
-    async addExperiment() {
-      const res = await api.addExperiment()
+    async addExperiment(): Promise<void> {
+      const res = await api.addExperiment({})
 
       if (res.success) {
         this.$router.push({
           name: 'Settings',
-          params: { addExperiment: true },
+          params: { addExperiment: 'true' },
           query: { id: res.data.id },
         })
       } else {
@@ -112,7 +124,7 @@ export default {
       this.experiments.sandbox = []
       this.getExperiments()
     },
-    async createHIT(experiment) {
+    async createHIT(experiment: Experiment) {
       console.log(experiment)
       const res = await api.createHIT(experiment)
       console.log(res)
@@ -135,15 +147,15 @@ export default {
         })
       }
     },
-    addHITtoExperiment(experiment, hit) {
-      const hitID = hit.HITId
-      const maxAssignments = hit.MaxAssignments
-      const available = hit.NumberOfAssignmentsAvailable
-      const pending = hit.NumberOfAssignmentsPending
-      const completed = hit.NumberOfAssignmentsCompleted
-      const creationTime = hit.CreationTime
-      const title = hit.Title
-      const status = hit.HITStatus
+    addHITtoExperiment(experiment: Experiment, hit: Hit) {
+      const hitID = hit.id
+      const maxAssignments = hit.maxAssignments
+      const available = hit.available
+      const pending = hit.pending
+      const completed = hit.completed
+      const creationTime = hit.creationTime
+      const title = hit.title
+      const status = hit.status
       const waitingForApproval =
         maxAssignments - available - completed - pending
 
@@ -164,37 +176,41 @@ export default {
       experiment.hits.push(mHIT)
       return experiment
     },
-    handleDeleteHIT(hit) {
-      this.modalIsVisible = true
-      this.hit = hit
-    },
-    async deleteHIT() {
-      const id = this.hit.id
-      console.log(api)
-      const res = await api.deleteHIT({ id })
+    /////////////////////////////
+    // needs to be implemented //
+    /////////////////////////////
+    
+    // handleDeleteHIT(hit: Hit) {
+    //   this.modalIsVisible = true
+    //   this.hit = hit
+    // },
+    // async deleteHIT() {
+    //   const id = this.hit.id
+    //   console.log(api)
+    //   const res = await api.deleteHIT({ id })
 
-      this.modalIsVisible = false
-      this.hit = {}
+    //   this.modalIsVisible = false
+    //   this.hit = {}
 
-      if (res.success) {
-        this.getExperiments()
+    //   if (res.success) {
+    //     this.getExperiments()
 
-        this.$toasted.success(res.message, {
-          position: 'bottom-right',
-          duration: 3000,
-        })
-      } else {
-        this.$toasted.error(res.message, {
-          position: 'bottom-right',
-          duration: 5000,
-        })
-      }
-    },
+    //     this.$toasted.success(res.message, {
+    //       position: 'bottom-right',
+    //       duration: 3000,
+    //     })
+    //   } else {
+    //     this.$toasted.error(res.message, {
+    //       position: 'bottom-right',
+    //       duration: 5000,
+    //     })
+    //   }
+    // },
     closeModal() {
       this.modalIsVisible = false
     },
   },
-}
+})
 </script>
 <style lang="scss">
 .Overview {

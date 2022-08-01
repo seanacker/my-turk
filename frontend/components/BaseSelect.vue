@@ -9,8 +9,10 @@
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import Vue from "vue"
+
+export default Vue.extend({
   name: 'BaseSelect',
   components: {},
   props: {
@@ -30,10 +32,10 @@ export default {
   data: () => ({}),
   computed: {
     selected: {
-      get() {
-        return this.options.find((o) => o.isSelected).value
+      get(): boolean {
+        return (this as any).options.find((o: any) => o.isSelected).value
       },
-      set(value) {
+      set(value: boolean): void {
         let key = this.label.toLowerCase()
         key = key.replace(/ ([a-z])/g, (_, w) => w.toUpperCase())
         this.$emit('onChange', {
@@ -42,7 +44,7 @@ export default {
       },
     },
   },
-}
+})
 </script>
 <style scoped lang="scss">
 .BaseSelect {

@@ -3,7 +3,7 @@
     <router-link
       v-if="route"
       class="BackButton"
-      :to="{ name: route.paths, params: route.params }"
+      :to="{ name: route.path, params: route.params }"
     >
       <i class="fas fa-angle-left"></i>
       <span>{{ route.name }}</span>
@@ -19,8 +19,10 @@
     </div>
   </div>
 </template>
-<script>
-export default {
+<script lang="ts">
+import Vue from 'vue'
+
+export default Vue.extend({
   name: 'BaseHeadline',
   props: {
     title: {
@@ -39,18 +41,9 @@ export default {
     route: {
       type: Object,
       default: () => {},
-      name: {
-        type: String,
-        default: '',
-      },
-      path: {
-        type: String,
-        default: '',
-      },
-      params: Object,
     },
   },
-}
+})
 </script>
 <style lang="scss">
 .BaseHeadline {

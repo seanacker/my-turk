@@ -2,3 +2,5 @@
 /design/interaction
 /data
 /mongo
+node_modules
+.vscode

@@ -8,12 +8,19 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import Vue from 'vue'
+
 import BaseHeadline from '@/components/BaseHeadline.vue'
 import Container from '@/components/login/Container.vue'
 import api from '@/api'
+import { APIRes, Credentials } from '@/lib/types'
 
-export default {
+type IndexData = {
+  login: string[]
+}
+
+export default Vue.extend({
   name: 'Login',
   components: {
     BaseHeadline,
@@ -22,13 +29,14 @@ export default {
   props: {
     loggedOut: Boolean,
   },
-  data: () => ({
+  data: (): IndexData => ({
     login: ['AWS Access Key ID', 'AWS Secret Access Key'],
   }),
   watch: {
     loggedOut: {
       immediate: true,
-      handler(loggedOut) {
+      handler(loggedOut: boolean): void {
+        console.log("watcher triggered")
         if (loggedOut) {
           localStorage.setItem('token', JSON.stringify(''))
           this.$toasted.success('you are logged out', {
@@ -41,12 +49,13 @@ export default {
   },
   methods: {
     // TODO: write mixin functions
-    async handleLogin(credentials) {
-      const res = await api.login(credentials)
+    async handleLogin(credentials: Credentials): Promise<void> {
+      const res = await api.login(credentials) as APIRes
       console.log(res)
       if (res.success) {
-        localStorage.setItem('token', JSON.stringify(res.token))
-        this.$toasted.success(res.message, {
+        const apiRes = res as APIRes
+        localStorage.setItem('token', JSON.stringify(apiRes.token))
+        this.$toasted.success(apiRes.message, {
           position: 'bottom-right',
           duration: 1500,
         })
@@ -61,7 +70,7 @@ export default {
       }
     },
   },
-}
+})
 </script>
 
 <style lang="scss">

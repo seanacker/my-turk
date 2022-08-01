@@ -1,7 +1,7 @@
 <template>
   <div class="Settings">
     <BaseHeadline
-      :route="backbutton"
+      :route="route"
       :title="settings.internalName || 'Add experiment'"
       :description="`You are in ${settings.endpoint} mode`"
     />
@@ -41,16 +41,36 @@
     </BaseModal>
   </div>
 </template>
-<script>
+<script lang="ts">
+import Vue from 'vue'
+
 import BaseButton from '@/components/BaseButton.vue'
 import BaseHeadline from '@/components/BaseHeadline.vue'
 import BaseModal from '@/components/BaseModal.vue'
-
 import Container from '@/components/settings/Container.vue'
-
 import api from '@/api'
+import { Experiment } from '@/lib/types'
 
-export default {
+type SettingsData =  {
+    modalIsVisible: boolean,
+    route: {
+      path: string,
+      name: string,
+    },
+    settings: Partial<Experiment>,
+    settingsInput: {title: string, items: 
+      {
+        name: string, 
+        value: string | boolean, 
+        disabled?: boolean, 
+        hint?: string,
+        type?: string,
+        placeholder?: string
+      }[]
+    }[]
+}
+
+export default Vue.extend({
   name: 'Tags',
   components: {
     BaseButton,
@@ -92,10 +112,10 @@ export default {
       default: true,
     },
   },
-  data: () => ({
+  data: (): SettingsData => ({
     modalIsVisible: false,
-    backbutton: {
-      paths: 'Overview',
+    route: {
+      path: 'Overview',
       name: 'back to Overview',
     },
     settings: {},
@@ -214,10 +234,10 @@ export default {
     this.loadExperimentSettings()
   },
   methods: {
-    updateSettings(settings) {
+    updateSettings(settings: Partial<Experiment>) {
       this.settings = Object.assign(this.settings, settings)
     },
-    hyphensToCamelCase(value) {
+    hyphensToCamelCase(value: string) {
       // if(!value) {return}
       let key = value.toLowerCase()
       key = key.replace(/ ([a-z])/g, (_, w) => w.toUpperCase())
@@ -254,7 +274,7 @@ export default {
       const res = await api.deleteExperiment({ id })
 
       if (res.success) {
-        this.$router.push({ name: 'overview' })
+        this.$router.push({ name: 'Overview' })
         this.$toasted.error(res.message, {
           position: 'bottom-right',
           duration: 3000,
@@ -262,26 +282,27 @@ export default {
       }
     },
     async loadExperimentSettings() {
-      const id = this.$route.query.id
-
+      console.log("this: ",this)
+      const id = this.$route.query.id     
       if (!this.addExperiment && this.initial && id) {
         const result = await api.getExperiments({ id })
         console.log('result', result)
 
-        if (result.success) {
+        if (result.success && result.data[0]) {
           this.settings = result.data[0]
         }
       }
       this.settingsInput.map((elem) => {
         return elem.items.forEach((item) => {
-          const key = this.hyphensToCamelCase(item.name)
+          const key = this.hyphensToCamelCase(item.name) as string
+          // @ts-ignore
           item.value = this.settings[key]
           return item
         })
       })
     },
   },
-}
+})
 </script>
 <style lang="scss">
 .Settings {
