@@ -107,7 +107,7 @@ export default Vue.extend({
     },
     submitted: null,
     approved: null,
-    rejected: null,
+    rejected: null
   }),
   async mounted(): Promise<void> {
     console.log('Stored QualifivationID: ' + this.awardid)
@@ -137,7 +137,7 @@ export default Vue.extend({
           const startDate = Moment(assignment.AcceptTime).format('DD.MM.YYYY')
           const finishTime = Moment(assignment.SubmitTime).format('HH:mm:ss')
           const finishDate = Moment(assignment.SubmitTime).format('DD.MM.YYYY')
-          const status: string = assignment.AssignmentStatus.toLowerCase()
+          const status = assignment.AssignmentStatus.toLowerCase()
 
           const worker: Workers = {
             id,
