@@ -77,6 +77,24 @@ app.post('/addExperiment', async (req, res) => {
   }
 });
 
+// dev only
+app.post('/listHITs', async (req, res) => {
+  let result = (await listHITs({MaxResults: 100}).catch(err => ({ error: err })));
+  if (result) {
+    return res.send({
+      success: true,
+      message: 'added experiment',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: 'Something went wrong'
+    });
+  }
+})
+
+
 app.post('/saveExperiment', async (req, res) => {
   let data = req.body;
   let id = data.id;
@@ -167,14 +185,14 @@ app.post('/getExperiments', async (req, res) => {
       for (var j = 0; hits && j < hits.length; j++) {
         let hit = hits[j];
 
-        console.log("Searching for HIT " + JSON.stringify(hit) , hit.id);
+        console.log("Searching for HIT ", hit.HITId);
         let mHIT = {}
-        if (mHITs.hasOwnProperty(hit.id)) {
-          mHIT = mHITs[hit.id];
+        if (mHITs.hasOwnProperty(hit.HITId)) {
+          mHIT = mHITs[hit.HITId];
           console.log("HIT found with id " + mHIT.HITId);
         } else {
           console.log("HIT not found in list, request via getHIT")
-          mHIT = (await getHIT({id: hit.id}).catch(err => ({ error: err }))).HIT;
+          mHIT = (await getHIT({id: hit.HITId}).catch(err => ({ error: err }))).HIT;
         }
 
 
@@ -191,7 +209,7 @@ app.post('/getExperiments', async (req, res) => {
           let status = mHIT.HITStatus;
 
           mHIT = {
-            id: hitID,
+            HITId: hitID,
             title: title,
             available: `${available} / ${maxAssignments}`,
             pending: `${pending} / ${maxAssignments}`,
@@ -297,9 +315,29 @@ app.post('/getHIT', async (req, res) => {
   }
 });
 
+app.post('/expireHIT', async (req, res) => {
+
+  const HITId = req.body.HITId;
+  // providing a timestamp 0 expires the hit imidiatly
+  let result = await expireHIT({HITId, ExpireAt: 0}).catch(err => ({ error: err }));
+  if (!result.error) {
+    return res.send({
+      success: true,
+      message: 'expired HIT',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: result.error.message,
+      error: result.error.code
+    });
+  }
+});
+
 app.post('/deleteHIT', async (req, res) => {
-  let data = req.body;
-  let result = await deleteHIT(data).catch(err => ({ error: err }));
+  const HITId = req.body.HITId;
+  let result = await deleteHIT({HITId}).catch(err => ({ error: err }));
   if (!result.error) {
     return res.send({
       success: true,
@@ -376,8 +414,7 @@ app.post('/listAssignments', async (req, res) => {
   let data = req.body;
   let result = await listAssignments(data).catch(err => ({ error: err }));
   let groupBy = data.groupBy;
-  console.log(result);
-
+  console.log("resulted Assisgnements", result)
   if (!result.error) {
     return res.send({
       success: true,
@@ -448,9 +485,10 @@ const createHIT = async params => {
     Keywords: params.keywords,
     LifetimeInSeconds: lifetimeInSeconds,
     MaxAssignments: params.assignmentsPerHit,
-    Question: `<?xml version="1.0" encoding="UTF-8"?><ExternalQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2006-07-14/ExternalQuestion.xsd"><ExternalURL>${
-      params.entrypoint
-      }</ExternalURL><FrameHeight>0</FrameHeight></ExternalQuestion>`
+    //////////////////////////////////////////////////////////////////////////
+    // there is a major issue here, needs to be turned back and investigated//
+    //////////////////////////////////////////////////////////////////////////
+    Question: `<?xml version=\"1.0\"?>\n<HTMLQuestion xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd\">\n  <HTMLContent><![CDATA[<html><head><title>HIT</title><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/></head><body><!-- You must include this JavaScript file -->\r\n<script src=\"https://assets.crowd.aws/crowd-html-elements.js\"></script>\r\n\r\n<!-- For the full list of available Crowd HTML Elements and their input/output documentation,\r\n      please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->\r\n\r\n<!-- You must include crowd-form so that your task submits answers to MTurk -->\r\n<crowd-form answer-format=\"flatten-objects\">\r\n\r\n  <crowd-instructions link-text=\"View instructions\" link-type=\"button\">\r\n    <short-summary>\r\n      <p>Provide a brief instruction here</p>\r\n    </short-summary>\r\n\r\n    <detailed-instructions>\r\n      <h3>Provide more detailed instructions here</h3>\r\n      <p>Include additional information</p>\r\n    </detailed-instructions>\r\n\r\n    <positive-example>\r\n      <p>Provide an example of a good answer here</p>\r\n      <p>Explain why it's a good answer</p>\r\n    </positive-example>\r\n\r\n    <negative-example>\r\n      <p>Provide an example of a bad answer here</p>\r\n      <p>Explain why it's a bad answer</p>\r\n    </negative-example>\r\n  </crowd-instructions>\r\n\r\n  <div>\r\n    <p>What is your favorite color for a bird?</p>\r\n    <crowd-input name=\"favoriteColor\" placeholder=\"example: pink\" required></crowd-input>\r\n  </div>\r\n\r\n  <div>\r\n    <p>Check this box if you like birds</p>\r\n    <crowd-checkbox name=\"likeBirds\" checked=\"true\" required></crowd-checkbox>\r\n  </div>\r\n\r\n  <div>\r\n    <p>On a scale of 1-10, how much do you like birds?</p>\r\n    <crowd-slider name=\"howMuch\" min=\"1\" max=\"10\" step=\"1\" pin=\"true\" required></crowd-slider>\r\n  </div>\r\n\r\n  <div>\r\n    <p>Write a short essay describing your favorite bird</p>\r\n    <crowd-text-area name=\"essay\" rows=\"4\" placeholder=\"Lorem ipsum...\" required></crowd-text-area>\r\n  </div>\r\n</crowd-form></body></html>]]></HTMLContent>\n  <FrameHeight>0</FrameHeight>\n</HTMLQuestion>\n`
   };
   let requirements = {
     QualificationRequirements: []
@@ -503,13 +541,10 @@ const createHIT = async params => {
     });
   });
 };
-
-const getHIT = ({ id }) => {
+//// might be bugged comapare to github version
+const getHIT = (params) => {
   connectToMturk();
-
-  let params = {
-    HITId: id
-  };
+  
   // TODO show error as toast.
   return new Promise((resolve, reject) => {
     mturk.getHIT(params, (err, data) => {
@@ -524,7 +559,7 @@ const getHIT = ({ id }) => {
   });
 };
 
-const listHITs = params => {
+const listHITs = (params) => {
   connectToMturk();
 
   // TODO show error as toast.
@@ -541,12 +576,24 @@ const listHITs = params => {
   });
 };
 
-const deleteHIT = ({ id }) => {
+const expireHIT = (params) => {
   connectToMturk();
 
-  var params = {
-    HITId: id
-  };
+  return new Promise((resolve, reject) => {
+    mturk.updateExpirationForHIT(params, (err, data) => {
+      if (err) {
+        console.log(err, err.stack); // an error occurred
+        reject(err);
+      } else {
+        console.log(data); // successful response
+        resolve(data);
+      }
+    });
+  });
+};
+
+const deleteHIT = (params) => {
+  connectToMturk();
   return new Promise((resolve, reject) => {
     mturk.deleteHIT(params, (err, data) => {
       if (err) {
@@ -582,12 +629,9 @@ const createQualificationType = (name, description) => {
   });
 };
 
-const listAssignments = ({ id }) => {
+const listAssignments = (params) => {
   connectToMturk();
 
-  let params = {
-    HITId: id
-  };
   return new Promise((resolve, reject) => {
     mturk.listAssignmentsForHIT(params, (err, data) => {
       if (err) {

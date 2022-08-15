@@ -68,7 +68,7 @@ import TableApproved from '@/components/workers/Table-Approved.vue'
 import TableRejected from '@/components/workers/Table-Rejected.vue'
 import TableSubmitted from '@/components/workers/Table-Submitted.vue'
 import api from '@/api'
-import { WorkersData, Worker } from '@/lib/types'
+import { WorkersData, Workers } from '@/lib/types'
 
 export default Vue.extend({
   name: 'Tags',
@@ -82,7 +82,7 @@ export default Vue.extend({
     TableSubmitted,
   },
   props: {
-    id: {
+    HITId: {
       type: String,
       default: '',
     },
@@ -108,7 +108,6 @@ export default Vue.extend({
     submitted: null,
     approved: null,
     rejected: null,
-    status: undefined
   }),
   async mounted(): Promise<void> {
     console.log('Stored QualifivationID: ' + this.awardid)
@@ -122,9 +121,9 @@ export default Vue.extend({
       this.rejected = []
     },
     async getWorkers(): Promise<void> {
-      const id = this.id || ''
+      const HITId = this.HITId
 
-      const res = await api.listAssignments({ id })
+      const res = await api.listAssignments({ HITId })
       this.clearWorkers()
 
       console.log(res)
@@ -138,9 +137,9 @@ export default Vue.extend({
           const startDate = Moment(assignment.AcceptTime).format('DD.MM.YYYY')
           const finishTime = Moment(assignment.SubmitTime).format('HH:mm:ss')
           const finishDate = Moment(assignment.SubmitTime).format('DD.MM.YYYY')
-          const status = assignment.AssignmentStatus.toLowerCase()
+          const status: string = assignment.AssignmentStatus.toLowerCase()
 
-          const worker: Worker = {
+          const worker: Workers = {
             id,
             assignmentID,
             started: {
@@ -164,6 +163,7 @@ export default Vue.extend({
               time: rejectionTime,
               date: rejectionDate,
             }
+            this.rejected?.push(worker)
           } else if (status === 'approved') {
             const approvedTime = Moment(assignment.ApprovalTime).format(
               'HH:mm:ss'
@@ -175,8 +175,11 @@ export default Vue.extend({
               time: approvedTime,
               date: approvedDate,
             }
+            this.approved?.push(worker)
           }
-          this.status.push(worker)
+          else {
+            this.submitted?.push(worker)
+          }
         }
       }
       console.log(this.submitted)

@@ -69,7 +69,7 @@ import TableApproved from '@/components/workers/Table-Approved.vue'
 import TableRejected from '@/components/workers/Table-Rejected.vue'
 import TableSubmitted from '@/components/workers/Table-Submitted.vue'
 import api from '@/api'
-import { BaseText, WorkersData, Worker } from '@/lib/types'
+import { WorkersData, Workers } from '@/lib/types'
 
 export default Vue.extend({
   name: 'Tags',
@@ -85,7 +85,7 @@ export default Vue.extend({
   },
   props: {},
   data: (): WorkersData => ({
-    id: '',
+    HITId: '',
     title: '',
     creationTime: '',
     awardQualificationID: '',
@@ -100,10 +100,9 @@ export default Vue.extend({
       path: 'Overview',
       name: 'back to Overview',
     },
-    submitted: null,
-    approved: null,
-    rejected: null,
-    status: undefined
+    submitted: [],
+    approved: [],
+    rejected: [],
   }),
 
   computed: {
@@ -114,7 +113,7 @@ export default Vue.extend({
       set() {},
     },
   },
-  async mounted(): Promise<void> {
+  mounted: async function (){
     this.awardQualificationID = this.$route.query.awardQualificationID as string || ''
     console.log('Stored QualifivationID: ' + this.awardQualificationID)
     await this.getWorkers()
@@ -122,12 +121,12 @@ export default Vue.extend({
   },
   methods: {
     async getHIT(): Promise<void> {
-      const id = this.$route.query.id || ''
-      const res = await api.getHIT({ id })
+      const HITId = this.$route.query.HITId || ''
+      const res = await api.getHIT({ HITId })
 
       if (res.success) {
         const hit = res.data
-        this.id = hit.HITId
+        this.HITId = hit.HITId
         this.title = hit.Title
         this.creationTime = hit.creationTime
       } else {
@@ -144,9 +143,8 @@ export default Vue.extend({
       this.rejected = []
     },
     async getWorkers(): Promise<void> {
-      const id = this.$route.query.id || ''
-
-      const res = await api.listAssignments({ id })
+      const HITId = this.$route.query.HITId || ''
+      const res = await api.listAssignments({ HITId })
       this.clearWorkers()
       if (res.success) {
         const assignments = res.data
@@ -159,7 +157,7 @@ export default Vue.extend({
           const finishDate = Moment(assignment.SubmitTime).format('DD.MM.YYYY')
           const status = assignment.AssignmentStatus.toLowerCase()
 
-          const worker: Worker = {
+          const worker: Workers = {
             id,
             assignmentID,
             started: {
@@ -183,6 +181,7 @@ export default Vue.extend({
               time: rejectionTime,
               date: rejectionDate,
             }
+            this.rejected?.push(worker)
           } else if (status === 'approved') {
             const approvedTime = Moment(assignment.ApprovalTime).format(
               'HH:mm:ss'
@@ -194,8 +193,11 @@ export default Vue.extend({
               time: approvedTime,
               date: approvedDate,
             }
+            this.approved?.push(worker)
           }
-          this.status.push(worker)
+          else {
+            this.submitted?.push(worker)
+          }
         }
       }
       console.log(this.submitted)

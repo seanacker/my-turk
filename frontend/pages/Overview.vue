@@ -20,6 +20,7 @@
         :experiments="experiments.sandbox"
         @createHIT="createHIT"
         @onHitDeleteClick="handleDeleteHIT"
+        @expireAndDeleteHIT="expireAndDeleteHIT"
       />
     </BaseWrapper>
     <BaseButton
@@ -147,8 +148,47 @@ export default Vue.extend({
         })
       }
     },
+    async expireAndDeleteHIT(experiment: Experiment, hit: Hit) {
+      const expireRes = await api.expireHIT({HITId: hit.HITId})
+      if (expireRes.success) {
+        this.$toasted.success(expireRes.message, {
+          position: 'bottom-right',
+          duration: 3000,
+        })
+        const deleteRes = await api.deleteHIT({HITId: hit.HITId})
+        if (deleteRes.success) {
+          this.$toasted.success(deleteRes.message, {
+            position: 'bottom-right',
+            duration: 3000,
+          })
+          experiment = this.deleteHITfromExperiment(experiment, hit)
+          const id = experiment._id
+          await api.saveSettings({ id, experiment })
+          this.getExperiments()
+        }
+        else {
+          this.$toasted.error(deleteRes.message, {
+            position: 'bottom-right',
+            duration: 5000,
+          })
+        }
+      }
+      else {
+        this.$toasted.error(expireRes.message, {
+            position: 'bottom-right',
+            duration: 5000,
+          })
+      }
+
+    },
+    deleteHITfromExperiment(experiment: Experiment, hit: Hit): Experiment {
+      experiment.hits = experiment.hits.filter((_hit) => {
+        return _hit.HITId != hit.HITId
+      })
+      return experiment
+    },
     addHITtoExperiment(experiment: Experiment, hit: Hit) {
-      const hitID = hit.id
+      const HITId = hit.HITId
       const maxAssignments = hit.maxAssignments
       const available = hit.available
       const pending = hit.pending
@@ -156,11 +196,11 @@ export default Vue.extend({
       const creationTime = hit.creationTime
       const title = hit.title
       const status = hit.status
-      const waitingForApproval =
-        maxAssignments - available - completed - pending
+      const waitingForApproval = 
+        `${parseInt(maxAssignments) - parseInt(available) - parseInt(completed) - parseInt(pending)}`
 
       const mHIT = {
-        id: hitID,
+        HITId: HITId,
         title,
         available: `${available} / ${maxAssignments} `,
         pending: `${pending} / ${maxAssignments} `,
@@ -168,6 +208,7 @@ export default Vue.extend({
         completed: `${completed} / ${maxAssignments} `,
         creationTime,
         status,
+        maxAssignments
       }
 
       if (!experiment.hits) {
@@ -185,7 +226,7 @@ export default Vue.extend({
     //   this.hit = hit
     // },
     // async deleteHIT() {
-    //   const id = this.hit.id
+    //   const id = this.hit?.HITId
     //   console.log(api)
     //   const res = await api.deleteHIT({ id })
 
