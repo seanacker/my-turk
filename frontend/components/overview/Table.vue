@@ -49,13 +49,13 @@
         />
       </span>
 
-      <BaseRow v-for="(hit, index) in experiment.hits" :key="hit.id">
-        <input :id="hit.id" class="toggle" type="checkbox" />
-        <label :for="hit.id" class="lbl-toggle">Details</label>
+      <BaseRow v-for="(hit, index) in experiment.hits" :key="hit.HITId">
+        <input :id="hit.HITId" class="toggle" type="checkbox" />
+        <label :for="hit.HITId" class="lbl-toggle">Details</label>
 
         <span class="is-wide">
-          {{ index + 1 }}: {{ hit.id }}&nbsp;
-          <BaseCopy :value="hit.id" />
+          {{ index + 1 }}: {{ hit.HITId }}&nbsp;
+          <BaseCopy :value="hit.HITId" />
         </span>
         <span class="is-narrow align-right">{{ hit.available }}</span>
         <span class="is-narrow align-right">{{ hit.pending }}</span>
@@ -65,9 +65,12 @@
           <span class="Anchor" @click="onHitClick(hit, experiment)"
             >Fullscreen</span
           >
+          <span class="Anchor" @click="onExpireAndDeleteClick(experiment, hit)"
+            >ExpireAndDelete</span
+          >
         </span>
         <WorkersInline
-          :id="hit.id"
+          :HITId="hit.HITId"
           :awardid="experiment.awardQualificationId"
         />
       </BaseRow>
@@ -111,11 +114,14 @@ export default Vue.extend({
       this.$router.push({
         name: 'Workers',
         params: {},
-        query: {
-          id: hit.id,
-          awardQualificationID: experiment.awardQualificationId,
+        query: {      
+          HITId: hit.HITId,
+          awardQualificationID: experiment.awardQualificationId
         },
       })
+    },
+    onExpireAndDeleteClick(experiment: Experiment, hit: Hit) {
+      this.$emit('expireAndDeleteHIT', experiment, hit)
     },
     onNewHitClick(experiment: Experiment) {
       this.$emit('createHIT', experiment)
