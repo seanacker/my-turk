@@ -1,5 +1,5 @@
 <template>
-  <div class="BaseRow" :class="[{ 'is-bold': bold }, { 'is-light': light }]">
+  <div class="BaseRow" :style="{width: this.width ?? '100%'}" :class="[{ 'is-bold': bold }, { 'is-light': light }]">
     <slot></slot>
   </div>
 </template>
@@ -15,7 +15,12 @@ export default Vue.extend({
     },
     light: Boolean,
     bold: Boolean,
+    width: {
+      type: String,
+      default: "100%"
+    }
   },
+  
 })
 </script>
 <style lang="scss">
@@ -25,7 +30,7 @@ export default Vue.extend({
   position: relative;
   display: flex;
   justify-content: space-between;
-  width: 100%;
+  width: var(--width) ;
   flex-wrap: wrap;
   padding: 0 40px;
   font-size: rem(14px);
@@ -96,20 +101,20 @@ export default Vue.extend({
     position: relative;
     padding: 20px 0;
     line-height: 1.25;
-    flex: 1.5;
     align-self: baseline;
 
     &:not(:last-of-type) {
-      padding-right: 12px;
+      border-right: 0
     }
 
     &.is-narrow {
-      flex: 1;
+      width: 9%
     }
 
     &.is-wide {
-      flex: 3;
+      width: 18%;
     }
+
 
     &.align-right {
       text-align: right;

@@ -1,46 +1,49 @@
 <template>
   <div class="Table">
-    <BaseRow v-if="!experiments" light>
+    <BaseRow width="70%" v-if="!experiments" light>
       <span class="is-loading">Title</span>
       <span class="is-loading is-wide">Description</span>
       <span class="is-loading is-narrow align-right">Available</span>
       <span class="is-loading is-narrow align-right">Pending</span>
       <span class="is-loading is-narrow align-right">Waiting</span>
       <span class="is-loading is-narrow align-right">Completed</span>
-      <span class="is-loading is-narrow">blub</span>
+      <span class="buttons">&nbsp;</span>
     </BaseRow>
 
-    <BaseRow v-else light>
-      <span>Title</span>
+    <BaseRow v-else :width="'60%'" light>
+      <span class="is-narrow">Title</span>
       <span class="is-wide">Description</span>
       <span class="is-narrow align-right">Available</span>
       <span class="is-narrow align-right">Pending</span>
       <span class="is-narrow align-right">Waiting for approval</span>
       <span class="is-narrow align-right">Completed</span>
-      <span class="is-narrow"></span>
+      <span class="buttons">&nbsp;</span>
+      
     </BaseRow>
 
     <BaseRow v-for="experiment in experiments" :key="experiment._id" bold>
-      <span class="Anchor" @click="onExperimentClick(experiment)">
+      <span class="Anchor is-narrow" @click="onExperimentClick(experiment)">
         {{ experiment.experimentName }}&nbsp;
         <i class="far fa-edit"></i>
       </span>
       <span class="is-wide">{{ experiment.description }}</span>
-      <span class="is-narrow align-right">{{ experiment.available }}</span>
-      <span class="is-narrow align-right">{{ experiment.pending }}</span>
-      <span class="is-narrow align-right">{{
+      <span class="is-narrow align-center">{{ experiment.available }}</span>
+      <span class="is-narrow align-center">{{ experiment.pending }}</span>
+      <span class="is-narrow align-center">{{
         experiment.waitingForApproval
       }}</span>
-      <span class="is-narrow align-right">{{ experiment.completed }}</span>
+      <span class="is-narrow align-center">{{ experiment.completed }}</span>
       <span class="is-narrow align-center">
-        <BaseButtons
+        <BaseButton
           v-if="experiment.endpoint !== 'development'"
           second
           square
           title="new hit"
           @click="onNewHitClick(experiment)"
-        /><br />
-        <BaseButtons
+        />
+      </span>
+      <span class="is-narrow align-center">
+        <BaseButton
           v-if="experiment.endpoint !== 'development'"
           second
           square
@@ -48,27 +51,45 @@
           @click="onQualifyAllClick(experiment)"
         />
       </span>
-
+      <span class="is-narrow">
+        <BaseButton
+          v-if="experiment.endpoint !== 'development'"
+          second
+          square
+          title="approve workers"
+          @click="onApproveWorkersClick(experiment.rewardPerAssignment)"
+        />
+      </span>
+      <span class="is-narrow">
+        <BaseButton
+          v-if="experiment.endpoint !== 'development'"
+          second
+          square
+          title="reject workers"
+          @click="onQualifyAllClick(experiment)"
+        />
+      </span>
       <BaseRow v-for="(hit, index) in experiment.hits" :key="hit.HITId">
-        <input :id="hit.HITId" class="toggle" type="checkbox" />
-        <label :for="hit.HITId" class="lbl-toggle">Details</label>
+        <span :style="{ width : '28%', paddingLeft: '10px'}">
+          <input :id="hit.HITId" class="toggle" type="checkbox" />
+          <label :for="hit.HITId" :style="{textAlign: 'left', paddingLeft: '0'}" class="lbl-toggle">Details</label>
 
-        <span class="is-wide">
-          {{ index + 1 }}: {{ hit.HITId }}&nbsp;
-          <BaseCopy :value="hit.HITId" />
+          <span :style="{ fontSize: '0.7rem'}">
+            {{ index + 1 }}: {{ hit.HITId }}&nbsp;
+            <BaseCopy :value="hit.HITId" />
+          </span>
         </span>
-        <span class="is-narrow align-right">{{ hit.available }}</span>
-        <span class="is-narrow align-right">{{ hit.pending }}</span>
-        <span class="is-narrow align-right">{{ hit.waitingForApproval }}</span>
-        <span class="is-narrow align-right">{{ hit.completed }}</span>
-        <span class="is-narrow align-center">
-          <span class="Anchor" @click="onHitClick(hit, experiment)"
-            >Fullscreen</span
-          >
-          <span class="Anchor" @click="onExpireAndDeleteClick(experiment, hit)"
-            >ExpireAndDelete</span
-          >
-        </span>
+        <span class="is-narrow align-center">{{ hit.available }}</span>
+        <span class="is-narrow align-center">{{ hit.pending }}</span>
+        <span class="is-narrow align-center">{{ hit.waitingForApproval }}</span>
+        <span class="is-narrow align-center">{{ hit.completed }}</span>
+        <span class="is-narrow align-center Anchor" @click="onHitClick(hit, experiment)"
+          >Fullscreen</span
+        >
+        <span class="is-narrow align-center Anchor" @click="onExpireAndDeleteClick(experiment, hit)"
+          >Expire</span
+        >
+        <span :style="{width: '25%'}">&nbsp;</span>
         <WorkersInline
           :HITId="hit.HITId"
           :awardid="experiment.awardQualificationId"
@@ -81,7 +102,7 @@
 <script lang="ts">
 import Vue from 'vue'
 
-import BaseButtons from '../BaseButton.vue'
+import BaseButton from '../BaseButton.vue'
 import BaseCopy from '../BaseCopy.vue'
 import BaseRow from '../BaseRow.vue'
 import WorkersInline from '../../pages/WorkersInline.vue'
@@ -90,7 +111,7 @@ import { Experiment, Hit } from '../../lib/types'
 export default Vue.extend({
   name: 'Tags',
   components: {
-    BaseButtons,
+    BaseButton,
     BaseCopy,
     BaseRow,
     WorkersInline,
@@ -125,6 +146,10 @@ export default Vue.extend({
     },
     onNewHitClick(experiment: Experiment) {
       this.$emit('createHIT', experiment)
+    },
+    onApproveWorkersClick(rewardPerAssignment: string) {
+      console.log("here", rewardPerAssignment)
+      this.$emit('showAcceptAssignments', rewardPerAssignment)
     },
     // todo: Implement Button that deletes hit
     // onHitDeleteClick(hit: Hit) {
@@ -204,5 +229,10 @@ export default Vue.extend({
 .toggle:checked ~ .collapsible-content {
   max-height: 100vh;
   overflow: scroll;
+}
+
+.buttons {
+  width: 40%;
+  display: flex;
 }
 </style>

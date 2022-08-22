@@ -372,6 +372,58 @@ app.post('/approveAssignment', async (req, res) => {
   }
 });
 
+app.post('/approveAssignments', async (req, res) => {
+  let data = req.body;
+  let results = []
+  let promises = []
+  let currentIDIndex = 0
+  while (currentIDIndex <= data.assignmentIds.length - 1) {
+    const assignment = await getAssignment({AssignmentId: data.assignmentIds[currentIDIndex]}).catch((err) => ({success: false, error: err}))
+    if (assignment.error) {
+      return res.send({
+        success: false,
+        message: assignment.error,
+        error: `Assignment ${data.assignmentIds[currentIDIndex]} was not found`
+      });
+    }
+    if (assignment.Assignment.AssignmentStatus != "Submitted") {
+      results = [...results, {
+        success: false,
+        message: `Assignment ${data.assignmentIds[currentIDIndex]} was allready in status ${assignment.Assignment.status}`,
+      }]
+      currentIDIndex ++
+      continue
+    }
+    let params = {
+      id : data.assignmentIds[currentIDIndex],
+      feedback: '',
+      awardQualificationID: data.awardQualificationID ,
+      workerID: assignment.Assignment.WorkerId
+    }
+    promises.push(approveAssignment(params).catch(err => ({ success: false, error: err })))
+    
+  }
+  const promisesData = await Promise.all(promises).catch((err) => ({ success: false, error: err }))
+  promisesData.forEach(({ data }) => {
+    results = [...results, data];
+  });
+  if (!results.some((result) => !result.success)){
+    return res.send({
+      success: true,
+      message: 'approved all assignments',
+      data: results
+    })
+  } else {
+    return res.send({
+      success: false,
+      message: result.error.errors,
+      error: 'Some assignments could not be approved',
+      data: results
+    });
+  }
+});
+
+
 app.post('/qualifyWorker', async (req, res) => {
   let data = req.body;
   let result = await qualify(data).catch(err => ({ error: err }));
@@ -448,6 +500,70 @@ app.post('/createQualificationType', async (req, res) => {
     });
   }
 });
+
+app.post('/createMessage', async (req, res) => {
+  let data = req.body;
+  let result = await mongo.insertData(data, "messages").catch(err => ({
+    error: err
+  }));
+  if (!result.error) {
+    return res.send({
+      success: true,
+      message: 'Message created',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: result.error.message,
+      error: result.error.code
+    });
+  }
+});
+
+app.post('/deleteMessage', async (req, res) => {
+  let data = req.body;
+  let result = await mongo.removeData(data, "messages").catch(err => ({
+    error: err
+  }));
+  if (!result.error) {
+    return res.send({
+      success: true,
+      message: 'Message deleted',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: result.error.message,
+      error: result.error.code
+    });
+  }
+});
+
+app.post('/getMessages', async (req, res) => {
+  let type = req.body.type;
+  let result = await mongo.findData(data = {}, "messages").catch(err => ({
+    error: err
+  }));
+  result = result.filter((message) => message.type == type)
+  console.log("results:", result)
+  if (!result.error) {
+    return res.send({
+      success: true,
+      message: 'Message deleted',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: result.error.message,
+      error: result.error.code
+    });
+  }
+});
+
+
 
 const connectToMturk = () => {
   AWS.config.update({
@@ -645,6 +761,23 @@ const listAssignments = (params) => {
   });
 };
 
+const getAssignment = (params) => {
+  connectToMturk();
+
+  return new Promise((resolve, reject) => {
+    mturk.getAssignment(params, (err, data) => {
+      if (err) {
+        console.log(err, err.stack); // an error occurred
+        reject(err);
+      } else {
+        console.log(data); // successful response
+        resolve(data);
+      }
+    })
+  })
+}
+
+
 const qualify = ({ awardQualificationID, workerID }) => {
   console.log("Qualifying worker " + workerID + " with " + awardQualificationID);
   let params = {
@@ -686,6 +819,7 @@ const approveAssignment = ({ id, feedback = '', awardQualificationID, workerID }
     });
   });
 };
+
 
 const rejectAssignment = ({ id, feedback }) => {
   connectToMturk();

@@ -58,6 +58,10 @@ export default {
   rejectAssignment: (payload: Payload): Promise<APIRes> => {
     return sendData('rejectAssignment', payload)
   },
+
+  approveAssignments: (payload: Payload): Promise<APIRes> => {
+    return sendData('approveAssignment', payload)
+  },
 }
 
 /**

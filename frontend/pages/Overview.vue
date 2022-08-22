@@ -1,11 +1,30 @@
 <template>
   <div class="Overview">
-    <BaseHeadline
-      :route="route"
-      prime
-      title="myTurk"
-      description="Overview of your experiments"
-    />
+    <div class="HeaderWrapper">
+      <BaseHeadline
+        :route="route"
+        prime
+        title="myTurk"
+        description="Overview of your experiments"
+        :style="{ width: '80%' }"
+      />
+
+      <div :style="{display: 'flex', flexDirection: 'column'}">
+        <button @click="toggleHeaderMenu" :style="{ marginLeft: 'auto'}">
+          <img v-if="showHeaderMenu" src="../public/closeicon.png"/>
+          <img v-else src="../public/burgermenuicon.png"/>
+        </button>
+        <div v-if="showHeaderMenu" class="HeaderMenu">
+          <BaseButton @click="addExperiment">new experiment</BaseButton>
+          <hr/>
+          <BaseButton @click="showAcceptAssignments">accept assignemnt</BaseButton>
+          <hr/>
+          <BaseButton @click="showRejectAssignments">reject assignment</BaseButton> 
+          <hr/>
+          <BaseButton @click="refreshPage">refresh</BaseButton>
+        </div>
+      </div>
+    </div>
 
     <BaseWrapper title="Production" red :hidden="prodIsHidden">
       <Table
@@ -18,29 +37,41 @@
     <BaseWrapper title="Sandbox" green :hidden="sandIsHidden">
       <Table
         :experiments="experiments.sandbox"
+        @acceptAssignments="showAcceptAssignments"
+        @rejectAssignment="showRejectAssignments"
         @createHIT="createHIT"
         @onHitDeleteClick="handleDeleteHIT"
         @expireAndDeleteHIT="expireAndDeleteHIT"
+        @showAcceptAssignments="showAcceptAssignments"
       />
     </BaseWrapper>
-    <BaseButton
-      prime
-      style="right: 14em"
-      title="refresh"
-      @click="refreshPage"
-    />
-    <BaseButton prime title="new experiment" @click="addExperiment" />
 
     <BaseModal
       :visible="modalIsVisible"
       title="Delete HIT"
       :cancel="{ label: 'cancel' }"
-      :accept="{ label: 'delete', type: 'warning' }"
+      :accept="{ label: 'accept', type: 'cancel' }"
       @onAccept="deleteHIT"
       @onCancel="closeModal"
-    >
-      <p>Are you sure you want to delete this HIT?</p>
+    >      <p>Are you sure you want to delete this HIT?</p>
     </BaseModal>
+    <AssignmentModal
+      :visible="acceptAssignmentModalVisible"
+      title="Accept Assignments"
+      :rewardPerAssignment="rewardPerAssignment"
+      :cancel="{ label: 'cancel' }"
+      :accept="{ label: 'Approve', type: 'success' }"
+      @onAccept="acceptAssignments"
+      @onCancel="closeModal"
+    >
+      <BaseTextarea 
+        label="AssignmentIDs"
+        @keyPress="setAcceptIDs"
+      ></BaseTextarea>
+      <p>
+        {{this.priceForAccepting}}
+      </p>
+    </AssignmentModal>
   </div>
 </template>
 <script lang="ts">
@@ -53,6 +84,8 @@ import BaseWrapper from '@/components/BaseWrapper.vue'
 import Table from '@/components/overview/Table.vue'
 import api from '@/api/index'
 import { Experiment, Hit, Route } from '@/lib/types'
+import AssignmentModal from '@/components/overview/Assignment-Modal.vue'
+import BaseTextarea from '~/components/BaseTextarea.vue'
 
 type OverviewData = {
   route: Route
@@ -61,6 +94,12 @@ type OverviewData = {
   experiments: { production: Experiment[], sandbox: Experiment[] }
   prodIsHidden: boolean
   sandIsHidden: boolean
+  acceptAssignmentModalVisible: boolean
+  rejectAssignmentModalVisible: boolean
+  showHeaderMenu: boolean
+  acceptIDs: string[]
+  rewardPerAssignmentForModal?: string
+  priceForAccepting?: number
 }
 
 export default Vue.extend({
@@ -71,7 +110,9 @@ export default Vue.extend({
     BaseWrapper,
     BaseButton,
     Table,
-  },
+    AssignmentModal,
+    BaseTextarea
+},
   data: (): OverviewData => ({
     route: {
       path: 'index',
@@ -82,7 +123,13 @@ export default Vue.extend({
     experiments: { production: [], sandbox: []},
     prodIsHidden: false,
     sandIsHidden: false,
-    hit: undefined
+    hit: undefined,
+    acceptAssignmentModalVisible: false,
+    showHeaderMenu: false,
+    rejectAssignmentModalVisible: false,
+    acceptIDs: [],
+    rewardPerAssignmentForModal: undefined,
+    priceForAccepting: undefined
   }),
   mounted() {
     this.getExperiments()
@@ -247,9 +294,34 @@ export default Vue.extend({
     //     })
     //   }
     // },
+
+    toggleHeaderMenu() {
+      this.showHeaderMenu = !this.showHeaderMenu
+    },
+
+    showAcceptAssignments(rewardPerAssignment: string) {
+      console.log(rewardPerAssignment)
+      this.rewardPerAssignmentForModal = rewardPerAssignment
+      this.acceptAssignmentModalVisible = true
+    },
+
     closeModal() {
       this.modalIsVisible = false
+      this.acceptAssignmentModalVisible = false
     },
+    setAcceptIDs(value: any) {
+      this.acceptIDs = value.assignmentids.split(/[^A-Za-z0-9]/).filter((value: string) => {
+        return value != ""
+      })
+      console.log('reward:' ,this.rewardPerAssignmentForModal)
+      console.log("Ids", this.acceptIDs)
+      this.priceForAccepting = this.rewardPerAssignmentForModal ? (parseInt(this.rewardPerAssignmentForModal)) * this.acceptIDs.length : undefined
+    },
+    acceptAssignments() {
+      api.approveAssignment(this.acceptIDs)
+    }
+
+
   },
 })
 </script>
@@ -257,10 +329,24 @@ export default Vue.extend({
 .Overview {
   position: relative;
 
-  > .BaseButton.is-prime {
-    position: absolute;
-    top: 0;
-    right: 0;
+.HeaderWrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.HeaderMenu {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid black;
+  padding: 5px;
+}
+
+  button {
+    margin: 5px;
+    border: 0;
+    background: transparent;
   }
 }
 </style>
