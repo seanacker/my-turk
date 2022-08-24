@@ -33,6 +33,7 @@
     >
       <p>Leave feedback for the worker if you like</p>
       <BaseTextarea
+        name="feedback"
         label="Feedback"
         :value="approvalFeedback"
         @keyPress="setApprovalFeedback"
@@ -49,6 +50,7 @@
     >
       <p>Leave feedback for the worker</p>
       <BaseTextarea
+        name="feedback"
         label="Feedback"
         :value="rejectFeedback"
         @keyPress="setRejectionFeedback"

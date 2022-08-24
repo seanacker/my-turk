@@ -54,7 +54,7 @@ export default Vue.extend({
     handleCheck(): void {
       const key = this.label.toLowerCase()
 
-      this.$emit('keyPress', {
+this.$emit('keyPress', {
         [key]: this.mValue,
       })
     },

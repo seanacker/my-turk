@@ -76,7 +76,10 @@ export type WorkersData = {
   submitted: any[] | null,
   approved: any[] | null,
   rejected: any[] | null,
-  feedback?: string
+  feedback?: string,
+  approveMessages: string[],
+  rejectMessages: string[],
+  saveMessage: boolean | undefined
 }
   
 export type Workers = {
@@ -104,6 +107,12 @@ export type Route = {
   path: string
   name: string
   params: Record<string, any>
+}
+
+export type Message = {
+  id: string
+  type: string
+  message: string
 }
 
 
