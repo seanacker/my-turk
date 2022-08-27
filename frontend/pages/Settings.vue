@@ -214,6 +214,16 @@ export default Vue.extend({
             value: false,
           },
           {
+            name: 'Guard Hit by additional QualificationIDs',
+            value: '',
+            hint: 'Please type in the QualificationIDs a Worker needs to participate on the HIT. Seperate different IDs with a comma.',
+          },
+          {
+            name: 'Exclude Workers by QualificationID',
+            value: '',
+            hint: 'Please type in any additional QualificationIDs on which to exclude workers from the HIT. Seperate different IDs with a comma.',
+          },
+          {
             name: 'Entrypoint',
             value: '',
             placeholder: 'URL of your Experiment (iframe)',
@@ -246,6 +256,12 @@ export default Vue.extend({
     async handleSave() {
       const id = this.$route.query.id || ''
       const settings = this.settings
+      if (settings.guardHitByAdditionalQualificationids){
+        settings.guardHitByAdditionalQualificationids = (settings.guardHitByAdditionalQualificationids as string).split(",")
+      }
+      if (settings.excludeWorkersByQualificationid){
+        settings.excludeWorkersByQualificationid = (settings.excludeWorkersByQualificationid as string).split(",")
+      }
       console.log(settings)
 
       const res = await api.saveSettings({ id, experiment: settings })

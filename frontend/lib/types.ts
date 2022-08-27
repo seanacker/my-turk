@@ -36,6 +36,8 @@ export type Experiment = {
   rewardPerAssignment: string,
   hits: Hit[],
   endpoint: string,
+  guardHitByAdditionalQualificationids: string[] | string
+  excludeWorkersByQualificationid: string[] | string
 }
 
 export type Hit = {
