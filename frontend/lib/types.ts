@@ -58,6 +58,8 @@ export type BaseText = {
 }
 
 export type WorkersData = {
+  isExperiment: boolean | undefined
+  experimentId: string,
   HITId: string,
   title: string,
   creationTime: string,

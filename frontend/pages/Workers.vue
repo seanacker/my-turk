@@ -3,8 +3,8 @@
     <BaseHeadline
       :route="route"
       :title="title"
-      :description="`Started: ${date}`"
-      :meta="`HIT: ${id}`"
+      :description="isExperiment ? null : `Started: ${date}`"
+      :meta="isExperiment ? `ExperimentID: ${experimentId}` : `HIT: ${HITId}`"
     />
     <BaseWrapper title="Workers waiting for approval" gray-dark>
       <TableSubmitted
@@ -85,6 +85,8 @@ export default Vue.extend({
   },
   props: {},
   data: (): WorkersData => ({
+    isExperiment: undefined,
+    experimentId: '',
     HITId: '',
     title: '',
     creationTime: '',
@@ -115,9 +117,13 @@ export default Vue.extend({
   },
   mounted: async function (){
     this.awardQualificationID = this.$route.query.awardQualificationID as string || ''
+    this.isExperiment = this.$route.query.hasOwnProperty('hitList')
     console.log('Stored QualifivationID: ' + this.awardQualificationID)
     await this.getWorkers()
-    this.getHIT()
+    if (this.isExperiment) {
+      this.getExperiment()
+    }
+    else this.getHIT()
   },
   methods: {
     async getHIT(): Promise<void> {
@@ -137,66 +143,78 @@ export default Vue.extend({
         })
       }
     },
+    async getExperiment(): Promise<void> {
+      this.title = this.$route.query.title as string
+      this.experimentId = this.$route.query.experimentId as string
+    },
     clearWorkers(): void {
       this.submitted = []
       this.approved = []
       this.rejected = []
     },
     async getWorkers(): Promise<void> {
-      const HITId = this.$route.query.HITId || ''
-      const res = await api.listAssignments({ HITId })
       this.clearWorkers()
-      if (res.success) {
-        const assignments = res.data
-        for (const assignment of assignments) {
-          const id = assignment.WorkerId
-          const assignmentID = assignment.AssignmentId
-          const startTime = Moment(assignment.AcceptTime).format('HH:mm:ss')
-          const startDate = Moment(assignment.AcceptTime).format('DD.MM.YYYY')
-          const finishTime = Moment(assignment.SubmitTime).format('HH:mm:ss')
-          const finishDate = Moment(assignment.SubmitTime).format('DD.MM.YYYY')
-          const status = assignment.AssignmentStatus.toLowerCase()
+      var hitList = []
+      if (this.isExperiment){
+        hitList = (this.$route.query.hitList as string).split(',') || []
+      }
+      else {
+        hitList = [this.$route.query.HITId || '']
+      }
+      for (const HITId of hitList) {
+        const res = await api.listAssignments({ HITId })      
+        if (res.success) {
+          const assignments = res.data
+          for (const assignment of assignments) {
+            const id = assignment.WorkerId
+            const assignmentID = assignment.AssignmentId
+            const startTime = Moment(assignment.AcceptTime).format('HH:mm:ss')
+            const startDate = Moment(assignment.AcceptTime).format('DD.MM.YYYY')
+            const finishTime = Moment(assignment.SubmitTime).format('HH:mm:ss')
+            const finishDate = Moment(assignment.SubmitTime).format('DD.MM.YYYY')
+            const status = assignment.AssignmentStatus.toLowerCase()
 
-          const worker: Workers = {
-            id,
-            assignmentID,
-            started: {
-              time: startTime,
-              date: startDate,
-            },
-            finished: {
-              time: finishTime,
-              date: finishDate,
-            },
-          }
+            const worker: Workers = {
+              id,
+              assignmentID,
+              started: {
+                time: startTime,
+                date: startDate,
+              },
+              finished: {
+                time: finishTime,
+                date: finishDate,
+              },
+            }
 
-          if (status === 'rejected') {
-            const rejectionTime = Moment(assignment.RejectionTime).format(
-              'HH:mm:ss'
-            )
-            const rejectionDate = Moment(assignment.RejectionTime).format(
-              'DD.MM.YYYY'
-            )
-            worker.rejected = {
-              time: rejectionTime,
-              date: rejectionDate,
+            if (status === 'rejected') {
+              const rejectionTime = Moment(assignment.RejectionTime).format(
+                'HH:mm:ss'
+              )
+              const rejectionDate = Moment(assignment.RejectionTime).format(
+                'DD.MM.YYYY'
+              )
+              worker.rejected = {
+                time: rejectionTime,
+                date: rejectionDate,
+              }
+              this.rejected?.push(worker)
+            } else if (status === 'approved') {
+              const approvedTime = Moment(assignment.ApprovalTime).format(
+                'HH:mm:ss'
+              )
+              const approvedDate = Moment(assignment.ApprovalTime).format(
+                'DD.MM.YYYY'
+              )
+              worker.approved = {
+                time: approvedTime,
+                date: approvedDate,
+              }
+              this.approved?.push(worker)
             }
-            this.rejected?.push(worker)
-          } else if (status === 'approved') {
-            const approvedTime = Moment(assignment.ApprovalTime).format(
-              'HH:mm:ss'
-            )
-            const approvedDate = Moment(assignment.ApprovalTime).format(
-              'DD.MM.YYYY'
-            )
-            worker.approved = {
-              time: approvedTime,
-              date: approvedDate,
+            else {
+              this.submitted?.push(worker)
             }
-            this.approved?.push(worker)
-          }
-          else {
-            this.submitted?.push(worker)
           }
         }
       }

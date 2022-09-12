@@ -21,8 +21,12 @@
     </BaseRow>
 
     <BaseRow v-for="experiment in experiments" :key="experiment._id" bold>
-      <span class="Anchor" @click="onExperimentClick(experiment)">
+      <span class="Anchor" @click="onExperimentSettingsClick(experiment)">
         {{ experiment.experimentName }}&nbsp;
+        <i class="far fa-edit"></i>
+      </span>
+      <span class="Anchor" @click="onExperimentOverviewClick(experiment)">
+        overview &nbsp;
         <i class="far fa-edit"></i>
       </span>
       <span class="is-wide">{{ experiment.description }}</span>
@@ -103,11 +107,23 @@ export default Vue.extend({
   },
   data: () => ({}),
   methods: {
-    onExperimentClick(experiment: Experiment) {
+    onExperimentSettingsClick(experiment: Experiment) {
       this.$router.push({
         name: 'Settings',
         query: { id: experiment._id },
         params: { experiment: experiment as any, initial: 'false' },
+      })
+    },
+    onExperimentOverviewClick(experiment: Experiment) {
+      const hitList = experiment.hits.map(hit => hit.HITId).toString()
+      this.$router.push({
+        name: 'Workers',
+        query: {
+          awardQualificationID: experiment.awardQualificationId,
+          title: experiment.title,
+          hitList,
+          experimentId: experiment._id
+        }
       })
     },
     onHitClick(hit: Hit, experiment: Experiment) {
@@ -116,7 +132,7 @@ export default Vue.extend({
         params: {},
         query: {      
           HITId: hit.HITId,
-          awardQualificationID: experiment.awardQualificationId
+          awardQualificationID: experiment.awardQualificationId,
         },
       })
     },
