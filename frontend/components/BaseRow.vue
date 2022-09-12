@@ -40,6 +40,8 @@ export default Vue.extend({
     background-color: rgba(black, 0.2);
   }
 
+
+
   &:last-child {
     .BaseRow {
       padding: 0;

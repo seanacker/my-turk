@@ -3,22 +3,23 @@
     <BaseHeadline
       :route="route"
       :title="title"
-      :description="isExperiment ? null : `Started: ${date}`"
-      :meta="isExperiment ? `ExperimentID: ${experimentId}` : `HIT: ${HITId}`"
+      :description="isExperimentView ? null : `Started: ${date}`"
+      :meta="isExperimentView ? `ExperimentID: ${experimentId}` : `HIT: ${HITId}`"
     />
-    <BaseWrapper title="Workers waiting for approval" gray-dark>
+    <BaseWrapper :title="'Workers waiting for approval (' +  submitted.length + ')'" gray-dark>
       <TableSubmitted
         :workers="submitted"
+        :isExperimentView="isExperimentView"
         @onApprove="handleApprove"
         @onReject="handleReject"
         @onQualify="handleQualify"
       />
     </BaseWrapper>
-    <BaseWrapper title="Workers approved" green>
-      <TableApproved :workers="approved" />
+    <BaseWrapper :title="'Workers approved (' + approved.length +')' " green>
+      <TableApproved :workers="approved" :isExperimentView="isExperimentView"/>
     </BaseWrapper>
-    <BaseWrapper title="Workers rejected" red>
-      <TableRejected :workers="rejected" />
+    <BaseWrapper :title="'Workers rejected (' + rejected.length + ')'" red>
+      <TableRejected :workers="rejected" :isExperimentView="isExperimentView"/>
     </BaseWrapper>
     <BaseButton prime title="refresh" @click="refreshPage" />
     <BaseButton second title="Qualify All" @click="handleQualifyAll" />
@@ -69,7 +70,7 @@ import TableApproved from '@/components/workers/Table-Approved.vue'
 import TableRejected from '@/components/workers/Table-Rejected.vue'
 import TableSubmitted from '@/components/workers/Table-Submitted.vue'
 import api from '@/api'
-import { WorkersData, Workers } from '@/lib/types'
+import { WorkersData, Worker } from '@/lib/types'
 
 export default Vue.extend({
   name: 'Tags',
@@ -85,7 +86,7 @@ export default Vue.extend({
   },
   props: {},
   data: (): WorkersData => ({
-    isExperiment: undefined,
+    isExperimentView: undefined,
     experimentId: '',
     HITId: '',
     title: '',
@@ -106,7 +107,6 @@ export default Vue.extend({
     approved: [],
     rejected: [],
   }),
-
   computed: {
     date: {
       get(): string {
@@ -117,10 +117,11 @@ export default Vue.extend({
   },
   mounted: async function (){
     this.awardQualificationID = this.$route.query.awardQualificationID as string || ''
-    this.isExperiment = this.$route.query.hasOwnProperty('hitList')
+    this.isExperimentView = this.$route.query.hasOwnProperty('hitList')
+    console.log("isexeperimentview", this.isExperimentView)
     console.log('Stored QualifivationID: ' + this.awardQualificationID)
     await this.getWorkers()
-    if (this.isExperiment) {
+    if (this.isExperimentView) {
       this.getExperiment()
     }
     else this.getHIT()
@@ -155,7 +156,7 @@ export default Vue.extend({
     async getWorkers(): Promise<void> {
       this.clearWorkers()
       var hitList = []
-      if (this.isExperiment){
+      if (this.isExperimentView){
         hitList = (this.$route.query.hitList as string).split(',') || []
       }
       else {
@@ -174,8 +175,10 @@ export default Vue.extend({
             const finishDate = Moment(assignment.SubmitTime).format('DD.MM.YYYY')
             const status = assignment.AssignmentStatus.toLowerCase()
 
-            const worker: Workers = {
+            const worker: Worker = {
               id,
+              HITId: HITId as string,
+              awardQualificationId: this.awardQualificationId,
               assignmentID,
               started: {
                 time: startTime,

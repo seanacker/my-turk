@@ -113,6 +113,7 @@ export default Vue.extend({
         query: { id: experiment._id },
         params: { experiment: experiment as any, initial: 'false' },
       })
+      
     },
     onExperimentOverviewClick(experiment: Experiment) {
       const hitList = experiment.hits.map(hit => hit.HITId).toString()
@@ -125,6 +126,7 @@ export default Vue.extend({
           experimentId: experiment._id
         }
       })
+           
     },
     onHitClick(hit: Hit, experiment: Experiment) {
       this.$router.push({
