@@ -21,7 +21,7 @@
       <TableRejected :workers="rejected" />
     </BaseWrapper>
     <BaseButton prime title="refresh" @click="refreshPage" />
-    <BaseButton second title="Qualify All" @click="handleQualifyAll" />
+    <BaseButton second title="Qualify All" @click="handleQualifyAll"/>
 
     <BaseModal
       :visible="modalApproveIsVisible"
@@ -41,7 +41,16 @@
         @toggleSaveMessage="toggleSaveMessage()"
       />
       <p :style="{margin: '0 0  10px 0'}">or select a message</p>
-      <select :style="{margin: '0 0 15px 0'}" class="MessageSelect">
+      <select 
+        :style="{margin: '0 0 15px 0'}" 
+        class="MessageSelect"
+      >
+        <option 
+          value="" 
+          disabled 
+          selected 
+          v-text="approveMessages ? 'Select your message!' : 'No messages saved!'">
+        </option>
         <option v-for="(option, i) in approveMessages" :key="i" :value="option.message">
           {{ option.message }}
         </option>
@@ -67,7 +76,13 @@
         @toggleSaveMessage="toggleSaveMessage()"
       />
       <p :style="{margin: '0 0  10px 0'}">or select a message</p>
-      <select :style="{margin: '0 0 15px 0'}" class="MessageSelect">
+      <select :style="{margin: '0 0 15px 0'}" class="MessageSelect" :disabled="!rejectMessages">
+        <option 
+          value="" 
+          disabled 
+          selected 
+          v-text="approveMessages ? 'Select your message!' : 'No messages saved!'">
+        </option>
         <option v-for="(option, i) in rejectMessages" :key="i" :value="option.message">
           {{ option.message }} 
         </option>
@@ -336,7 +351,9 @@ export default Vue.extend({
 
       if (res.success) {
         if (this.saveMessage) {
-          const messageRes = await api.createMessage({message: this.approvalFeedback, type: 'approve'})
+          const messageRes = await api.createMessage(
+            {message: this.approvalFeedback, type: 'approve'}
+          )
           if (messageRes.success) {
             this.$toasted.show(messageRes.message, {
               type: 'success',
