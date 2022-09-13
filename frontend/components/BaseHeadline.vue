@@ -5,7 +5,7 @@
       class="BackButton"
       :to="{ name: route.path, params: route.params }"
     >
-      <i class="fas fa-angle-left"></i>
+      <fa icon="angle-left"/>
       <span>{{ route.name }}</span>
     </router-link>
     <div v-if="prime">

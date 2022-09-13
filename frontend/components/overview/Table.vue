@@ -21,14 +21,17 @@
     </BaseRow>
 
     <BaseRow v-for="experiment in experiments" :key="experiment._id" bold>
-      <span class="Anchor" @click="onExperimentSettingsClick(experiment)">
-        {{ experiment.experimentName }}&nbsp;
-        <i class="far fa-edit"></i>
-        <fa icon="edit"/>
-      </span>
-      <span class="Anchor" @click="onExperimentOverviewClick(experiment)">
-        overview &nbsp;
-        <i class="far fa-edit"></i>
+      <span :style="{display: 'flex', flexDirection: 'column'}">
+        <span class="Anchor" @click="onExperimentClick(experiment)">
+          <fa v-if="activeExperimentId==experiment._id" icon="arrow-up"/>
+          <fa v-else icon="arrow-down"/>
+          {{experiment.experimentName}}          
+        </span>
+        <span v-if="activeExperimentId==experiment._id" :style="{display: 'flex', flexDirection: 'column', border: '1px solid black', borderRadius: '5px'}">
+          <span @click="onExperimentEditClick(experiment)" :style="{paddingLeft: '10px'}">edit</span>
+          <span @click="onExperimentOverviewClick(experiment)" :style="{paddingLeft: '10px'}">overview</span>
+        </span>
+
       </span>
       <span class="is-wide">{{ experiment.description }}</span>
       <span class="is-narrow align-right">{{ experiment.available }}</span>
@@ -106,15 +109,20 @@ export default Vue.extend({
       default: null,
     },
   },
-  data: () => ({}),
+  data: () => ({
+    activeExperimentId: ''
+  }),
   methods: {
-    onExperimentSettingsClick(experiment: Experiment) {
+    onExperimentClick(experiment: Experiment) {
+      if(this.activeExperimentId == experiment._id) this.activeExperimentId = ""
+      else this.activeExperimentId = experiment._id
+    },
+    onExperimentEditClick(experiment: Experiment) {
       this.$router.push({
         name: 'Settings',
         query: { id: experiment._id },
         params: { experiment: experiment as any, initial: 'false' },
       })
-      
     },
     onExperimentOverviewClick(experiment: Experiment) {
       const hitList = experiment.hits.map(hit => hit.HITId).toString()
@@ -127,7 +135,7 @@ export default Vue.extend({
           experimentId: experiment._id
         }
       })
-           
+
     },
     onHitClick(hit: Hit, experiment: Experiment) {
       this.$router.push({
