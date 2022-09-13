@@ -1,89 +1,114 @@
 <template>
-  <div class="Table">
-    <BaseRow v-if="!experiments" light>
-      <span class="is-loading">Title</span>
-      <span class="is-loading is-wide">Description</span>
-      <span class="is-loading is-narrow align-right">Available</span>
-      <span class="is-loading is-narrow align-right">Pending</span>
-      <span class="is-loading is-narrow align-right">Waiting</span>
-      <span class="is-loading is-narrow align-right">Completed</span>
-      <span class="is-loading is-narrow">blub</span>
-    </BaseRow>
+  <table>
+    <tr v-if="!experiments" light>
+      <td class="is-loading">Title</td>
+      <td class="is-loading">Description</td>
+      <td class="is-loading align-right">Available</td>
+      <td class="is-loading align-right">Pending</td>
+      <td class="is-loading align-right">Waiting</td>
+      <td class="is-loading align-right">Completed</td>
+      <td class="is-loading">blub</td>
+    </tr>
 
-    <BaseRow v-else light>
-      <span>Title</span>
-      <span class="is-wide">Description</span>
-      <span class="is-narrow align-right">Available</span>
-      <span class="is-narrow align-right">Pending</span>
-      <span class="is-narrow align-right">Waiting for approval</span>
-      <span class="is-narrow align-right">Completed</span>
-      <span class="is-narrow"></span>
-    </BaseRow>
-
-    <BaseRow v-for="experiment in experiments" :key="experiment._id" bold>
-      <span :style="{display: 'flex', flexDirection: 'column'}">
-        <span class="Anchor" @click="onExperimentClick(experiment)">
-          <fa v-if="activeExperimentId==experiment._id" icon="arrow-up"/>
-          <fa v-else icon="arrow-down"/>
-          {{experiment.experimentName}}          
-        </span>
-        <span v-if="activeExperimentId==experiment._id" :style="{display: 'flex', flexDirection: 'column', border: '1px solid black', borderRadius: '5px'}">
-          <span @click="onExperimentEditClick(experiment)" :style="{paddingLeft: '10px'}">edit</span>
-          <span @click="onExperimentOverviewClick(experiment)" :style="{paddingLeft: '10px'}">overview</span>
-        </span>
-
-      </span>
-      <span class="is-wide">{{ experiment.description }}</span>
-      <span class="is-narrow align-right">{{ experiment.available }}</span>
-      <span class="is-narrow align-right">{{ experiment.pending }}</span>
-      <span class="is-narrow align-right">{{
-        experiment.waitingForApproval
-      }}</span>
-      <span class="is-narrow align-right">{{ experiment.completed }}</span>
-      <span class="is-narrow align-center">
-        <BaseButtons
-          v-if="experiment.endpoint !== 'development'"
-          second
-          square
-          title="new hit"
-          @click="onNewHitClick(experiment)"
-        /><br />
-        <BaseButtons
-          v-if="experiment.endpoint !== 'development'"
-          second
-          square
-          title="qualify all"
-          @click="onQualifyAllClick(experiment)"
-        />
-      </span>
-
-      <BaseRow v-for="(hit, index) in experiment.hits" :key="hit.HITId">
-        <input :id="hit.HITId" class="toggle" type="checkbox" />
-        <label :for="hit.HITId" class="lbl-toggle">Details</label>
-
-        <span class="is-wide">
-          {{ index + 1 }}: {{ hit.HITId }}&nbsp;
-          <BaseCopy :value="hit.HITId" />
-        </span>
-        <span class="is-narrow align-right">{{ hit.available }}</span>
-        <span class="is-narrow align-right">{{ hit.pending }}</span>
-        <span class="is-narrow align-right">{{ hit.waitingForApproval }}</span>
-        <span class="is-narrow align-right">{{ hit.completed }}</span>
-        <span class="is-narrow align-center">
-          <span class="Anchor" @click="onHitClick(hit, experiment)"
-            >Fullscreen</span
-          >
-          <span class="Anchor" @click="onExpireAndDeleteClick(experiment, hit)"
-            >ExpireAndDelete</span
-          >
-        </span>
-        <WorkersInline
-          :HITId="hit.HITId"
-          :awardid="experiment.awardQualificationId"
-        />
-      </BaseRow>
-    </BaseRow>
-  </div>
+    <tr v-else light>
+      <td>Title</td>
+      <td>Description</td>
+      <td class="align-right">Available</td>
+      <td class="align-right">Pending</td>
+      <td class="align-right">Waiting<br/> for<br/> approval</td>
+      <td class="align-right">Completed</td>
+      <td></td>
+    </tr>
+    <template v-for="experiment in experiments" bold>
+      <tr :key="experiment._id">
+        <td :style="{display: 'flex', flexDirection: 'column'}">
+          <span class="Anchor" @click="onExperimentClick(experiment)">
+            <fa v-if="activeExperimentId==experiment._id" icon="arrow-up"/>
+            <fa v-else icon="arrow-down"/>
+            {{experiment.experimentName}}          
+          </span>
+          <span v-if="activeExperimentId==experiment._id" :style="{display: 'flex', flexDirection: 'column', border: '1px solid black', borderRadius: '5px', marginTop: '10px'}">
+            <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px'}" class="hoverable">edit</span>
+            <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px'}" class="hoverable">overview</span>
+          </span>
+        </td>
+        <td>{{ experiment.description }}</td>
+        <td class="align-right">{{ experiment.available }}</td>
+        <td class="align-right">{{ experiment.pending }}</td>
+        <td class="align-right">{{ experiment.waitingForApproval}}</td>
+        <td class="align-right">{{ experiment.completed }}</td>
+        <td class="is-wide align-center" >
+          <BaseButtons
+              v-if="experiment.endpoint !== 'development'"
+              second
+              square
+              title="new hit"
+              fullWidth
+              @click="onNewHitClick(experiment)"
+            />
+          </td>
+          <td >
+            <BaseButtons
+            v-if="experiment.endpoint !== 'development'"
+            second
+            square
+            title="qualify all"
+            fullWidth
+            @click="onQualifyAllClick(experiment)"
+            />
+          </td>
+      </tr>
+      <template v-for="(hit, index) in experiment.hits" >
+        <tr :key="hit.HITId + 'header'">
+          <td class="is-narrow">
+            <input :id="hit.HITId" class="toggle" type="checkbox" @click="toggleActiveHIT(hit.HITId)"/>
+            <label :for="hit.HITId" class="lbl-toggle">Details</label>
+          </td>
+          <td>
+            {{ index + 1 }}: <span :style="{fonts}">{{ hit.HITId }}</span>&nbsp;
+            <BaseCopy :value="hit.HITId" />
+          </td>
+          <td class="align-right">{{ hit.available }}</td>
+          <td class="align-right">{{ hit.pending }}</td>
+          <td class="align-right">{{ hit.waitingForApproval }}</td>
+          <td class="align-right">{{ hit.completed }}</td>
+          <td >
+              <BaseButtons second square fullWidth @click="onHitClick(hit, experiment)">
+                Fullscreen
+              </BaseButtons>
+          </td>
+          <td v-if="hitStatus(hit)=='cancelable'" >
+            <BaseButtons second square fullWidth @click="onCancelHitClick(experiment, hit)">
+              Expire
+            </BaseButtons>
+          </td>
+          <td v-if="hitStatus(hit)=='expireable'" >
+            <BaseButtons second square fullWidth @click="onExpireHitClick(experiment, hit)">
+              Expire
+            </BaseButtons>
+          </td>
+          <td v-if="hitStatus(hit)=='deleteable'" >
+            <BaseButtons  second square fullWidth @click="onDeleteHitClick(experiment, hit)">
+              Delete
+            </BaseButtons>
+          </td>
+          <td v-if="hitStatus(hit)=='approvable'" >
+            <BaseButtons  second square fullWidth @click="onQualifyAllFromHitClick(experiment, hit)">
+              Qualify all
+            </BaseButtons>
+          </td>
+        </tr>
+        <tr v-if="activeHITId==hit.HITId" class="collapsible-content" :key="hit.HITId + 'workers'">
+          <td colspan="100%" :style="{paddingLeft: '50px'}">
+            <WorkersInline
+              :HITId="hit.HITId"
+              :awardid="experiment.awardQualificationId"
+            />
+          </td>
+        </tr>
+      </template>
+    </template>
+  </table>
 </template>
 
 <script lang="ts">
@@ -91,7 +116,6 @@ import Vue from 'vue'
 
 import BaseButtons from '../BaseButton.vue'
 import BaseCopy from '../BaseCopy.vue'
-import BaseRow from '../BaseRow.vue'
 import WorkersInline from '../../pages/WorkersInline.vue'
 import { Experiment, Hit } from '../../lib/types'
 
@@ -100,7 +124,6 @@ export default Vue.extend({
   components: {
     BaseButtons,
     BaseCopy,
-    BaseRow,
     WorkersInline,
   },
   props: {
@@ -110,7 +133,8 @@ export default Vue.extend({
     },
   },
   data: () => ({
-    activeExperimentId: ''
+    activeExperimentId: '',
+    activeHITId: ''
   }),
   methods: {
     onExperimentClick(experiment: Experiment) {
@@ -147,8 +171,15 @@ export default Vue.extend({
         },
       })
     },
-    onExpireAndDeleteClick(experiment: Experiment, hit: Hit) {
-      this.$emit('expireAndDeleteHIT', experiment, hit)
+    onCancelHitClick(experiment: Experiment, hit: Hit) {
+      this.$emit('cancelHIT', experiment, hit)
+    },
+    onExpireHitClick(experiment: Experiment, hit: Hit) {
+      this.$emit('expireHIT', experiment, hit)
+    },
+    onDeleteHitClick(experiment: Experiment, hit: Hit) {
+      console.log("emitting delete hit")
+      this.$emit('deleteHIT', experiment, hit)
     },
     onNewHitClick(experiment: Experiment) {
       this.$emit('createHIT', experiment)
@@ -165,14 +196,36 @@ export default Vue.extend({
         btns[i].click()
       }
     },
+    hitStatus(hit: Hit) {
+      const pending = parseInt(hit.pending.split('/')[0])
+      const waitingForApproval = parseInt(hit.waitingForApproval.split('/')[0])
+      console.log(hit)
+      if (hit.status == "Pending") return 'cancelable'
+      if (hit.status == "Assignable") return 'expireable'
+      if (waitingForApproval == 0 && pending == 0) return 'deleteable'     
+      if (hit.status == "Reviewable" || hit.status == "Reviewing") return 'approvable'    
+      return 
+    },
+    toggleActiveHIT(HITId: string) {
+      if(this.activeHITId == HITId) this.activeHITId = ""
+      else this.activeHITId = HITId
+    }
   },
 })
 </script>
 <style lang="scss">
-.Table {
-  display: flex;
-  flex-wrap: wrap;
-}
+  table {
+    width: 100%;
+    border-spacing: 0 1em;
+  }
+  tr {
+    width: 100%;
+    margin-top: 10px;
+  }
+  td {
+    padding: 0 10px;
+    font-size: 12px;
+  }
 .Overview input[type='checkbox'] {
   display: none;
 }
@@ -222,14 +275,12 @@ export default Vue.extend({
 }
 
 .collapsible-content {
-  max-height: 0px;
-  overflow: hidden;
-
+  overflow: scroll;
   transition: max-height 0.25s ease-in-out;
+  max-height: 100vh;
 }
 
-.toggle:checked ~ .collapsible-content {
-  max-height: 100vh;
-  overflow: scroll;
+.hoverable:hover{
+  background-color: rgba(color(gray-dark), 0.25);
 }
 </style>

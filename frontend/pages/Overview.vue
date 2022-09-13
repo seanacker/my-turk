@@ -12,6 +12,9 @@
         :experiments="experiments.production"
         @createHIT="createHIT"
         @onHitDeleteClick="handleDeleteHIT"
+        @expireHIT="expireHIT"
+        @deleteHIT="deleteHIT"
+        @cancelHIT="cancelHIT"
       />
     </BaseWrapper>
 
@@ -20,7 +23,9 @@
         :experiments="experiments.sandbox"
         @createHIT="createHIT"
         @onHitDeleteClick="handleDeleteHIT"
-        @expireAndDeleteHIT="expireAndDeleteHIT"
+        @expireHIT="expireHIT"
+        @deleteHIT="deleteHIT"
+        @cancelHIT="cancelHIT"
       />
     </BaseWrapper>
     <BaseButton
@@ -148,14 +153,20 @@ export default Vue.extend({
         })
       }
     },
-    async expireAndDeleteHIT(experiment: Experiment, hit: Hit) {
+    async cancelHIT(experiment: Experiment, hit: Hit){
+      //needs to be implemented in timed hit publication
+    },
+    async expireHIT(experiment: Experiment, hit: Hit) {
       const expireRes = await api.expireHIT({HITId: hit.HITId})
-      if (expireRes.success) {
-        this.$toasted.success(expireRes.message, {
+      this.$toasted.success(expireRes.message, {
           position: 'bottom-right',
           duration: 3000,
         })
-        const deleteRes = await api.deleteHIT({HITId: hit.HITId})
+      this.refreshPage()
+    },
+    async deleteHIT(experiment: Experiment, hit: Hit) {
+      console.log("deleted HIT", hit)
+      const deleteRes = await api.deleteHIT({HITId: hit.HITId})
         if (deleteRes.success) {
           this.$toasted.success(deleteRes.message, {
             position: 'bottom-right',
@@ -172,14 +183,7 @@ export default Vue.extend({
             duration: 5000,
           })
         }
-      }
-      else {
-        this.$toasted.error(expireRes.message, {
-            position: 'bottom-right',
-            duration: 5000,
-          })
-      }
-
+        this.refreshPage()
     },
     deleteHITfromExperiment(experiment: Experiment, hit: Hit): Experiment {
       experiment.hits = experiment.hits.filter((_hit) => {
