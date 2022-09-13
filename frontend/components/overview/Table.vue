@@ -21,7 +21,17 @@
     </tr>
     <template v-for="experiment in experiments" bold>
       <tr>
-        <td>{{experiment.title}}</td>
+        <td :style="{display: 'flex', flexDirection: 'column'}">
+          <span class="Anchor" @click="onExperimentClick(experiment)">
+            <fa v-if="activeExperimentId==experiment._id" icon="arrow-up"/>
+            <fa v-else icon="arrow-down"/>
+            {{experiment.experimentName}}          
+          </span>
+          <span v-if="activeExperimentId==experiment._id" :style="{display: 'flex', flexDirection: 'column', border: '1px solid black', borderRadius: '5px', marginTop: '10px'}">
+            <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px'}" class="hoverable">edit</span>
+            <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px'}" class="hoverable">overview</span>
+          </span>
+        </td>
         <td>{{ experiment.description }}</td>
         <td class="align-right">{{ experiment.available }}</td>
         <td class="align-right">{{ experiment.pending }}</td>
@@ -272,5 +282,7 @@ export default Vue.extend({
   max-height: 100vh;
 }
 
-
+.hoverable:hover{
+  background-color: rgba(color(gray-dark), 0.25);
+}
 </style>
