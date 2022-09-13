@@ -105,13 +105,7 @@ export default Vue.extend({
       padding-right: 12px;
     }
 
-    &.is-narrow {
-      flex: 1;
-    }
 
-    &.is-wide {
-      flex: 3;
-    }
 
     &.align-right {
       text-align: right;
