@@ -20,7 +20,7 @@
       <td></td>
     </tr>
     <template v-for="experiment in experiments" bold>
-      <tr>
+      <tr :key="experiment._id">
         <td :style="{display: 'flex', flexDirection: 'column'}">
           <span class="Anchor" @click="onExperimentClick(experiment)">
             <fa v-if="activeExperimentId==experiment._id" icon="arrow-up"/>
@@ -58,8 +58,8 @@
             />
           </td>
       </tr>
-      <template v-for="(hit, index) in experiment.hits" :key="hit.HITId">
-        <tr>
+      <template v-for="(hit, index) in experiment.hits" >
+        <tr :key="hit.HITId + 'header'">
           <td class="is-narrow">
             <input :id="hit.HITId" class="toggle" type="checkbox" @click="toggleActiveHIT(hit.HITId)"/>
             <label :for="hit.HITId" class="lbl-toggle">Details</label>
@@ -98,7 +98,7 @@
             </BaseButtons>
           </td>
         </tr>
-        <tr v-if="activeHITId==hit.HITId" class="collapsible-content">
+        <tr v-if="activeHITId==hit.HITId" class="collapsible-content" :key="hit.HITId + 'workers'">
           <td colspan="100%" :style="{paddingLeft: '50px'}">
             <WorkersInline
               :HITId="hit.HITId"
