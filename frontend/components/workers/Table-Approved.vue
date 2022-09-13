@@ -50,7 +50,6 @@
 <script lang="ts">
 import Vue from 'vue'
 
-import BaseRow from '@/components/BaseRow.vue'
 import BaseCopy from '@/components/BaseCopy.vue'
 
 

@@ -61,14 +61,12 @@
 import Vue from 'vue'
 
 import BaseCopy from '@/components/BaseCopy.vue'
-import BaseRow from '@/components/BaseRow.vue'
 import BaseButton from '@/components/BaseButton.vue'
 
 export default Vue.extend({
   name: 'TableWaiting',
   components: {
     BaseCopy,
-    BaseRow,
     BaseButton
   },
   props: {

@@ -58,8 +58,8 @@
             />
           </td>
       </tr>
-      <template v-for="(hit, index) in experiment.hits">
-        <tr  :key="hit.HITId">
+      <template v-for="(hit, index) in experiment.hits" :key="hit.HITId">
+        <tr>
           <td class="is-narrow">
             <input :id="hit.HITId" class="toggle" type="checkbox" @click="toggleActiveHIT(hit.HITId)"/>
             <label :for="hit.HITId" class="lbl-toggle">Details</label>
@@ -116,7 +116,6 @@ import Vue from 'vue'
 
 import BaseButtons from '../BaseButton.vue'
 import BaseCopy from '../BaseCopy.vue'
-import BaseRow from '../BaseRow.vue'
 import WorkersInline from '../../pages/WorkersInline.vue'
 import { Experiment, Hit } from '../../lib/types'
 
@@ -125,7 +124,6 @@ export default Vue.extend({
   components: {
     BaseButtons,
     BaseCopy,
-    BaseRow,
     WorkersInline,
   },
   props: {
