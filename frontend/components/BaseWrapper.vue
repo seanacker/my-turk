@@ -97,6 +97,9 @@ export default Vue.extend({
     .TitleWrapper {
       background-color: color(gray-dark);
     }
+    .Title {
+      color: color(text-white);
+    }
   }
 
   .TitleWrapper {
