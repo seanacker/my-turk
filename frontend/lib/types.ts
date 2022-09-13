@@ -34,21 +34,21 @@ export type Experiment = {
   defaultRequirements: boolean,
   guardHitByQualification: boolean,
   rewardPerAssignment: string,
-  hits: any[],
+  hits: Hit[],
   endpoint: string,
 }
 
 export type Hit = {
-    id: string,
-    available: number,
-    pending: number,
-    waitingForApproval: number,
-    completed: number,
-    maxAssignments: number,
+    HITId: string,
+    available: string,
+    pending: string,
+    waitingForApproval: string,
+    completed: string,
+    maxAssignments: string,
     creationTime: number,
     title: string,
     status: string,
-    numberOfAssignmentsAvailable: number
+    numberOfAssignmentsAvailable?: number
 }
 
 export type BaseText = {
@@ -58,7 +58,9 @@ export type BaseText = {
 }
 
 export type WorkersData = {
-  id: string,
+  isExperimentView: boolean | undefined
+  experimentId: string,
+  HITId: string,
   title: string,
   creationTime: string,
   awardQualificationID: string,
@@ -76,12 +78,13 @@ export type WorkersData = {
   submitted: any[] | null,
   approved: any[] | null,
   rejected: any[] | null,
-  status: any,
-  feedback?: string
+  feedback?: string,
+  awardQualificationId?: string
 }
   
 export type Worker = {
-  id: string
+  id: string,
+  HITId: string,
   assignmentID: string
   started: {
     time: string,
@@ -99,6 +102,7 @@ export type Worker = {
     time: string,
     date: string,
   },
+  awardQualificationId?: string
 }
 
 export type Route = {

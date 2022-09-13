@@ -3,22 +3,23 @@
     <BaseHeadline
       :route="route"
       :title="title"
-      :description="`Started: ${date}`"
-      :meta="`HIT: ${id}`"
+      :description="isExperimentView ? null : `Started: ${date}`"
+      :meta="isExperimentView ? `ExperimentID: ${experimentId}` : `HIT: ${HITId}`"
     />
-    <BaseWrapper title="Workers waiting for approval" gray-dark>
+    <BaseWrapper :title="'Workers waiting for approval (' +  submitted.length + ')'" gray-dark>
       <TableSubmitted
         :workers="submitted"
+        :isExperimentView="isExperimentView"
         @onApprove="handleApprove"
         @onReject="handleReject"
         @onQualify="handleQualify"
       />
     </BaseWrapper>
-    <BaseWrapper title="Workers approved" green>
-      <TableApproved :workers="approved" />
+    <BaseWrapper :title="'Workers approved (' + approved.length +')' " green>
+      <TableApproved :workers="approved" :isExperimentView="isExperimentView"/>
     </BaseWrapper>
-    <BaseWrapper title="Workers rejected" red>
-      <TableRejected :workers="rejected" />
+    <BaseWrapper :title="'Workers rejected (' + rejected.length + ')'" red>
+      <TableRejected :workers="rejected" :isExperimentView="isExperimentView"/>
     </BaseWrapper>
     <BaseButton prime title="refresh" @click="refreshPage" />
     <BaseButton second title="Qualify All" @click="handleQualifyAll" />
@@ -69,7 +70,7 @@ import TableApproved from '@/components/workers/Table-Approved.vue'
 import TableRejected from '@/components/workers/Table-Rejected.vue'
 import TableSubmitted from '@/components/workers/Table-Submitted.vue'
 import api from '@/api'
-import { BaseText, WorkersData, Worker } from '@/lib/types'
+import { WorkersData, Worker } from '@/lib/types'
 
 export default Vue.extend({
   name: 'Tags',
@@ -85,7 +86,9 @@ export default Vue.extend({
   },
   props: {},
   data: (): WorkersData => ({
-    id: '',
+    isExperimentView: undefined,
+    experimentId: '',
+    HITId: '',
     title: '',
     creationTime: '',
     awardQualificationID: '',
@@ -100,10 +103,9 @@ export default Vue.extend({
       path: 'Overview',
       name: 'back to Overview',
     },
-    submitted: null,
-    approved: null,
-    rejected: null,
-    status: undefined
+    submitted: [],
+    approved: [],
+    rejected: [],
   }),
 
   computed: {
@@ -114,20 +116,23 @@ export default Vue.extend({
       set() {},
     },
   },
-  async mounted(): Promise<void> {
+  mounted: async function (){
     this.awardQualificationID = this.$route.query.awardQualificationID as string || ''
-    console.log('Stored QualifivationID: ' + this.awardQualificationID)
+    this.isExperimentView = this.$route.query.hasOwnProperty('hitList')
     await this.getWorkers()
-    this.getHIT()
+    if (this.isExperimentView) {
+      this.getExperiment()
+    }
+    else this.getHIT()
   },
   methods: {
     async getHIT(): Promise<void> {
-      const id = this.$route.query.id || ''
-      const res = await api.getHIT({ id })
+      const HITId = this.$route.query.HITId || ''
+      const res = await api.getHIT({ HITId })
 
       if (res.success) {
         const hit = res.data
-        this.id = hit.HITId
+        this.HITId = hit.HITId
         this.title = hit.Title
         this.creationTime = hit.creationTime
       } else {
@@ -138,64 +143,81 @@ export default Vue.extend({
         })
       }
     },
+    async getExperiment(): Promise<void> {
+      this.title = this.$route.query.title as string
+      this.experimentId = this.$route.query.experimentId as string
+    },
     clearWorkers(): void {
       this.submitted = []
       this.approved = []
       this.rejected = []
     },
     async getWorkers(): Promise<void> {
-      const id = this.$route.query.id || ''
-
-      const res = await api.listAssignments({ id })
       this.clearWorkers()
-      if (res.success) {
-        const assignments = res.data
-        for (const assignment of assignments) {
-          const id = assignment.WorkerId
-          const assignmentID = assignment.AssignmentId
-          const startTime = Moment(assignment.AcceptTime).format('HH:mm:ss')
-          const startDate = Moment(assignment.AcceptTime).format('DD.MM.YYYY')
-          const finishTime = Moment(assignment.SubmitTime).format('HH:mm:ss')
-          const finishDate = Moment(assignment.SubmitTime).format('DD.MM.YYYY')
-          const status = assignment.AssignmentStatus.toLowerCase()
+      var hitList = []
+      if (this.isExperimentView){
+        hitList = (this.$route.query.hitList as string).split(',') || []
+      }
+      else {
+        hitList = [this.$route.query.HITId || '']
+      }
+      for (const HITId of hitList) {
+        const res = await api.listAssignments({ HITId })      
+        if (res.success) {
+          const assignments = res.data
+          for (const assignment of assignments) {
+            const id = assignment.WorkerId
+            const assignmentID = assignment.AssignmentId
+            const startTime = Moment(assignment.AcceptTime).format('HH:mm:ss')
+            const startDate = Moment(assignment.AcceptTime).format('DD.MM.YYYY')
+            const finishTime = Moment(assignment.SubmitTime).format('HH:mm:ss')
+            const finishDate = Moment(assignment.SubmitTime).format('DD.MM.YYYY')
+            const status = assignment.AssignmentStatus.toLowerCase()
 
-          const worker: Worker = {
-            id,
-            assignmentID,
-            started: {
-              time: startTime,
-              date: startDate,
-            },
-            finished: {
-              time: finishTime,
-              date: finishDate,
-            },
-          }
+            const worker: Worker = {
+              id,
+              HITId: HITId as string,
+              awardQualificationId: this.awardQualificationId,
+              assignmentID,
+              started: {
+                time: startTime,
+                date: startDate,
+              },
+              finished: {
+                time: finishTime,
+                date: finishDate,
+              },
+            }
 
-          if (status === 'rejected') {
-            const rejectionTime = Moment(assignment.RejectionTime).format(
-              'HH:mm:ss'
-            )
-            const rejectionDate = Moment(assignment.RejectionTime).format(
-              'DD.MM.YYYY'
-            )
-            worker.rejected = {
-              time: rejectionTime,
-              date: rejectionDate,
+            if (status === 'rejected') {
+              const rejectionTime = Moment(assignment.RejectionTime).format(
+                'HH:mm:ss'
+              )
+              const rejectionDate = Moment(assignment.RejectionTime).format(
+                'DD.MM.YYYY'
+              )
+              worker.rejected = {
+                time: rejectionTime,
+                date: rejectionDate,
+              }
+              this.rejected?.push(worker)
+            } else if (status === 'approved') {
+              const approvedTime = Moment(assignment.ApprovalTime).format(
+                'HH:mm:ss'
+              )
+              const approvedDate = Moment(assignment.ApprovalTime).format(
+                'DD.MM.YYYY'
+              )
+              worker.approved = {
+                time: approvedTime,
+                date: approvedDate,
+              }
+              this.approved?.push(worker)
             }
-          } else if (status === 'approved') {
-            const approvedTime = Moment(assignment.ApprovalTime).format(
-              'HH:mm:ss'
-            )
-            const approvedDate = Moment(assignment.ApprovalTime).format(
-              'DD.MM.YYYY'
-            )
-            worker.approved = {
-              time: approvedTime,
-              date: approvedDate,
+            else {
+              this.submitted?.push(worker)
             }
           }
-          this.status.push(worker)
         }
       }
       console.log(this.submitted)

@@ -21,9 +21,17 @@
     </BaseRow>
 
     <BaseRow v-for="experiment in experiments" :key="experiment._id" bold>
-      <span class="Anchor" @click="onExperimentClick(experiment)">
-        {{ experiment.experimentName }}&nbsp;
-        <i class="far fa-edit"></i>
+      <span :style="{display: 'flex', flexDirection: 'column'}">
+        <span class="Anchor" @click="onExperimentClick(experiment)">
+          <fa v-if="activeExperimentId==experiment._id" icon="arrow-up"/>
+          <fa v-else icon="arrow-down"/>
+          {{experiment.experimentName}}          
+        </span>
+        <span v-if="activeExperimentId==experiment._id" :style="{display: 'flex', flexDirection: 'column', border: '1px solid black', borderRadius: '5px'}">
+          <span @click="onExperimentEditClick(experiment)" :style="{paddingLeft: '10px'}">edit</span>
+          <span @click="onExperimentOverviewClick(experiment)" :style="{paddingLeft: '10px'}">overview</span>
+        </span>
+
       </span>
       <span class="is-wide">{{ experiment.description }}</span>
       <span class="is-narrow align-right">{{ experiment.available }}</span>
@@ -49,13 +57,13 @@
         />
       </span>
 
-      <BaseRow v-for="(hit, index) in experiment.hits" :key="hit.id">
-        <input :id="hit.id" class="toggle" type="checkbox" />
-        <label :for="hit.id" class="lbl-toggle">Details</label>
+      <BaseRow v-for="(hit, index) in experiment.hits" :key="hit.HITId">
+        <input :id="hit.HITId" class="toggle" type="checkbox" />
+        <label :for="hit.HITId" class="lbl-toggle">Details</label>
 
         <span class="is-wide">
-          {{ index + 1 }}: {{ hit.id }}&nbsp;
-          <BaseCopy :value="hit.id" />
+          {{ index + 1 }}: {{ hit.HITId }}&nbsp;
+          <BaseCopy :value="hit.HITId" />
         </span>
         <span class="is-narrow align-right">{{ hit.available }}</span>
         <span class="is-narrow align-right">{{ hit.pending }}</span>
@@ -65,9 +73,12 @@
           <span class="Anchor" @click="onHitClick(hit, experiment)"
             >Fullscreen</span
           >
+          <span class="Anchor" @click="onExpireAndDeleteClick(experiment, hit)"
+            >ExpireAndDelete</span
+          >
         </span>
         <WorkersInline
-          :id="hit.id"
+          :HITId="hit.HITId"
           :awardid="experiment.awardQualificationId"
         />
       </BaseRow>
@@ -98,24 +109,46 @@ export default Vue.extend({
       default: null,
     },
   },
-  data: () => ({}),
+  data: () => ({
+    activeExperimentId: ''
+  }),
   methods: {
     onExperimentClick(experiment: Experiment) {
+      if(this.activeExperimentId == experiment._id) this.activeExperimentId = ""
+      else this.activeExperimentId = experiment._id
+    },
+    onExperimentEditClick(experiment: Experiment) {
       this.$router.push({
         name: 'Settings',
         query: { id: experiment._id },
         params: { experiment: experiment as any, initial: 'false' },
       })
     },
+    onExperimentOverviewClick(experiment: Experiment) {
+      const hitList = experiment.hits.map(hit => hit.HITId).toString()
+      this.$router.push({
+        name: 'Workers',
+        query: {
+          awardQualificationID: experiment.awardQualificationId,
+          title: experiment.title,
+          hitList,
+          experimentId: experiment._id
+        }
+      })
+
+    },
     onHitClick(hit: Hit, experiment: Experiment) {
       this.$router.push({
         name: 'Workers',
         params: {},
-        query: {
-          id: hit.id,
+        query: {      
+          HITId: hit.HITId,
           awardQualificationID: experiment.awardQualificationId,
         },
       })
+    },
+    onExpireAndDeleteClick(experiment: Experiment, hit: Hit) {
+      this.$emit('expireAndDeleteHIT', experiment, hit)
     },
     onNewHitClick(experiment: Experiment) {
       this.$emit('createHIT', experiment)

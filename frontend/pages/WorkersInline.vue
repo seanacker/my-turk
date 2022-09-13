@@ -82,7 +82,7 @@ export default Vue.extend({
     TableSubmitted,
   },
   props: {
-    id: {
+    HITId: {
       type: String,
       default: '',
     },
@@ -108,7 +108,6 @@ export default Vue.extend({
     submitted: null,
     approved: null,
     rejected: null,
-    status: undefined
   }),
   async mounted(): Promise<void> {
     console.log('Stored QualifivationID: ' + this.awardid)
@@ -122,9 +121,9 @@ export default Vue.extend({
       this.rejected = []
     },
     async getWorkers(): Promise<void> {
-      const id = this.id || ''
+      const HITId = this.HITId
 
-      const res = await api.listAssignments({ id })
+      const res = await api.listAssignments({ HITId })
       this.clearWorkers()
 
       console.log(res)
@@ -141,6 +140,7 @@ export default Vue.extend({
           const status = assignment.AssignmentStatus.toLowerCase()
 
           const worker: Worker = {
+            HITId: HITId as string,
             id,
             assignmentID,
             started: {
@@ -164,6 +164,7 @@ export default Vue.extend({
               time: rejectionTime,
               date: rejectionDate,
             }
+            this.rejected?.push(worker)
           } else if (status === 'approved') {
             const approvedTime = Moment(assignment.ApprovalTime).format(
               'HH:mm:ss'
@@ -175,8 +176,11 @@ export default Vue.extend({
               time: approvedTime,
               date: approvedDate,
             }
+            this.approved?.push(worker)
           }
-          this.status.push(worker)
+          else {
+            this.submitted?.push(worker)
+          }
         }
       }
       console.log(this.submitted)

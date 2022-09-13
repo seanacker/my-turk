@@ -35,6 +35,10 @@ export default {
     return sendData('listHITs', payload)
   },
 
+  expireHIT: (payload: Payload): Promise<APIRes> => {
+    return sendData('expireHIT', payload)
+  },
+
   deleteHIT: (payload: Payload): Promise<APIRes> => {
     return sendData('deleteHIT', payload)
   },
