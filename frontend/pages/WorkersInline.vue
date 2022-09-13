@@ -99,7 +99,7 @@ import TableApproved from '@/components/workers/Table-Approved.vue'
 import TableRejected from '@/components/workers/Table-Rejected.vue'
 import TableSubmitted from '@/components/workers/Table-Submitted.vue'
 import api from '@/api'
-import { WorkersData, Workers } from '@/lib/types'
+import { WorkersData, Worker } from '@/lib/types'
 
 export default Vue.extend({
   name: 'Tags',
@@ -170,7 +170,8 @@ export default Vue.extend({
           const finishDate = Moment(assignment.SubmitTime).format('DD.MM.YYYY')
           const status = assignment.AssignmentStatus.toLowerCase()
 
-          const worker: Workers = {
+          const worker: Worker = {
+            HITId: HITId as string,
             id,
             assignmentID,
             started: {
