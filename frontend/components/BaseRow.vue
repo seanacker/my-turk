@@ -19,14 +19,10 @@ export default Vue.extend({
 })
 </script>
 <style lang="scss">
-.BaseRow {
+table {
   color: color(text);
   font-weight: 500;
-  position: relative;
-  display: flex;
-  justify-content: space-between;
   width: 100%;
-  flex-wrap: wrap;
   padding: 0 40px;
   font-size: rem(14px);
 
@@ -40,10 +36,8 @@ export default Vue.extend({
     background-color: rgba(black, 0.2);
   }
 
-
-
   &:last-child {
-    .BaseRow {
+    table {
       padding: 0;
 
       &:last-child {
@@ -56,14 +50,14 @@ export default Vue.extend({
     }
   }
 
-  .BaseRow {
+  table {
     padding: 0;
 
     &:last-child {
       padding-bottom: 20px;
     }
 
-    > span {
+    > td {
       padding-top: 8px;
       padding-bottom: 8px;
     }
@@ -77,7 +71,7 @@ export default Vue.extend({
     font-weight: 900;
     font-size: rem(16px);
 
-    > span {
+    > td {
       line-height: rem(25);
     }
   }
@@ -87,13 +81,13 @@ export default Vue.extend({
     font-size: rem(14px);
     color: color(text-light);
 
-    > span {
+    > td {
       padding: 0;
       padding-bottom: 8px;
     }
   }
 
-  > span {
+  > td {
     letter-spacing: 0.47px;
     position: relative;
     padding: 20px 0;
@@ -104,8 +98,6 @@ export default Vue.extend({
     &:not(:last-of-type) {
       padding-right: 12px;
     }
-
-
 
     &.align-right {
       text-align: right;

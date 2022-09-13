@@ -121,7 +121,7 @@ export default Vue.extend({
     margin: 2px;
     border-radius: 10px;
     box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2);
-    font-family: font(roboto);
+    font-family: font(regular);
     padding: 4px;
   }
   table {

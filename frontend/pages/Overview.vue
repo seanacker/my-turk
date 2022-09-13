@@ -18,7 +18,7 @@
       />
     </BaseWrapper>
 
-    <BaseWrapper title="Sandbox" green :hidden="sandIsHidden">
+    <BaseWrapper title="Sandbox" green :hidden="sandIsHidden" :style="{minWidth: '1500px'}">
       <Table
         :experiments="experiments.sandbox"
         @createHIT="createHIT"

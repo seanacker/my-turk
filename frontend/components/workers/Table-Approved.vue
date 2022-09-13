@@ -88,7 +88,7 @@ export default Vue.extend({
   .light {
       font-weight: 400;
       font-size: rem(14px);
-      color: color(text-class="light");
+      color: color(text-light);
     }
   button {
     background-color: #2e3035;
@@ -98,7 +98,7 @@ export default Vue.extend({
     margin: 2px;
     border-radius: 10px;
     box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2);
-    font-family: font(roboto);
+    font-family: font(regular);
     padding: 4px;
   }
   table {

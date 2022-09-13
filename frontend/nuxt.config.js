@@ -14,7 +14,13 @@ export default {
       { hid: 'description', name: 'description', content: '' },
       { name: 'format-detection', content: 'telephone=no' },
     ],
-    link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }],
+    link: [
+      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+      { 
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css?family=Playfare+Display:400,700|Roboto:400,700,900'
+      }
+    ],
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
