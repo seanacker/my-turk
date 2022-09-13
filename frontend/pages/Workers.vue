@@ -118,8 +118,6 @@ export default Vue.extend({
   mounted: async function (){
     this.awardQualificationID = this.$route.query.awardQualificationID as string || ''
     this.isExperimentView = this.$route.query.hasOwnProperty('hitList')
-    console.log("isexeperimentview", this.isExperimentView)
-    console.log('Stored QualifivationID: ' + this.awardQualificationID)
     await this.getWorkers()
     if (this.isExperimentView) {
       this.getExperiment()
