@@ -24,6 +24,7 @@
       <span class="Anchor" @click="onExperimentSettingsClick(experiment)">
         {{ experiment.experimentName }}&nbsp;
         <i class="far fa-edit"></i>
+        <fa icon="edit"/>
       </span>
       <span class="Anchor" @click="onExperimentOverviewClick(experiment)">
         overview &nbsp;
