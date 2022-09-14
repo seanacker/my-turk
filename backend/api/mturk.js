@@ -590,17 +590,12 @@ app.post('/getMessages', async (req, res) => {
   if (!result.error) {
     return res.send({
       success: true,
-      message: 'Message deleted',
+      message: 'Got all Messages',
       data: result
     });
-  } else {
-    return res.send({
-      success: false,
-      message: result.error.message,
-      error: result.error.code
-    });
   }
-});
+})
+
 
 
 

@@ -2,44 +2,66 @@
   <div class="BaseTextarea">
     <textarea v-model="mValue" :type="type" name></textarea>
     <label class="Label">{{ label }}</label>
+    <div v-if="onSave" class="Save">
+      <p 
+        :style="{marginTop: '0', lineHeight: '1', marginRight: '5px'}">save this Message</p>
+      <input
+        type="checkbox"
+        :style="{marginTop: '0', padding: '0', width: 'auto', backgroundColor: 'transparent', display: 'block'}"
+        :value="false"
+        @click="toggleSaveMessage()"
+      />
+    </div>
   </div>
 </template>
 <script lang="ts">
 import Vue from 'vue'
+import BaseCheckbox from './BaseCheckbox.vue'
 
 export default Vue.extend({
-  name: 'BaseTextarea',
-  props: {
-    label: {
-      type: String,
-      default: '',
+    name: "BaseTextarea",
+    props: {
+        name: String,
+        label: {
+            type: String,
+            default: "",
+        },
+        type: {
+            type: String,
+            default: "",
+        },
+        value: {
+            type: String,
+            default: "",
+        },
+        onSave: {
+            type: Boolean,
+            default: false
+        }
     },
-    type: {
-      type: String,
-      default: '',
+    data: () => ({}),
+    computed: {
+        mValue: {
+            get(): string {
+                return this.value;
+            },
+            set(value: string): void {
+                // convert the label name to camelCase
+                // eg:  AWS Access Key ID -> awsAccessKeyId
+                let key = this.name.toLowerCase();
+                key = key.replace(/ ([a-z])/g, (_, w) => w.toUpperCase());
+                this.$emit("keyPress", {
+                    [key]: value,
+                });
+            },
+        },
     },
-    value: {
-      type: String,
-      default: '',
-    },
-  },
-  data: () => ({}),
-  computed: {
-    mValue: {
-      get(): string {
-        return this.value
-      },
-      set(value: string): void {
-        // convert the label name to camelCase
-        // eg:  AWS Access Key ID -> awsAccessKeyId
-        let key = this.label.toLowerCase()
-        key = key.replace(/ ([a-z])/g, (_, w) => w.toUpperCase())
-        this.$emit('keyPress', {
-          [key]: value,
-        })
-      },
-    },
-  },
+    components: { BaseCheckbox },
+    methods: {
+      toggleSaveMessage() {
+        this.$emit('toggleSaveMessage')
+      }
+    }
 })
 </script>
 <style lang="scss">
@@ -56,6 +78,16 @@ export default Vue.extend({
     transform: translateY(-30px);
     font-size: rem(12px);
     transition: all 0.2s ease-out;
+  }
+
+  .Save {
+    position: absolute;
+    right: 0;
+    top: 10px;
+    transform: translateY(-30px);
+    font-size: rem(12px);
+    transition: all 0.2s ease-out;
+    display: flex;
   }
 
   textarea {

@@ -31,12 +31,28 @@
       @onAccept="approveAssignment"
       @onCancel="closeModal"
     >
-      <p>Leave feedback for the worker if you like</p>
       <BaseTextarea
-        label="Feedback"
+        name="feedback"
+        label="Leave your own Feedback"
+        :style="{marginBottom: '15px', marginTop: '50px'}"
+        :onSave="true"
         :value="approvalFeedback"
         @keyPress="setApprovalFeedback"
+        @toggleSaveMessage="toggleSaveMessage()"
       />
+      <p :style="{margin: '0 0  10px 0'}">or select a message</p>
+      <select :style="{margin: '0 0 15px 0', width: '100%'}" class="MessageSelect">
+        <option 
+          value="" 
+          disabled 
+          selected 
+          v-text="approveMessages ? 'Select your message!' : 'No messages saved!'">
+        </option>
+        <option v-for="(option, i) in approveMessages" :key="i" :value="option.message">
+          {{ option.message }}
+        </option>
+        
+      </select>
     </BaseModal>
 
     <BaseModal
@@ -44,15 +60,30 @@
       title="Reject Assignment"
       :cancel="{ label: 'cancel' }"
       :accept="{ label: 'reject', type: 'warning' }"
+      :onSave="true"
       @onAccept="rejectAssignment"
       @onCancel="closeModal"
+      @toggleSaveMessage="toggleSaveMessage()"
     >
-      <p>Leave feedback for the worker</p>
       <BaseTextarea
-        label="Feedback"
+        name="feedback"
+        label="Leave your own Feedback"
+        :style="{marginBottom: '15px', marginTop: '50px'}"
         :value="rejectFeedback"
         @keyPress="setRejectionFeedback"
       />
+      <p :style="{margin: '0 0  10px 0'}">or select a message</p>
+      <select :style="{margin: '0 0 15px 0' ,width: '100%'}" class="MessageSelect">
+        <option 
+          value="" 
+          disabled 
+          selected 
+          v-text="approveMessages ? 'Select your message!' : 'No messages saved!'">
+        </option>
+        <option v-for="(option, i) in rejectMessages" :key="i" :value="option.message">
+          {{ option.message }} 
+        </option>
+      </select>
     </BaseModal>
   </div>
 </template>
@@ -105,14 +136,14 @@ export default Vue.extend({
       path: 'Overview',
       name: 'back to Overview',
     },
-    submitted: null,
-    approved: null,
-    rejected: null
+    submitted: [],
+    approved: [],
+    rejected: []
   }),
   async mounted(): Promise<void> {
     console.log('Stored QualifivationID: ' + this.awardid)
+    await this.getMessages()
     await this.getWorkers()
-    // this.getHIT()
   },
   methods: {
     clearWorkers(): void {
@@ -336,6 +367,15 @@ export default Vue.extend({
       this.rejected = null
 
       await this.getWorkers()
+    },
+    async getMessages() {
+      const approveRes = await api.getMessages({type: 'approve'})
+      this.approveMessages = approveRes.data
+      const rejectRes = await api.getMessages({type: 'reject'})
+      this.rejectMessages = rejectRes.data
+    },
+    toggleSaveMessage(){ 
+      this.saveMessage = !this.saveMessage
     },
   },
 })
