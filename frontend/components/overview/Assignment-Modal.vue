@@ -7,18 +7,6 @@
   >
     <div class="BaseModal-Content">
       <h3 class="Title">{{ title }}</h3>
-      <p>
-        Before you approve/reject Assignments make sure that, if necessary,
-        you have qualified all Workers with their Award Qualification.
-      </p>
-      <p v-if="type=='accept'">
-        Fill in a list of AssignmentIDs you want to accept.
-        The List should be seperated by any non-alphabetic character.
-      </p>
-      <p v-else>
-        Fill in a list of AssignmentIDs you want to reject.
-        The List should be seperated by any non-alphabetic character.
-      </p>
       <slot></slot>
       <div class="BaseModal-Content-Buttons">
         <BaseButton

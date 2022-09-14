@@ -394,7 +394,7 @@ app.post('/approveAssignments', async (req, res) => {
     }
     let params = {
       id : data.assignmentIds[currentIDIndex],
-      feedback: '',
+      feedback: data.feedback,
       awardQualificationID: data.awardQualificationID ,
       workerID: assignment.Assignment.WorkerId
     }
@@ -419,7 +419,6 @@ app.post('/approveAssignments', async (req, res) => {
 app.post('/rejectAssignments', async (req, res) => {
   let data = req.body;
   let results = []
-  let promises = []
   let currentIDIndex = 0
   while (currentIDIndex <= data.assignmentIds.length - 1) {
     const assignment = await getAssignment({AssignmentId: data.assignmentIds[currentIDIndex]}).catch((err) => ({success: false, error: err}))
@@ -441,7 +440,7 @@ app.post('/rejectAssignments', async (req, res) => {
     }
     let params = {
       id : data.assignmentIds[currentIDIndex],
-      feedback: '',
+      feedback: data.feedback,
       workerID: assignment.Assignment.WorkerId
     }
     results.push(rejectAssignment(params).then((data) => ({ success: true, message: `Assignment ${params.id} was rejected`})).catch(err => ({ success: false, error: err })))

@@ -56,7 +56,7 @@
       @onCancel="closeModal"
     >      <p>Are you sure you want to delete this HIT?</p>
     </BaseModal>
-    <AssignmentModal
+    <BaseModal
       :visible="acceptAssignmentModalVisible"
       title="Accept Assignments"
       :rewardPerAssignment="rewardPerAssignment"
@@ -66,31 +66,96 @@
       type="accept"
       @onAccept="acceptAssignments"
       @onCancel="closeModal"
-    >
+    >       
+      <p>
+        Before you approve Assignments make sure that, if necessary,
+        you have qualified all Workers with their Award Qualification.
+      </p>
+      <p>
+        Fill in a list of AssignmentIDs you want to accept.
+        The List should be seperated by any non-alphabetic character.
+      </p>
       <BaseTextarea 
+        name="assignmentids"
         label="AssignmentIDs"
         @keyPress="setAcceptIDs"
       ></BaseTextarea>
+      <BaseTextarea
+        name="feedback"
+        :style="{marginBottom: '15px', marginTop: '50px'}"
+        label="Leave your own Feedback"
+        :value="approvalFeedback"
+        :onSave="true"
+        @keyPress="setApprovalFeedbackFromText"
+        @toggleSaveMessage="toggleSaveMessage()"
+      />
+      <p :style="{margin: '0 0  10px 0'}">or select a message</p>
+      <select 
+        :style="{margin: '0 0 15px 0', width: '100%'}" 
+        class="MessageSelect"
+        @change="setApprovalFeedbackFromSelect($event)"
+      >
+        <option 
+          value="" 
+          disabled 
+          selected 
+          v-text="approveMessages ? 'Select your message!' : 'No messages saved!'">
+        </option>
+        <option v-for="(option, i) in approveMessages" :key="i" :value="option.message" :style="{width: '100%', wordBreak: 'break-all'}">
+          {{ option.message }}
+        </option>
+        
+      </select>
       <p>
         Approving these Assignments will cost you {{this.priceForAccepting}}$
       </p>
-    </AssignmentModal>
-    <AssignmentModal
+    </BaseModal>
+    <BaseModal
       :visible="rejectAssignmentModalVisible"
       title="Reject Assignments"
       :rewardPerAssignment="rewardPerAssignment"
       :cancel="{ label: 'cancel' }"
-      :accept="{ label: 'Reject', type: 'success' }"
-      type="reject"
+      :accept="{ label: 'Reject', type: 'warning' }"
       @onAccept="rejectAssignments"
       @onCancel="closeModal"
-    >
+    > 
+      <p>
+        Before you reject Assignments make sure that, if necessary,
+        you have qualified all Workers with their Award Qualification.
+      </p>
+      <p>
+        Fill in a list of AssignmentIDs you want to reject.
+        The List should be seperated by any non-alphabetic character.
+      </p>
       <BaseTextarea 
         label="AssignmentIDs"
         @keyPress="setRejectIDs"
+        name="assignmentids"
       ></BaseTextarea>
-
-    </AssignmentModal>
+      <BaseTextarea
+        name="feedback"
+        :style="{marginBottom: '15px', marginTop: '50px'}"
+        label="Leave your own Feedback"
+        :value="rejectFeedback"
+        :onSave="true"
+        @keyPress="setRectionFeedbackFromText"
+        @toggleSaveMessage="toggleSaveMessage()"
+      />
+      <p :style="{margin: '0 0  10px 0'}">or select a message</p>
+      <div :style="{width: '100%'}">
+        <select @change="setRejectionFeedbackFromSelect($event)" :style="{margin: '0 0 15px 0', display: 'inline-block%'}" class="MessageSelect" :disabled="!rejectMessages">
+          <option 
+            value="" 
+            disabled 
+            selected 
+            v-text="approveMessages ? 'Select your message!' : 'No messages saved!'">
+          </option>
+          <option v-for="(option, i) in rejectMessages" :key="i" :value="option.message" :style="{width: '100%'}">
+            {{ option.message }} 
+          </option>
+        </select>
+      </div>
+  </BaseModal>
   </div>
 </template>
 <script lang="ts">
@@ -121,6 +186,11 @@ type OverviewData = {
   rewardPerAssignmentForModal?: string
   priceForAccepting?: number
   awardQualificationID: string | undefined
+  approvalFeedback: string
+  rejectFeedback: string
+  saveMessage: boolean
+  approveMessages: string[],
+  rejectMessages: string[],
 }
 
 export default Vue.extend({
@@ -152,10 +222,16 @@ export default Vue.extend({
     rejectIDs: [],
     rewardPerAssignmentForModal: undefined,
     priceForAccepting: undefined,
-    awardQualificationID: undefined
+    awardQualificationID: undefined,
+    approvalFeedback: "",
+    rejectFeedback: "",
+    saveMessage: false,
+    approveMessages: [],
+    rejectMessages: []
   }),
   mounted() {
     this.getExperiments()
+    this.getMessages()
   },
 
   methods: {
@@ -352,6 +428,24 @@ export default Vue.extend({
       console.log(this.rejectIDs)
     },
     async acceptAssignments() {
+      if (this.saveMessage) {
+          const messageRes = await api.createMessage(
+            {message: this.approvalFeedback, type: 'approve'}
+          )
+          if (messageRes.success) {
+            this.$toasted.show(messageRes.message, {
+              type: 'success',
+              position: 'bottom-right',
+              duration: 3000,
+            })
+          } else {
+            this.$toasted.show(messageRes.message, {
+              type: 'error',
+              position: 'bottom-right',
+              duration: 3000,
+            })
+          }
+        }
       const res = await api.approveAssignments({assignmentIds: this.acceptIDs, awardQualificationID: this.awardQualificationID})
       console.log("res:", res)
       this.acceptAssignmentModalVisible = false
@@ -379,7 +473,22 @@ export default Vue.extend({
       }
     },
     async rejectAssignments()  {
-      console.log("ids:", this.rejectIDs)
+      if (this.saveMessage) {
+        const messageRes = await api.createMessage({message: this.rejectFeedback, type: 'reject'})
+        if (messageRes.success) {
+          this.$toasted.show(messageRes.message, {
+            type: 'success',
+            position: 'bottom-right',
+            duration: 3000,
+          })
+        } else {
+          this.$toasted.show(messageRes.message, {
+            type: 'error',
+            position: 'bottom-right',
+            duration: 3000,
+          })
+        }
+      }
       const res = await api.rejectAssignments({assignmentIds: this.rejectIDs})
       console.log("res:",)
       this.acceptAssignmentModalVisible = false
@@ -405,8 +514,28 @@ export default Vue.extend({
           })
         })
       }
-    }
-
+    },
+    async getMessages() {
+      const approveRes = await api.getMessages({type: 'approve'})
+      this.approveMessages = approveRes.data
+      const rejectRes = await api.getMessages({type: 'reject'})
+      this.rejectMessages = rejectRes.data
+    },
+    setApprovalFeedbackFromText(val: any): void {
+      this.approvalFeedback = val.feedback
+    },
+    setApprovalFeedbackFromSelect(event: any): void {
+      this.approvalFeedback = event.target.value
+    },
+    setRectionFeedbackFromText(val: any): void {
+      this.rejectFeedback = val.feedback
+    },
+    setRejectionFeedbackFromSelect(event: any): void {
+      this.rejectFeedback = event.target.value
+    },
+    toggleSaveMessage(){ 
+      this.saveMessage = !this.saveMessage
+    },
 
   },
 })
@@ -414,7 +543,7 @@ export default Vue.extend({
 <style lang="scss">
 .Overview {
   position: relative;
-
+}
 .HeaderWrapper {
   display: flex;
   flex-direction: row;
@@ -434,6 +563,5 @@ export default Vue.extend({
   margin-left: auto;
   border: 0;
   background: transparent;
-}
 }
 </style>
