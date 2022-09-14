@@ -79,6 +79,7 @@ export default Vue.extend({
   box-shadow: 0px 2px 20px 0 rgba(lighten(color(gray-dark), 10%), 0);
   font-family: font(regular);
   text-align: center;
+  white-space: nowrap;
 
   &.is-full-width {
     width: 100%

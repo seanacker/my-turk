@@ -345,7 +345,6 @@ export default Vue.extend({
   position: relative;
   flex-basis: 100%;
   background-color: grey;
-  margin-left: 10%;
 
   > .BaseButton.is-prime {
     visibility: hidden;

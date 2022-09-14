@@ -36,7 +36,6 @@ export default Vue.extend({
     loggedOut: {
       immediate: true,
       handler(loggedOut: boolean): void {
-        console.log("watcher triggered")
         if (loggedOut) {
           localStorage.setItem('token', JSON.stringify(''))
           this.$toasted.success('you are logged out', {

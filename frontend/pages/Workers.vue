@@ -59,7 +59,7 @@
 </template>
 <script lang="ts">
 import Vue from 'vue'
-import Moment from 'moment' 
+import Moment from 'moment'
 
 import BaseButton from '@/components/BaseButton.vue'
 import BaseHeadline from '@/components/BaseHeadline.vue'
@@ -223,7 +223,13 @@ export default Vue.extend({
       console.log(this.approved)
       console.log(this.rejected)
     },
-    handleApprove({ workerID, assignmentID }: { workerID: string, assignmentID: string}): void {
+    handleApprove({
+      workerID,
+      assignmentID,
+    }: {
+      workerID: string
+      assignmentID: string
+    }): void {
       this.modalApproveIsVisible = true
       this.workerID = workerID
       this.assignmentID = assignmentID
@@ -235,7 +241,7 @@ export default Vue.extend({
     handleQualify(workerID: string): void {
       this.qualifyWorker(workerID)
     },
-    handleQualifyAll(): void {    
+    handleQualifyAll(): void {
       if (this.submitted != null) {
         console.log('Qualifying submitted Workers: ')
         for (const worker of this.submitted) {

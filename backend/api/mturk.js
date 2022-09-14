@@ -110,13 +110,13 @@ app.post('/saveExperiment', async (req, res) => {
       console.log(result.QualificationType.QualificationTypeId);
       data.experiment.awardQualificationId = result.QualificationType.QualificationTypeId;
     }
-    // else {
-    //   return res.send({
-    //     success: false,
-    //     message: result.error.message,
-    //     error: result.error.code
-    //   });
-    // }
+    else {
+      return res.send({
+        success: false,
+        message: result.error.message,
+        error: result.error.code
+      });
+    }
   }
 
   let result = await mongo.updateData({ _id: ObjectId(id) }, data.experiment);
@@ -192,7 +192,7 @@ app.post('/getExperiments', async (req, res) => {
           console.log("HIT found with id " + mHIT.HITId);
         } else {
           console.log("HIT not found in list, request via getHIT")
-          mHIT = (await getHIT({id: hit.HITId}).catch(err => ({ error: err }))).HIT;
+          mHIT = (await getHIT({HITId: hit.HITId}).catch(err => ({ error: err }))).HIT;
         }
 
 
@@ -315,11 +315,9 @@ app.post('/getHIT', async (req, res) => {
   }
 });
 
-app.post('/expireHIT', async (req, res) => {
-
-  const HITId = req.body.HITId;
-  // providing a timestamp 0 expires the hit imidiatly
-  let result = await expireHIT({HITId, ExpireAt: 0}).catch(err => ({ error: err }));
+app.post('/expireHIT', async (req,res) => {
+  const data = req.body
+  const result = await expireHIT(data).catch(err => ({ error: err}));
   if (!result.error) {
     return res.send({
       success: true,
@@ -375,16 +373,16 @@ app.post('/approveAssignment', async (req, res) => {
 app.post('/approveAssignments', async (req, res) => {
   let data = req.body;
   let results = []
-  let promises = []
   let currentIDIndex = 0
   while (currentIDIndex <= data.assignmentIds.length - 1) {
     const assignment = await getAssignment({AssignmentId: data.assignmentIds[currentIDIndex]}).catch((err) => ({success: false, error: err}))
     if (assignment.error) {
-      return res.send({
+      results =  [...results, {
         success: false,
-        message: assignment.error,
-        error: `Assignment ${data.assignmentIds[currentIDIndex]} was not found`
-      });
+        message: `Assignment ${data.assignmentIds[currentIDIndex]} was not found.`,
+      }]
+      currentIDIndex ++
+      continue
     }
     if (assignment.Assignment.AssignmentStatus != "Submitted") {
       results = [...results, {
@@ -400,13 +398,9 @@ app.post('/approveAssignments', async (req, res) => {
       awardQualificationID: data.awardQualificationID ,
       workerID: assignment.Assignment.WorkerId
     }
-    promises.push(approveAssignment(params).catch(err => ({ success: false, error: err })))
-    
+    results.push(await approveAssignment(params).then(() => ({ success: true, message: `Assignment ${params.id} was approved`})).catch(err => ({ success: false, error: err })))
+    currentIDIndex ++
   }
-  const promisesData = await Promise.all(promises).catch((err) => ({ success: false, error: err }))
-  promisesData.forEach(({ data }) => {
-    results = [...results, data];
-  });
   if (!results.some((result) => !result.success)){
     return res.send({
       success: true,
@@ -416,8 +410,53 @@ app.post('/approveAssignments', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: result.error.errors,
-      error: 'Some assignments could not be approved',
+      message: 'Some assignments could not be approved',
+      data: results
+    });
+  }
+});
+
+app.post('/rejectAssignments', async (req, res) => {
+  let data = req.body;
+  let results = []
+  let promises = []
+  let currentIDIndex = 0
+  while (currentIDIndex <= data.assignmentIds.length - 1) {
+    const assignment = await getAssignment({AssignmentId: data.assignmentIds[currentIDIndex]}).catch((err) => ({success: false, error: err}))
+    if (assignment.error) {
+      results =  [...results, {
+        success: false,
+        message: `Assignment ${data.assignmentIds[currentIDIndex]} was not found.`,
+      }]
+      currentIDIndex ++
+      continue
+    }
+    if (assignment.Assignment.AssignmentStatus != "Submitted") {
+      results = [...results, {
+        success: false,
+        message: `Assignment ${data.assignmentIds[currentIDIndex]} was allready in status ${assignment.Assignment.status}`,
+      }]
+      currentIDIndex ++
+      continue
+    }
+    let params = {
+      id : data.assignmentIds[currentIDIndex],
+      feedback: '',
+      workerID: assignment.Assignment.WorkerId
+    }
+    results.push(rejectAssignment(params).then((data) => ({ success: true, message: `Assignment ${params.id} was rejected`})).catch(err => ({ success: false, error: err })))
+    currentIDIndex ++
+  }
+  if (!results.some((result) => !result.success)){
+    return res.send({
+      success: true,
+      message: 'rejected all assignments',
+      data: results
+    })
+  } else {
+    return res.send({
+      success: false,
+      message: 'Some assignments could not be rejected',
       data: results
     });
   }
@@ -692,11 +731,10 @@ const listHITs = (params) => {
   });
 };
 
-const expireHIT = (params) => {
-  connectToMturk();
-
+const expireHIT = ({ HITId }) => {
+  connectToMturk()
   return new Promise((resolve, reject) => {
-    mturk.updateExpirationForHIT(params, (err, data) => {
+    mturk.updateExpirationForHIT({HITId, ExpireAt: 0}, (err, data) => {
       if (err) {
         console.log(err, err.stack); // an error occurred
         reject(err);
@@ -706,7 +744,7 @@ const expireHIT = (params) => {
       }
     });
   });
-};
+}
 
 const deleteHIT = (params) => {
   connectToMturk();

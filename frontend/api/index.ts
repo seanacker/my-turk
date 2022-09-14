@@ -12,6 +12,7 @@ export default {
   },
 
   saveSettings: (payload: Payload): Promise<APIRes> => {
+    console.log(payload)
     return sendData('saveExperiment', payload)
   },
 
@@ -60,7 +61,11 @@ export default {
   },
 
   approveAssignments: (payload: Payload): Promise<APIRes> => {
-    return sendData('approveAssignment', payload)
+    return sendData('approveAssignments', payload)
+  },
+
+  rejectAssignments: (payload: Payload): Promise<APIRes> => {
+    return sendData('rejectAssignments', payload)
   },
 }
 

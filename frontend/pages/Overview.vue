@@ -10,14 +10,12 @@
       />
 
       <div :style="{display: 'flex', flexDirection: 'column'}">
-        <button @click="toggleHeaderMenu" :style="{ marginLeft: 'auto'}">
+        <button @click="toggleHeaderMenu" class="headerMenuButton">
           <img v-if="showHeaderMenu" src="../public/closeicon.png"/>
           <img v-else src="../public/burgermenuicon.png"/>
         </button>
         <div v-if="showHeaderMenu" class="HeaderMenu">
           <BaseButton square second @click="addExperiment">new experiment</BaseButton>
-          <BaseButton square second @click="showAcceptAssignments">accept assignemnts</BaseButton>
-          <BaseButton square second @click="showRejectAssignments">reject assignments</BaseButton> 
           <BaseButton square second @click="refreshPage">refresh</BaseButton>
         </div>
       </div>
@@ -45,6 +43,7 @@
         @deleteHIT="deleteHIT"
         @cancelHIT="cancelHIT"
         @showAcceptAssignments="showAcceptAssignments"
+        @showRejectAssignments="showRejectAssignments"
       />
     </BaseWrapper>
 
@@ -61,6 +60,7 @@
       :visible="acceptAssignmentModalVisible"
       title="Accept Assignments"
       :rewardPerAssignment="rewardPerAssignment"
+      :awardQualificationID="awardQualificationID"
       :cancel="{ label: 'cancel' }"
       :accept="{ label: 'Approve', type: 'success' }"
       type="accept"
@@ -71,13 +71,16 @@
         label="AssignmentIDs"
         @keyPress="setAcceptIDs"
       ></BaseTextarea>
+      <p>
+        Approving these Assignments will cost you {{this.priceForAccepting}}$
+      </p>
     </AssignmentModal>
     <AssignmentModal
       :visible="rejectAssignmentModalVisible"
       title="Reject Assignments"
       :rewardPerAssignment="rewardPerAssignment"
       :cancel="{ label: 'cancel' }"
-      :accept="{ label: 'Approve', type: 'success' }"
+      :accept="{ label: 'Reject', type: 'success' }"
       type="reject"
       @onAccept="rejectAssignments"
       @onCancel="closeModal"
@@ -86,9 +89,7 @@
         label="AssignmentIDs"
         @keyPress="setRejectIDs"
       ></BaseTextarea>
-      <p>
-        {{this.priceForAccepting}}
-      </p>
+
     </AssignmentModal>
   </div>
 </template>
@@ -101,7 +102,7 @@ import BaseModal from '@/components/BaseModal.vue'
 import BaseWrapper from '@/components/BaseWrapper.vue'
 import Table from '@/components/overview/Table.vue'
 import api from '@/api/index'
-import { Experiment, Hit, Route } from '@/lib/types'
+import { Experiment, Hit, Route, APIRes } from '@/lib/types'
 import AssignmentModal from '@/components/overview/Assignment-Modal.vue'
 import BaseTextarea from '~/components/BaseTextarea.vue'
 
@@ -109,7 +110,7 @@ type OverviewData = {
   route: Route
   hit: Hit | undefined
   modalIsVisible: boolean
-  experiments: { production: Experiment[], sandbox: Experiment[] }
+  experiments: { production: Experiment[]; sandbox: Experiment[] }
   prodIsHidden: boolean
   sandIsHidden: boolean
   acceptAssignmentModalVisible: boolean
@@ -119,6 +120,7 @@ type OverviewData = {
   rejectIDs: string[]
   rewardPerAssignmentForModal?: string
   priceForAccepting?: number
+  awardQualificationID: string | undefined
 }
 
 export default Vue.extend({
@@ -139,7 +141,7 @@ export default Vue.extend({
       params: { loggedOut: true },
     },
     modalIsVisible: false,
-    experiments: { production: [], sandbox: []},
+    experiments: { production: [], sandbox: [] },
     prodIsHidden: false,
     sandIsHidden: false,
     hit: undefined,
@@ -149,7 +151,8 @@ export default Vue.extend({
     acceptIDs: [],
     rejectIDs: [],
     rewardPerAssignmentForModal: undefined,
-    priceForAccepting: undefined
+    priceForAccepting: undefined,
+    awardQualificationID: undefined
   }),
   mounted() {
     this.getExperiments()
@@ -163,11 +166,14 @@ export default Vue.extend({
       this.sandIsHidden = result.endpoint === 'production'
       console.log(this.sandIsHidden)
       if (result.success) {
-        console.log("data: ", result.data)
+        console.log('data: ', result.data)
         this.experiments = result.data
         this.experiments.production = result.data.production || []
         this.experiments.sandbox = result.data.sandbox || []
-        console.log('sandbox experiments: ', JSON.stringify(result.data.sandbox))
+        console.log(
+          'sandbox experiments: ',
+          JSON.stringify(result.data.sandbox)
+        )
       }
     },
     async addExperiment(): Promise<void> {
@@ -286,7 +292,7 @@ export default Vue.extend({
     /////////////////////////////
     // needs to be implemented //
     /////////////////////////////
-    
+
     // handleDeleteHIT(hit: Hit) {
     //   this.modalIsVisible = true
     //   this.hit = hit
@@ -318,12 +324,12 @@ export default Vue.extend({
       this.showHeaderMenu = !this.showHeaderMenu
     },
 
-    showAcceptAssignments(rewardPerAssignment: string) {
+    showAcceptAssignments(rewardPerAssignment: string, awardQualificationID: string) {
       this.rewardPerAssignmentForModal = rewardPerAssignment
+      this.awardQualificationID = awardQualificationID
       this.acceptAssignmentModalVisible = true
     },
-    showRejectAssignments(rewardPerAssignment: string) {
-      this.rewardPerAssignmentForModal = rewardPerAssignment
+    showRejectAssignments() {
       this.rejectAssignmentModalVisible = true
     },
 
@@ -343,12 +349,62 @@ export default Vue.extend({
       this.rejectIDs = value.assignmentids.split(/[^A-Za-z0-9]/).filter((value: string) => {
         return value != ""
       })
+      console.log(this.rejectIDs)
     },
-    acceptAssignments() {
-      api.approveAssignment(this.acceptIDs)
+    async acceptAssignments() {
+      const res = await api.approveAssignments({assignmentIds: this.acceptIDs, awardQualificationID: this.awardQualificationID})
+      console.log("res:", res)
+      this.acceptAssignmentModalVisible = false
+      if (res.success) {
+        this.$toasted.success(res.message, {
+            position: 'bottom-right',
+            duration: 100000,
+          })
+      }
+      else {
+        res.data.filter((assignment: APIRes) => assignment.success).
+          map((assignment: APIRes) => {
+            this.$toasted.success(assignment.message, {
+            position: 'bottom-right',
+            duration: 5000,
+          })
+        })
+        res.data.filter((assignment: APIRes) => !assignment.success).
+          map((assignment: APIRes) => {
+            this.$toasted.error(assignment.message, {
+            position: 'bottom-right',
+            duration: 5000,
+          })
+        })
+      }
     },
-    rejectAssignments()  {
-      api.rejectAssignment(this.rejectIDs)
+    async rejectAssignments()  {
+      console.log("ids:", this.rejectIDs)
+      const res = await api.rejectAssignments({assignmentIds: this.rejectIDs})
+      console.log("res:",)
+      this.acceptAssignmentModalVisible = false
+      if (res.success) {
+        this.$toasted.success(res.message, {
+            position: 'bottom-right',
+            duration: 5000,
+          })
+      }
+      else {
+        res.data.filter((assignment: APIRes) => assignment.success).
+          map((assignment: APIRes) => {
+            this.$toasted.success(assignment.message, {
+            position: 'bottom-right',
+            duration: 5000,
+          })
+        })
+        res.data.filter((assignment: APIRes) => !assignment.success).
+          map((assignment: APIRes) => {
+            this.$toasted.error(assignment.message, {
+            position: 'bottom-right',
+            duration: 5000,
+          })
+        })
+      }
     }
 
 
@@ -374,8 +430,8 @@ export default Vue.extend({
   margin-right: 4px;
 }
 
-button {
-  margin: 5px;
+.headerMenuButton {
+  margin-left: auto;
   border: 0;
   background: transparent;
 }

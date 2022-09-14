@@ -37,7 +37,7 @@
         <td class="align-right">{{ experiment.pending }}</td>
         <td class="align-right">{{ experiment.waitingForApproval}}</td>
         <td class="align-right">{{ experiment.completed }}</td>
-        <td class="is-wide align-center" >
+        <td class="align-center" >
           <BaseButton
               v-if="experiment.endpoint !== 'development'"
               second
@@ -49,31 +49,40 @@
           </td>
           <td >
             <BaseButton
-            v-if="experiment.endpoint !== 'development'"
-            second
-            square
-            title="qualify all"
-            fullWidth
-            @click="onQualifyAllClick(experiment)"
+              v-if="experiment.endpoint !== 'development'"
+              second
+              square
+              title="qualify all"
+              fullWidth
+              @click="onQualifyAllClick(experiment)"
             />
           </td>
-          <td class="is-narrow">
+          <td>
             <BaseButton
               v-if="experiment.endpoint !== 'development'"
               second
               square
               title="approve workers"
-              @click="onApproveWorkersClick(experiment.rewardPerAssignment)"
+              @click="onApproveWorkersClick(experiment.rewardPerAssignment, experiment.awardQualificationID)"
             />
-              </td>
+          </td>
+          <td>
+            <BaseButton
+              v-if="experiment.endpoint !== 'development'"
+              second
+              square
+              title="reject workers"
+              @click="onRejectWorkersClick()"
+            />
+          </td>
       </tr>
       <template v-for="(hit, index) in experiment.hits" >
         <tr :key="hit.HITId + 'header'">
-          <td class="is-narrow">
+          <td>
             <input :id="hit.HITId" class="toggle" type="checkbox" @click="toggleActiveHIT(hit.HITId)"/>
             <label :for="hit.HITId" class="lbl-toggle">Details</label>
           </td>
-          <td>
+          <td :style="{whiteSpace: 'nowrap'}">
             {{ index + 1 }}: <span :style="{fonts}">{{ hit.HITId }}</span>&nbsp;
             <BaseCopy :value="hit.HITId" />
           </td>
@@ -193,8 +202,11 @@ export default Vue.extend({
     onNewHitClick(experiment: Experiment) {
       this.$emit('createHIT', experiment)
     },
-    onApproveWorkersClick(rewardPerAssignment: string) {
-      this.$emit('showAcceptAssignments', rewardPerAssignment)
+    onApproveWorkersClick(rewardPerAssignment: string, awardQualificationID: string) {
+      this.$emit('showAcceptAssignments', rewardPerAssignment, awardQualificationID)
+    },
+    onRejectWorkersClick() {
+      this.$emit('showRejectAssignments')
     },
     onQualifyAllClick() {
       // TODO: actually keep track of who is qualified already

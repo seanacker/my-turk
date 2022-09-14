@@ -7,6 +7,10 @@
   >
     <div class="BaseModal-Content">
       <h3 class="Title">{{ title }}</h3>
+      <p>
+        Before you approve/reject Assignments make sure that, if necessary,
+        you have qualified all Workers with their Award Qualification.
+      </p>
       <p v-if="type=='accept'">
         Fill in a list of AssignmentIDs you want to accept.
         The List should be seperated by any non-alphabetic character.
@@ -28,8 +32,8 @@
           prime
           square
           :title="accept.label"
-          :green="accept.type === 'success'"
-          :red="accept.type === 'warning'"
+          :green="type === 'success'"
+          :red="type === 'reject'"
           @click="onAccept"
         />
       </div>
