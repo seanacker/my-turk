@@ -449,6 +449,66 @@ app.post('/createQualificationType', async (req, res) => {
   }
 });
 
+
+app.post('/createMessage', async (req, res) => {
+  let data = req.body;
+  let result = await mongo.insertData(data, "messages").catch(err => ({
+    error: err
+  }));
+  if (!result.error) {
+    return res.send({
+      success: true,
+      message: 'Message created',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: result.error.message,
+      error: result.error.code
+    });
+  }
+});
+
+app.post('/deleteMessage', async (req, res) => {
+  let data = req.body;
+  let result = await mongo.removeData(data, "messages").catch(err => ({
+    error: err
+  }));
+  if (!result.error) {
+    return res.send({
+      success: true,
+      message: 'Message deleted',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: result.error.message,
+      error: result.error.code
+    });
+  }
+});
+
+app.post('/getMessages', async (req, res) => {
+  let type = req.body.type;
+  let result = await mongo.findData(data = {}, "messages").catch(err => ({
+    error: err
+  }));
+  result = result.filter((message) => message.type == type)
+  console.log("results:", result)
+  if (!result.error) {
+    return res.send({
+      success: true,
+      message: 'Got all Messages',
+      data: result
+    });
+  }
+})
+
+
+
+
 const connectToMturk = () => {
   AWS.config.update({
     region,

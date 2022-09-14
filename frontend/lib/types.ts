@@ -79,6 +79,9 @@ export type WorkersData = {
   approved: any[] | null,
   rejected: any[] | null,
   feedback?: string,
+  approveMessages: string[],
+  rejectMessages: string[],
+  saveMessage: boolean | undefined
   awardQualificationId?: string
 }
   
@@ -109,6 +112,12 @@ export type Route = {
   path: string
   name: string
   params: Record<string, any>
+}
+
+export type Message = {
+  id: string
+  type: string
+  message: string
 }
 
 
