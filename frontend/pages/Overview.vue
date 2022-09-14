@@ -15,13 +15,10 @@
           <img v-else src="../public/burgermenuicon.png"/>
         </button>
         <div v-if="showHeaderMenu" class="HeaderMenu">
-          <BaseButton @click="addExperiment">new experiment</BaseButton>
-          <hr/>
-          <BaseButton @click="showAcceptAssignments">accept assignemnt</BaseButton>
-          <hr/>
-          <BaseButton @click="showRejectAssignments">reject assignment</BaseButton> 
-          <hr/>
-          <BaseButton @click="refreshPage">refresh</BaseButton>
+          <BaseButton square second @click="addExperiment">new experiment</BaseButton>
+          <BaseButton square second @click="showAcceptAssignments">accept assignemnts</BaseButton>
+          <BaseButton square second @click="showRejectAssignments">reject assignments</BaseButton> 
+          <BaseButton square second @click="refreshPage">refresh</BaseButton>
         </div>
       </div>
     </div>
@@ -31,6 +28,9 @@
         :experiments="experiments.production"
         @createHIT="createHIT"
         @onHitDeleteClick="handleDeleteHIT"
+        @expireHIT="expireHIT"
+        @deleteHIT="deleteHIT"
+        @cancelHIT="cancelHIT"
       />
     </BaseWrapper>
 
@@ -41,7 +41,9 @@
         @rejectAssignment="showRejectAssignments"
         @createHIT="createHIT"
         @onHitDeleteClick="handleDeleteHIT"
-        @expireAndDeleteHIT="expireAndDeleteHIT"
+        @expireHIT="expireHIT"
+        @deleteHIT="deleteHIT"
+        @cancelHIT="cancelHIT"
         @showAcceptAssignments="showAcceptAssignments"
       />
     </BaseWrapper>
@@ -61,12 +63,28 @@
       :rewardPerAssignment="rewardPerAssignment"
       :cancel="{ label: 'cancel' }"
       :accept="{ label: 'Approve', type: 'success' }"
+      type="accept"
       @onAccept="acceptAssignments"
       @onCancel="closeModal"
     >
       <BaseTextarea 
         label="AssignmentIDs"
         @keyPress="setAcceptIDs"
+      ></BaseTextarea>
+    </AssignmentModal>
+    <AssignmentModal
+      :visible="rejectAssignmentModalVisible"
+      title="Reject Assignments"
+      :rewardPerAssignment="rewardPerAssignment"
+      :cancel="{ label: 'cancel' }"
+      :accept="{ label: 'Approve', type: 'success' }"
+      type="reject"
+      @onAccept="rejectAssignments"
+      @onCancel="closeModal"
+    >
+      <BaseTextarea 
+        label="AssignmentIDs"
+        @keyPress="setRejectIDs"
       ></BaseTextarea>
       <p>
         {{this.priceForAccepting}}
@@ -98,6 +116,7 @@ type OverviewData = {
   rejectAssignmentModalVisible: boolean
   showHeaderMenu: boolean
   acceptIDs: string[]
+  rejectIDs: string[]
   rewardPerAssignmentForModal?: string
   priceForAccepting?: number
 }
@@ -128,6 +147,7 @@ export default Vue.extend({
     showHeaderMenu: false,
     rejectAssignmentModalVisible: false,
     acceptIDs: [],
+    rejectIDs: [],
     rewardPerAssignmentForModal: undefined,
     priceForAccepting: undefined
   }),
@@ -195,14 +215,20 @@ export default Vue.extend({
         })
       }
     },
-    async expireAndDeleteHIT(experiment: Experiment, hit: Hit) {
+    async cancelHIT(experiment: Experiment, hit: Hit){
+      //needs to be implemented in timed hit publication
+    },
+    async expireHIT(experiment: Experiment, hit: Hit) {
       const expireRes = await api.expireHIT({HITId: hit.HITId})
-      if (expireRes.success) {
-        this.$toasted.success(expireRes.message, {
+      this.$toasted.success(expireRes.message, {
           position: 'bottom-right',
           duration: 3000,
         })
-        const deleteRes = await api.deleteHIT({HITId: hit.HITId})
+      this.refreshPage()
+    },
+    async deleteHIT(experiment: Experiment, hit: Hit) {
+      console.log("deleted HIT", hit)
+      const deleteRes = await api.deleteHIT({HITId: hit.HITId})
         if (deleteRes.success) {
           this.$toasted.success(deleteRes.message, {
             position: 'bottom-right',
@@ -219,14 +245,7 @@ export default Vue.extend({
             duration: 5000,
           })
         }
-      }
-      else {
-        this.$toasted.error(expireRes.message, {
-            position: 'bottom-right',
-            duration: 5000,
-          })
-      }
-
+        this.refreshPage()
     },
     deleteHITfromExperiment(experiment: Experiment, hit: Hit): Experiment {
       experiment.hits = experiment.hits.filter((_hit) => {
@@ -300,25 +319,36 @@ export default Vue.extend({
     },
 
     showAcceptAssignments(rewardPerAssignment: string) {
-      console.log(rewardPerAssignment)
       this.rewardPerAssignmentForModal = rewardPerAssignment
       this.acceptAssignmentModalVisible = true
+    },
+    showRejectAssignments(rewardPerAssignment: string) {
+      this.rewardPerAssignmentForModal = rewardPerAssignment
+      this.rejectAssignmentModalVisible = true
     },
 
     closeModal() {
       this.modalIsVisible = false
       this.acceptAssignmentModalVisible = false
+      this.rejectAssignmentModalVisible = false
     },
     setAcceptIDs(value: any) {
       this.acceptIDs = value.assignmentids.split(/[^A-Za-z0-9]/).filter((value: string) => {
         return value != ""
       })
-      console.log('reward:' ,this.rewardPerAssignmentForModal)
-      console.log("Ids", this.acceptIDs)
       this.priceForAccepting = this.rewardPerAssignmentForModal ? (parseInt(this.rewardPerAssignmentForModal)) * this.acceptIDs.length : undefined
+      console.log("price in function: ", this.priceForAccepting)
+    },
+    setRejectIDs(value: any) {
+      this.rejectIDs = value.assignmentids.split(/[^A-Za-z0-9]/).filter((value: string) => {
+        return value != ""
+      })
     },
     acceptAssignments() {
       api.approveAssignment(this.acceptIDs)
+    },
+    rejectAssignments()  {
+      api.rejectAssignment(this.rejectIDs)
     }
 
 
@@ -340,13 +370,14 @@ export default Vue.extend({
   flex-direction: column;
   justify-content: space-between;
   border: 1px solid black;
-  padding: 5px;
+  box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2);
+  margin-right: 4px;
 }
 
-  button {
-    margin: 5px;
-    border: 0;
-    background: transparent;
-  }
+button {
+  margin: 5px;
+  border: 0;
+  background: transparent;
+}
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div class="BaseCopy" @click="handleClick">
-    <i class="far fa-copy"></i>
+    <fa icon="copy"/>
   </div>
 </template>
 <script>
