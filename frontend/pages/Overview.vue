@@ -365,36 +365,6 @@ export default Vue.extend({
       experiment.hits.push(mHIT)
       return experiment
     },
-    /////////////////////////////
-    // needs to be implemented //
-    /////////////////////////////
-
-    // handleDeleteHIT(hit: Hit) {
-    //   this.modalIsVisible = true
-    //   this.hit = hit
-    // },
-    // async deleteHIT() {
-    //   const id = this.hit?.HITId
-    //   console.log(api)
-    //   const res = await api.deleteHIT({ id })
-
-    //   this.modalIsVisible = false
-    //   this.hit = {}
-
-    //   if (res.success) {
-    //     this.getExperiments()
-
-    //     this.$toasted.success(res.message, {
-    //       position: 'bottom-right',
-    //       duration: 3000,
-    //     })
-    //   } else {
-    //     this.$toasted.error(res.message, {
-    //       position: 'bottom-right',
-    //       duration: 5000,
-    //     })
-    //   }
-    // },
 
     toggleHeaderMenu() {
       this.showHeaderMenu = !this.showHeaderMenu
@@ -446,7 +416,7 @@ export default Vue.extend({
             })
           }
         }
-      const res = await api.approveAssignments({assignmentIds: this.acceptIDs, awardQualificationID: this.awardQualificationID})
+      const res = await api.approveAssignments({assignmentIds: this.acceptIDs, awardQualificationID: this.awardQualificationID, feedback: this.approvalFeedback})
       console.log("res:", res)
       this.acceptAssignmentModalVisible = false
       if (res.success) {
@@ -489,7 +459,7 @@ export default Vue.extend({
           })
         }
       }
-      const res = await api.rejectAssignments({assignmentIds: this.rejectIDs})
+      const res = await api.rejectAssignments({assignmentIds: this.rejectIDs, feedback: this.rejectFeedback})
       console.log("res:",)
       this.acceptAssignmentModalVisible = false
       if (res.success) {

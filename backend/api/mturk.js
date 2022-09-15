@@ -461,6 +461,24 @@ app.post('/rejectAssignments', async (req, res) => {
   }
 });
 
+app.post('/rejectAssignment', async (req, res) => {
+  let data = req.body;
+  let result = await rejectAssignment(data).catch(err => ({ error: err }));
+  console.log(result);
+
+  if (!result.error) {
+    return res.send({
+      success: true,
+      message: 'rejected assignment',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: 'Something went wrong'
+    });
+  }
+});
 
 app.post('/qualifyWorker', async (req, res) => {
   let data = req.body;
@@ -481,24 +499,6 @@ app.post('/qualifyWorker', async (req, res) => {
   }
 });
 
-app.post('/rejectAssignment', async (req, res) => {
-  let data = req.body;
-  let result = await rejectAssignment(data).catch(err => ({ error: err }));
-  console.log(result);
-
-  if (!result.error) {
-    return res.send({
-      success: true,
-      message: 'rejected assignment',
-      data: result
-    });
-  } else {
-    return res.send({
-      success: false,
-      message: 'Something went wrong'
-    });
-  }
-});
 
 app.post('/listAssignments', async (req, res) => {
   let data = req.body;

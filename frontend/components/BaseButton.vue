@@ -9,7 +9,9 @@
       { 'is-red': red },
       { 'is-green': green },
       { 'is-gray-light': grayLight },
-      { 'is-full-width': fullWidth}
+      { 'is-full-width': fullWidth},
+      { 'not-last': notLast },
+
     ]"
     @click="$emit('click')"
   >
@@ -58,6 +60,10 @@ export default Vue.extend({
     fullWidth: {
       type: Boolean,
       default: false
+    },
+    notLast: {
+      type: Boolean,
+      default: false
     }
   },
 })
@@ -80,6 +86,10 @@ export default Vue.extend({
   font-family: font(regular);
   text-align: center;
   white-space: nowrap;
+
+  &.not-last {
+      border-right: 0 !important;
+    }
 
   &.is-full-width {
     width: 100%
@@ -162,6 +172,10 @@ export default Vue.extend({
       &:hover {
         background-color: rgba(color(green), 0.1);
       }
+    }
+
+    &.green {
+      color: green
     }
   }
 }
