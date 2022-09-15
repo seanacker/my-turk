@@ -1,48 +1,59 @@
 <template>
-  <table>
-    <tr v-if="!experiments" light>
-      <td class="is-loading">Title</td>
-      <td class="is-loading">Description</td>
-      <td class="is-loading align-right">Available</td>
-      <td class="is-loading align-right">Pending</td>
-      <td class="is-loading align-right">Waiting</td>
-      <td class="is-loading align-right">Completed</td>
-      <td class="is-loading"></td>
-    </tr>
+  <div>
+    <table :style="{minHeight: modalIsVisible ? '500px' : '', transition: 'all 0.5s ease-out'}">
+      <tr v-if="!experiments" light>
+        <td class="is-loading">Title</td>
+        <td class="is-loading">Description</td>
+        <td class="is-loading align-right">Available</td>
+        <td class="is-loading align-right">Pending</td>
+        <td class="is-loading align-right">Waiting</td>
+        <td class="is-loading align-right">Completed</td>
+        <td class="is-loading">blub</td>
+      </tr>
 
-    <tr v-else light>
-      <td>Title</td>
-      <td>Description</td>
-      <td class="align-right">Available</td>
-      <td class="align-right">Pending</td>
-      <td class="align-right">Waiting<br/> for<br/> approval</td>
-      <td class="align-right">Completed</td>
-      <td></td>
-    </tr>
-    <template v-for="experiment in experiments" bold>
-      <tr :key="experiment._id">
-        <td :style="{display: 'flex', flexDirection: 'column'}">
-          <span class="Anchor" @click="onExperimentClick(experiment)">
-            <fa v-if="activeExperimentId==experiment._id" icon="arrow-up"/>
-            <fa v-else icon="arrow-down"/>
-            {{experiment.experimentName}}          
-          </span>
-          <span v-if="activeExperimentId==experiment._id" :style="{display: 'flex', flexDirection: 'column', border: '1px solid black', borderRadius: '5px', marginTop: '10px'}">
-            <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px'}" class="hoverable">edit</span>
-            <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px'}" class="hoverable">overview</span>
-          </span>
-        </td>
-        <td>{{ experiment.description }}</td>
-        <td class="align-right">{{ experiment.available }}</td>
-        <td class="align-right">{{ experiment.pending }}</td>
-        <td class="align-right">{{ experiment.waitingForApproval}}</td>
-        <td class="align-right">{{ experiment.completed }}</td>
-        <td class="align-center" >
-          <BaseButton
+      <tr v-else light>
+        <td>Title</td>
+        <td>Description</td>
+        <td class="align-right">Available</td>
+        <td class="align-right">Pending</td>
+        <td class="align-right">Waiting<br/> for<br/> approval</td>
+        <td class="align-right">Completed</td>
+        <td></td>
+      </tr>
+      <template v-for="experiment in experiments" bold>
+        <tr :key="experiment._id">
+          <td :style="{display: 'flex', flexDirection: 'column'}">
+            <span class="Anchor" @click="onExperimentClick(experiment)">
+              <fa v-if="activeExperimentId==experiment._id" icon="arrow-up"/>
+              <fa v-else icon="arrow-down"/>
+              {{experiment.experimentName}}          
+            </span>
+            <span v-if="activeExperimentId==experiment._id" :style="{display: 'flex', flexDirection: 'column', border: '1px solid black', borderRadius: '5px', marginTop: '10px'}">
+              <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px'}" class="hoverable">edit</span>
+              <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px'}" class="hoverable">overview</span>
+            </span>
+          </td>
+          <td>{{ experiment.description }}</td>
+          <td class="align-right">{{ experiment.available }}</td>
+          <td class="align-right">{{ experiment.pending }}</td>
+          <td class="align-right">{{ experiment.waitingForApproval}}</td>
+          <td class="align-right">{{ experiment.completed }}</td>
+          <td class="is-wide align-center" >
+            <BaseButton
+                v-if="experiment.endpoint !== 'development'"
+                second
+                square
+                title="new hit"
+                fullWidth
+                @click="onNewHitClick(experiment)"
+              />
+            </td>
+            <td >
+              <BaseButton
               v-if="experiment.endpoint !== 'development'"
               second
               square
-              title="new hit"
+              title="qualify all"
               fullWidth
               @click="onNewHitClick(experiment)"
             />
@@ -57,6 +68,16 @@
               @click="onQualifyAllClick(experiment)"
             />
           </td>
+          <td >
+              <BaseButton
+                v-if="experiment.endpoint !== 'development'"
+                second
+                square
+                title="notify workers"
+                fullWidth
+                @click="modalIsVisible=true"
+              />
+            </td>
           <td>
             <BaseButton
               v-if="experiment.endpoint !== 'development'"
@@ -124,9 +145,84 @@
             />
           </td>
         </tr>
+        <template v-for="(hit, index) in experiment.hits" >
+          <tr :key="hit.HITId + 'header'">
+            <td class="is-narrow">
+              <input :id="hit.HITId" class="toggle" type="checkbox" @click="toggleActiveHIT(hit.HITId)"/>
+              <label :for="hit.HITId" class="lbl-toggle">Details</label>
+            </td>
+            <td>
+              {{ index + 1 }}: <span :style="{fonts}">{{ hit.HITId }}</span>&nbsp;
+              <BaseCopy :value="hit.HITId" />
+            </td>
+            <td class="align-right">{{ hit.available }}</td>
+            <td class="align-right">{{ hit.pending }}</td>
+            <td class="align-right">{{ hit.waitingForApproval }}</td>
+            <td class="align-right">{{ hit.completed }}</td>
+            <td >
+                <BaseButton second square fullWidth @click="onHitClick(hit, experiment)">
+                  Fullscreen
+                </BaseButton>
+            </td>
+            <td v-if="hitStatus(hit)=='cancelable'" >
+              <BaseButton second square fullWidth @click="onCancelHitClick(experiment, hit)">
+                Expire
+              </BaseButton>
+            </td>
+            <td v-if="hitStatus(hit)=='expireable'" >
+              <BaseButton second square fullWidth @click="onExpireHitClick(experiment, hit)">
+                Expire
+              </BaseButton>
+            </td>
+            <td v-if="hitStatus(hit)=='deleteable'" >
+              <BaseButton  second square fullWidth @click="onDeleteHitClick(experiment, hit)">
+                Delete
+              </BaseButton>
+            </td>
+            <td v-if="hitStatus(hit)=='approvable'" >
+              <BaseButton  second square fullWidth @click="onQualifyAllFromHitClick(experiment, hit)">
+                Qualify all
+              </BaseButton>
+            </td>
+          </tr>
+          <tr v-if="activeHITId==hit.HITId" class="collapsible-content" :key="hit.HITId + 'workers'">
+            <td colspan="100%" :style="{paddingLeft: '50px'}">
+              <WorkersInline
+                :HITId="hit.HITId"
+                :awardid="experiment.awardQualificationId"
+              />
+            </td>
+          </tr>
+        </template>
+        <BaseModal
+          :visible="modalIsVisible"
+          :key=""
+          title="Send Email"
+          :cancel="{ label: 'cancel' }"
+          :accept="{ label: 'send', type: 'success' }"
+          :style="{width:'100%', margin: 'auto'}"
+          @onAccept="notifyWorkers(experiment)"
+          @onCancel="closeModal"
+        >
+          <BaseTextarea
+            name="subject"
+            :style="{marginBottom: '15px', marginTop: '50px'}"
+            label="Please enter the subject of your email"
+            :value="emailSubject"
+            @keyPress="setEmailSubject"
+          />
+          <BaseTextarea
+            name="message"
+            :style="{marginBottom: '15px', marginTop: '50px'}"
+            label="Please enter your message"
+            :value="emailMessage"
+            @keyPress="setEmailMessage"
+          />
+        </BaseModal>
       </template>
-    </template>
-  </table>
+      </template>
+    </table>
+  </div>
 </template>
 
 <script lang="ts">
@@ -134,14 +230,17 @@ import Vue from 'vue'
 
 import BaseButton from '../BaseButton.vue'
 import BaseCopy from '../BaseCopy.vue'
+import BaseModal from '../BaseModal.vue'
 import WorkersInline from '../../pages/WorkersInline.vue'
-import { Experiment, Hit } from '../../lib/types'
+import { Experiment, Hit, Assignment } from '../../lib/types'
+import api from '@/api'
 
 export default Vue.extend({
   name: 'Tags',
   components: {
     BaseButton,
     BaseCopy,
+    BaseModal,
     WorkersInline,
   },
   props: {
@@ -152,7 +251,11 @@ export default Vue.extend({
   },
   data: () => ({
     activeExperimentId: '',
-    activeHITId: ''
+    activeHITId: '',
+    emailSubject: '',
+    emailMessage: '',
+    modalIsVisible: false
+
   }),
   methods: {
     onExperimentClick(experiment: Experiment) {
@@ -196,7 +299,6 @@ export default Vue.extend({
       this.$emit('expireHIT', experiment, hit)
     },
     onDeleteHitClick(experiment: Experiment, hit: Hit) {
-      console.log("emitting delete hit")
       this.$emit('deleteHIT', experiment, hit)
     },
     onNewHitClick(experiment: Experiment) {
@@ -229,8 +331,42 @@ export default Vue.extend({
     toggleActiveHIT(HITId: string) {
       if(this.activeHITId == HITId) this.activeHITId = ""
       else this.activeHITId = HITId
-    }
-  },
+    },
+    closeModal() {
+        this.modalIsVisible = false
+    },
+    setEmailSubject(val: any): void {
+      this.emailSubject = val.subject
+    },
+    setEmailMessage(val: any): void {
+      this.emailMessage = val.message
+    },
+    async notifyWorkers(experiment: Experiment) {
+      const activeExperiment = (this.experiments as Experiment[]).filter((iterExperiment: Experiment) => iterExperiment._id == experiment._id
+      )[0]
+      const hitList = activeExperiment.hits
+      for (const hit of hitList) {
+        const assignmentRes = await api.listAssignments({ HITId: hit.HITId })
+        if (assignmentRes.success) {
+            const workerIDs = assignmentRes.data.map((assignment: Assignment) => assignment.WorkerId)
+            const notificationRes = await api.notifyWorkers({subject: 'noob', message: 'hallo', workerIDs})
+            if(notificationRes.success) {
+              this.$toasted.success(notificationRes.message, {
+                position: 'bottom-right',
+                duration: 3000,
+              })
+            }
+            else {
+              this.$toasted.error(notificationRes.message, {
+                position: 'bottom-right',
+                duration: 3000,
+              })
+            }
+          }     
+        this.closeModal()
+      }
+    },
+  }
 })
 </script>
 <style lang="scss">

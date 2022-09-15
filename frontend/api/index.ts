@@ -79,6 +79,9 @@ export default {
   createMessage: (payload: Payload): Promise<APIRes> => {
     return sendData('createMessage', payload)
   },
+  notifyWorkers: (payload: Payload): Promise<APIRes> => {
+    return sendData('notifyWorkers', payload)
+  },
 }
 
 /**
