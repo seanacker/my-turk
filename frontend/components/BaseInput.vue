@@ -45,9 +45,7 @@ export default Vue.extend({
       type: String,
     }
   },
-  data: () => ({
-    showInfoText: false
-  }),
+  data: () => ({}),
   computed: {
     mValue: {
       get(): string {
@@ -65,10 +63,7 @@ export default Vue.extend({
     },
   },
   methods: {
-    handleKeyPress() {},
-    toggleShowInfoText() {
-      this.showInfoText = !this.showInfoText
-    }
+    handleKeyPress() {}
   },
 })
 </script>
