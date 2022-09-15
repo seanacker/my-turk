@@ -120,4 +120,9 @@ export type Message = {
   message: string
 }
 
+export type Assignment = {
+  AssignmentId: string,
+  WorkerId: string,
+  HITId: string
+}
 
