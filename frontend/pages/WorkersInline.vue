@@ -41,7 +41,7 @@
         @toggleSaveMessage="toggleSaveMessage()"
       />
       <p :style="{margin: '0 0  10px 0'}">or select a message</p>
-      <select :style="{margin: '0 0 15px 0', width: '100%'}" class="MessageSelect">
+      <select :style="{margin: '0 0 15px 0', width: '100%', overflow: 'hidden'}" class="MessageSelect">
         <option 
           value="" 
           disabled 
@@ -73,7 +73,7 @@
         @keyPress="setRejectionFeedback"
       />
       <p :style="{margin: '0 0  10px 0'}">or select a message</p>
-      <select :style="{margin: '0 0 15px 0' ,width: '100%'}" class="MessageSelect">
+      <select :style="{margin: '0 0 15px 0' ,width: '100%', overflow: 'hidden'}" class="MessageSelect">
         <option 
           value="" 
           disabled 
@@ -385,7 +385,6 @@ export default Vue.extend({
   position: relative;
   flex-basis: 100%;
   background-color: grey;
-  margin-left: 10%;
 
   > .BaseButton.is-prime {
     visibility: hidden;

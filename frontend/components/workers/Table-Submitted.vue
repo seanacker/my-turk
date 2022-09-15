@@ -37,16 +37,16 @@
         <div class="is-small">{{ worker.finished.date || '' }}</div>
       </td>
       <td class="align-right">
-        <div :style="{display: 'flex', flexDirection: 'column'}">
-          <button class="Anchor" @click="onApprove(worker.id, worker.assignmentID)">
+        <div :style="{display: 'flex', flexDirection: 'row'}">
+          <BaseButton square second @click="onApprove(worker.id, worker.assignmentID)">
             ACCEPT
-          </button>
-          <button class="Anchor" @click="onReject(worker.assignmentID)">
+          </BaseButton>
+          <BaseButton square second @click="onReject(worker.assignmentID)">
             REJECT
-          </button>
-          <button class="Anchor" @click="onQualify(worker.id)"
-            >ASSIGN<br/> QUALIFICATION
-          </button>
+          </BaseButton>
+          <BaseButton second square @click="onQualify(worker.id)"
+            >ASSIGN QUALIFICATION
+        </BaseButton>
         </div>
       </td>
       <td>

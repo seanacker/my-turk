@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div >
     <table :style="{minHeight: modalIsVisible ? '500px' : '', transition: 'all 0.5s ease-out'}">
       <tr v-if="!experiments" light>
         <td class="is-loading">Title</td>
@@ -22,12 +22,12 @@
       </tr>
       <template v-for="experiment in experiments" bold>
         <tr :key="experiment._id">
-          <td :style="{display: 'flex', flexDirection: 'column'}">
-            <span class="Anchor" @click="onExperimentClick(experiment)">
+          <td >
+            <div class="Anchor" @click="onExperimentClick(experiment)" :style="{display: 'flex'}">
+              <div class="no-wrap">{{experiment.experimentName}}</div>          
               <fa v-if="activeExperimentId==experiment._id" icon="arrow-up"/>
               <fa v-else icon="arrow-down"/>
-              {{experiment.experimentName}}          
-            </span>
+            </div>
             <span v-if="activeExperimentId==experiment._id" :style="{display: 'flex', flexDirection: 'column', border: '1px solid black', borderRadius: '5px', marginTop: '10px'}">
               <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px'}" class="hoverable">edit</span>
               <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px'}" class="hoverable">overview</span>
@@ -38,86 +38,118 @@
           <td class="align-right">{{ experiment.pending }}</td>
           <td class="align-right">{{ experiment.waitingForApproval}}</td>
           <td class="align-right">{{ experiment.completed }}</td>
-          <td class="is-wide align-center" >
-            <BaseButtons
+          <td class="button align-center" >
+            <BaseButton
                 v-if="experiment.endpoint !== 'development'"
                 second
                 square
+                notLast
                 title="new hit"
                 fullWidth
                 @click="onNewHitClick(experiment)"
               />
             </td>
-            <td >
-              <BaseButtons
+            <td class="button">
+              <BaseButton
               v-if="experiment.endpoint !== 'development'"
               second
               square
+              notLast
+              title="qualify all"
+              fullWidth
+              @click="onNewHitClick(experiment)"
+            />
+          </td>
+          <td class="button">
+            <BaseButton
+              v-if="experiment.endpoint !== 'development'"
+              second
+              square
+              notLast
               title="qualify all"
               fullWidth
               @click="onQualifyAllClick(experiment)"
-              />
-            </td>
-            <td >
-              <BaseButtons
+            />
+          </td>
+          <td class="button">
+              <BaseButton
                 v-if="experiment.endpoint !== 'development'"
                 second
                 square
+                notLast
                 title="notify workers"
                 fullWidth
                 @click="modalIsVisible=true"
               />
             </td>
+          <td class="button">
+            <BaseButton
+              v-if="experiment.endpoint !== 'development'"
+              second
+              square
+              notLast
+              title="approve workers"
+              @click="onApproveWorkersClick(experiment.rewardPerAssignment, experiment.awardQualificationID)"
+            />
+          </td>
+          <td class="button">
+            <BaseButton
+              v-if="experiment.endpoint !== 'development'"
+              second
+              square
+              title="reject workers"
+              @click="onRejectWorkersClick()"
+            />
+          </td>
+      </tr>
+      <template v-for="(hit, index) in experiment.hits" >
+        <tr :key="hit.HITId + 'header'">
+          <td>
+            <input :id="hit.HITId" class="toggle" type="checkbox" @click="toggleActiveHIT(hit.HITId)"/>
+            <label :for="hit.HITId" class="lbl-toggle">Details</label>
+          </td>
+          <td :style="{whiteSpace: 'nowrap'}">
+            {{ index + 1 }}: <span :style="{fonts}">{{ hit.HITId }}</span>&nbsp;
+            <BaseCopy :value="hit.HITId" />
+          </td>
+          <td class="align-right">{{ hit.available }}</td>
+          <td class="align-right">{{ hit.pending }}</td>
+          <td class="align-right">{{ hit.waitingForApproval }}</td>
+          <td class="align-right">{{ hit.completed }}</td>
+          <td class="button">
+              <BaseButton notLast second square fullWidth @click="onHitClick(hit, experiment)">
+                Fullscreen
+              </BaseButton>
+          </td>
+          <td v-if="hitStatus(hit)=='cancelable'" class="button">
+            <BaseButton second square fullWidth @click="onCancelHitClick(experiment, hit)">
+              Expire
+            </BaseButton>
+          </td>
+          <td v-if="hitStatus(hit)=='expireable'" class="button">
+            <BaseButton  second square fullWidth @click="onExpireHitClick(experiment, hit)">
+              Expire
+            </BaseButton>
+          </td>
+          <td v-if="hitStatus(hit)=='deleteable'" class="button">
+            <BaseButton  second square fullWidth @click="onDeleteHitClick(experiment, hit)">
+              Delete
+            </BaseButton>
+          </td>
+          <td v-if="hitStatus(hit)=='approvable'" class="button">
+            <BaseButton  second square fullWidth @click="onQualifyAllFromHitClick(experiment, hit)">
+              Qualify all
+            </BaseButton>
+          </td>
         </tr>
-        <template v-for="(hit, index) in experiment.hits" >
-          <tr :key="hit.HITId + 'header'">
-            <td class="is-narrow">
-              <input :id="hit.HITId" class="toggle" type="checkbox" @click="toggleActiveHIT(hit.HITId)"/>
-              <label :for="hit.HITId" class="lbl-toggle">Details</label>
-            </td>
-            <td>
-              {{ index + 1 }}: <span :style="{fonts}">{{ hit.HITId }}</span>&nbsp;
-              <BaseCopy :value="hit.HITId" />
-            </td>
-            <td class="align-right">{{ hit.available }}</td>
-            <td class="align-right">{{ hit.pending }}</td>
-            <td class="align-right">{{ hit.waitingForApproval }}</td>
-            <td class="align-right">{{ hit.completed }}</td>
-            <td >
-                <BaseButtons second square fullWidth @click="onHitClick(hit, experiment)">
-                  Fullscreen
-                </BaseButtons>
-            </td>
-            <td v-if="hitStatus(hit)=='cancelable'" >
-              <BaseButtons second square fullWidth @click="onCancelHitClick(experiment, hit)">
-                Expire
-              </BaseButtons>
-            </td>
-            <td v-if="hitStatus(hit)=='expireable'" >
-              <BaseButtons second square fullWidth @click="onExpireHitClick(experiment, hit)">
-                Expire
-              </BaseButtons>
-            </td>
-            <td v-if="hitStatus(hit)=='deleteable'" >
-              <BaseButtons  second square fullWidth @click="onDeleteHitClick(experiment, hit)">
-                Delete
-              </BaseButtons>
-            </td>
-            <td v-if="hitStatus(hit)=='approvable'" >
-              <BaseButtons  second square fullWidth @click="onQualifyAllFromHitClick(experiment, hit)">
-                Qualify all
-              </BaseButtons>
-            </td>
-          </tr>
-          <tr v-if="activeHITId==hit.HITId" class="collapsible-content" :key="hit.HITId + 'workers'">
-            <td colspan="100%" :style="{paddingLeft: '50px'}">
-              <WorkersInline
-                :HITId="hit.HITId"
-                :awardid="experiment.awardQualificationId"
-              />
-            </td>
-          </tr>
-        </template>
+        <tr v-if="activeHITId==hit.HITId" class="collapsible-content" :key="hit.HITId + 'workers'">
+          <td colspan="100%" :style="{paddingLeft: '50px'}">
+            <WorkersInline
+              :HITId="hit.HITId"
+              :awardid="experiment.awardQualificationId"
+            />
+          </td>
+        </tr>
         <BaseModal
           :visible="modalIsVisible"
           :key=""
@@ -144,6 +176,7 @@
           />
         </BaseModal>
       </template>
+      </template>
     </table>
   </div>
 </template>
@@ -151,7 +184,7 @@
 <script lang="ts">
 import Vue from 'vue'
 
-import BaseButtons from '../BaseButton.vue'
+import BaseButton from '../BaseButton.vue'
 import BaseCopy from '../BaseCopy.vue'
 import BaseModal from '../BaseModal.vue'
 import WorkersInline from '../../pages/WorkersInline.vue'
@@ -161,7 +194,7 @@ import api from '@/api'
 export default Vue.extend({
   name: 'Tags',
   components: {
-    BaseButtons,
+    BaseButton,
     BaseCopy,
     BaseModal,
     WorkersInline,
@@ -227,10 +260,12 @@ export default Vue.extend({
     onNewHitClick(experiment: Experiment) {
       this.$emit('createHIT', experiment)
     },
-    // todo: Implement Button that deletes hit
-    // onHitDeleteClick(hit: Hit) {
-    //   this.$emit('onHitDeleteClick', hit)
-    // },
+    onApproveWorkersClick(rewardPerAssignment: string, awardQualificationID: string) {
+      this.$emit('showAcceptAssignments', rewardPerAssignment, awardQualificationID)
+    },
+    onRejectWorkersClick() {
+      this.$emit('showRejectAssignments')
+    },
     onQualifyAllClick() {
       // TODO: actually keep track of who is qualified already
       // TODO: Approve Workers from datastructure instead of simulating button presses
@@ -303,6 +338,10 @@ export default Vue.extend({
     padding: 0 10px;
     font-size: 12px;
   }
+  td.button {
+    padding: 0
+  }
+
 .Overview input[type='checkbox'] {
   display: none;
 }
@@ -359,5 +398,13 @@ export default Vue.extend({
 
 .hoverable:hover{
   background-color: rgba(color(gray-dark), 0.25);
+}
+
+.buttons {
+  width: 40%;
+  display: flex;
+}
+.no-wrap {
+  white-space: nowrap
 }
 </style>

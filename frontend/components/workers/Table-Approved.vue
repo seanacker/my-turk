@@ -20,7 +20,7 @@
 
     <tr v-for="worker in workers" :key="worker.id">
       <td>
-        {{ worker.id }}&nbsp;<br/>
+        {{ worker.id }}&nbsp;
         <BaseCopy :value="worker.id" />
       </td>
       <td>

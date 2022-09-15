@@ -38,21 +38,23 @@
         label="Leave your own Feedback"
         :value="approvalFeedback"
         :onSave="true"
-        @keyPress="setApprovalFeedback"
+        @keyPress="setApprovalFeedbackFromText"
         @toggleSaveMessage="toggleSaveMessage()"
       />
       <p :style="{margin: '0 0  10px 0'}">or select a message</p>
       <select 
-        :style="{margin: '0 0 15px 0'}" 
+        :style="{margin: '0 0 15px 0', width: '100%'}" 
         class="MessageSelect"
+        @change="setApprovalFeedbackFromSelect($event)"
       >
         <option 
           value="" 
           disabled 
-          selected 
+          selected
+          :style="{width: '100%'}" 
           v-text="approveMessages ? 'Select your message!' : 'No messages saved!'">
         </option>
-        <option v-for="(option, i) in approveMessages" :key="i" :value="option.message">
+        <option :style="{width: '100%'}" v-for="(option, i) in approveMessages" :key="i" :value="option.message">
           {{ option.message }}
         </option>
         
@@ -73,18 +75,19 @@
         label="Leave your own Feedback"
         :value="rejectFeedback"
         :onSave="true"
-        @keyPress="setRejectionFeedback"
+        @keyPress="setRectionFeedbackFromText"
         @toggleSaveMessage="toggleSaveMessage()"
       />
       <p :style="{margin: '0 0  10px 0'}">or select a message</p>
-      <select :style="{margin: '0 0 15px 0'}" class="MessageSelect" :disabled="!rejectMessages">
+      <select @change="setRejectionFeedbackFromSelect($event)" :style="{margin: '0 0 15px 0', width: '100%'}" class="MessageSelect" :disabled="!rejectMessages">
         <option 
           value="" 
           disabled 
           selected 
+          :style="{width: '100%'}"
           v-text="approveMessages ? 'Select your message!' : 'No messages saved!'">
         </option>
-        <option v-for="(option, i) in rejectMessages" :key="i" :value="option.message">
+        <option v-for="(option, i) in rejectMessages" :key="i" :style="{width: '100%'}" :value="option.message">
           {{ option.message }} 
         </option>
       </select>
@@ -93,7 +96,7 @@
 </template>
 <script lang="ts">
 import Vue from 'vue'
-import Moment from 'moment' 
+import Moment from 'moment'
 
 import BaseButton from '@/components/BaseButton.vue'
 import BaseHeadline from '@/components/BaseHeadline.vue'
@@ -105,6 +108,7 @@ import TableRejected from '@/components/workers/Table-Rejected.vue'
 import TableSubmitted from '@/components/workers/Table-Submitted.vue'
 import api from '@/api'
 import { WorkersData, Worker } from '@/lib/types'
+import BaseSelect from '@/components/BaseSelect.vue'
 
 export default Vue.extend({
   name: 'Tags',
@@ -114,10 +118,11 @@ export default Vue.extend({
     BaseHeadline,
     BaseTextarea,
     BaseWrapper,
+    BaseSelect,
     TableApproved,
     TableRejected,
-    TableSubmitted,
-  },
+    TableSubmitted
+},
   props: {},
   data: (): WorkersData => ({
     isExperimentView: undefined,
@@ -279,7 +284,7 @@ export default Vue.extend({
     handleQualify(workerID: string): void {
       this.qualifyWorker(workerID)
     },
-    handleQualifyAll(): void {    
+    handleQualifyAll(): void {
       if (this.submitted != null) {
         console.log('Qualifying submitted Workers: ')
         for (const worker of this.submitted) {
@@ -364,9 +369,7 @@ export default Vue.extend({
         awardQualificationID,
         workerID,
       })
-
-      if (res.success) {
-        if (this.saveMessage) {
+      if (this.saveMessage) {
           const messageRes = await api.createMessage(
             {message: this.approvalFeedback, type: 'approve'}
           )
@@ -384,6 +387,7 @@ export default Vue.extend({
             })
           }
         }
+      if (res.success) {        
         this.closeModal()
         await this.getWorkers()
 
@@ -401,27 +405,28 @@ export default Vue.extend({
       }    
     },
     async rejectAssignment(): Promise<void> {
+      if (this.saveMessage) {
+        const messageRes = await api.createMessage({message: this.rejectFeedback, type: 'reject'})
+        if (messageRes.success) {
+          this.$toasted.show(messageRes.message, {
+            type: 'success',
+            position: 'bottom-right',
+            duration: 3000,
+          })
+        } else {
+          this.$toasted.show(messageRes.message, {
+            type: 'error',
+            position: 'bottom-right',
+            duration: 3000,
+          })
+        }
+      }
       const id = this.assignmentID
       const feedback = this.rejectFeedback
       console.log(feedback)
       const res = await api.rejectAssignment({ id, feedback })
-      if (res.success) {
-        if (this.saveMessage) {
-          const messageRes = await api.createMessage({message: this.rejectFeedback, type: 'reject'})
-          if (messageRes.success) {
-            this.$toasted.show(messageRes.message, {
-              type: 'success',
-              position: 'bottom-right',
-              duration: 3000,
-            })
-          } else {
-            this.$toasted.show(messageRes.message, {
-              type: 'error',
-              position: 'bottom-right',
-              duration: 3000,
-            })
-          }
-        }
+
+      if (res.success) {        
         this.closeModal()
         await this.getWorkers()
 
@@ -438,13 +443,17 @@ export default Vue.extend({
         })
       }
     },
-    // I dont think that works
-    setApprovalFeedback(val: any): void {
+    setApprovalFeedbackFromText(val: any): void {
       this.approvalFeedback = val.feedback
     },
-    // I dont think that works
-    setRejectionFeedback(val: any): void {
+    setApprovalFeedbackFromSelect(event: any): void {
+      this.approvalFeedback = event.target.value
+    },
+    setRectionFeedbackFromText(val: any): void {
       this.rejectFeedback = val.feedback
+    },
+    setRejectionFeedbackFromSelect(event: any): void {
+      this.rejectFeedback = event.target.value
     },
     async refreshPage(): Promise<void> {
       this.submitted = null
@@ -478,4 +487,5 @@ option {
   width: 100%; 
   height: 30px;
 }
+
 </style>

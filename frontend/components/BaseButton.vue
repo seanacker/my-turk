@@ -9,12 +9,14 @@
       { 'is-red': red },
       { 'is-green': green },
       { 'is-gray-light': grayLight },
-      { 'is-full-width': fullWidth}
+      { 'is-full-width': fullWidth},
+      { 'not-last': notLast },
+
     ]"
     @click="$emit('click')"
   >
     <slot></slot>
-    <span>{{ title }}</span>
+    <span :style="{whiteSpace: 'nowrap'}">{{ title }}</span>
   </div>
 </template>
 <script lang="ts">
@@ -58,6 +60,10 @@ export default Vue.extend({
     fullWidth: {
       type: Boolean,
       default: false
+    },
+    notLast: {
+      type: Boolean,
+      default: false
     }
   },
 })
@@ -79,6 +85,11 @@ export default Vue.extend({
   box-shadow: 0px 2px 20px 0 rgba(lighten(color(gray-dark), 10%), 0);
   font-family: font(regular);
   text-align: center;
+  white-space: nowrap;
+
+  &.not-last {
+      border-right: 0 !important;
+    }
 
   &.is-full-width {
     width: 100%
