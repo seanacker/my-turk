@@ -553,7 +553,7 @@ const getBalance = () => {
 
 const createHIT = async params => {
   connectToMturk();
-  const lifetimeInSeconds = params['hitExpiresAfter (days)'] * 60 * 60 * 24;
+  const lifetimeInSeconds = params.hitExpiresAfter * 60 * 60 * 24;
   console.log(`params`, lifetimeInSeconds);
 
   let createHITOptions = {
@@ -608,42 +608,44 @@ const createHIT = async params => {
       }
     );
   }
-  for (const id of params.guardHitByAdditionalQualificationids) {
-    requiremests.QualificationRequirements.push(
-      {
-        QualificationTypeId: id,
-        Comperator: 'Exists'
-      }
-    )
+  if (params.guardHitByAdditionalQualificationids) {
+    for (const id of params.guardHitByAdditionalQualificationids.split(',')) {
+      requirements.QualificationRequirements.push(
+        {
+          QualificationTypeId: id,
+          Comparator: 'Exists'
+        }
+      )
+    }
   }
-  for (const id of params.excludeWorkersByQualificationid) {
-    requiremests.QualificationRequirements.push(
-      {
-        QualificationTypeId: id,
-        Comperator: 'Exists'
-      }
-    )
+  if (params.excludeWorkersByQualificationid) {
+    for (const id of params.excludeWorkersByQualificationid.split(',')) {
+      requirements.QualificationRequirements.push(
+        {
+          QualificationTypeId: id,
+          Comparator: 'DoesNotExist'
+        }
+      )
+    }
   }
   createHITOptions = Object.assign(createHITOptions, requirements);
 
-  console.log(createHITOptions)
-  // return new Promise((resolve, reject) => {
-  //   mturk.createHIT(createHITOptions, (err, data) => {
-  //     if (err) {
-  //       console.log(err, err.stack); // an error occurred
-  //       reject(err);
-  //     } else {
-  //       console.log(data); // successful response
-  //       resolve(data);
-  //     }
-  //   });
-  // });
+  return new Promise((resolve, reject) => {
+    mturk.createHIT(createHITOptions, (err, data) => {
+      if (err) {
+        console.log(err, err.stack); // an error occurred
+        reject(err);
+      } else {
+        console.log(data); // successful response
+        resolve(data);
+      }
+    });
+  });
 };
 //// might be bugged comapare to github version
 const getHIT = (params) => {
   connectToMturk();
   
-  // TODO show error as toast.
   return new Promise((resolve, reject) => {
     mturk.getHIT(params, (err, data) => {
       if (err) {

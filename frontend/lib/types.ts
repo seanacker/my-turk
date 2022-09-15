@@ -28,7 +28,7 @@ export type Experiment = {
   awardQualificationName: string,
   awardQualificationDescription: string,
   awardQualificationId: string,
-  hitExpiresAfterDays: string,
+  hitExpiresAfter: string,
   assignmentDurationInMinutes: string,
   assignmentsPerHit: string,
   defaultRequirements: boolean,

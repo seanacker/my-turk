@@ -16,7 +16,6 @@
             :info="item.info"
             @keyPress="handleKeyPress"
           />
-
           <BaseInput
             v-else
             :key="i + '-input'"

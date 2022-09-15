@@ -64,8 +64,8 @@ type SettingsData =  {
         value: string | boolean, 
         disabled?: boolean, 
         info?: string,
+        hint?: string,
         type?: string,
-        placeholder?: string
       }[]
     }[]
 }
@@ -126,7 +126,7 @@ export default Vue.extend({
           {
             name: 'Experiment Name',
             value: '',
-            placeholder: 'This is the experiment name for the overview page',
+            info: 'This is the experiment name for the overview page',
           },
         ],
       },
@@ -136,17 +136,17 @@ export default Vue.extend({
           {
             name: 'Title',
             value: 'This is the title shown to workers',
-            placeholder: 'This is the title shown to workers',
+            info: 'This is the title shown to workers',
           },
           {
             name: 'Description',
             value: 'Tell me something about this experiment',
-            placeholder: 'This is the description shown to workers',
+            info: 'This is the description shown to workers',
           },
           {
             name: 'Keywords',
             value: 'user test, data completion, information extraction',
-            placeholder: 'seperated by comma',
+            info: 'seperated by comma',
           },
         ],
       },
@@ -157,24 +157,24 @@ export default Vue.extend({
           {
             name: 'Award Qualification name',
             value: '',
-            placeholder: 'Fill in if you want to qualify your workers',
+            info: 'Fill in if you want to qualify your workers',
           },
           {
             name: 'Award Qualification description',
             value: '',
-            placeholder: 'Fill in if you want to qualify your workers',
+            info: 'Fill in if you want to qualify your workers',
           },
           {
             name: 'Award Qualification ID',
             value: '',
             disabled: true,
-            placeholder:
+            info:
               'auto-generated from qualification name and qualification description',
           },
           {
             name: 'Reward per Assignment',
             value: '',
-            placeholder: 'e.g. 3.5 for 3.5$',
+            info: 'e.g. 3.5 for 3.5$',
           },
         ],
       },
@@ -182,19 +182,19 @@ export default Vue.extend({
         title: 'Hit and Assignments',
         items: [
           {
-            name: 'Hit expires after (days)',
+            name: 'Hit expires after',
             value: '',
-            placeholder: 'e.g. 4 for 4 days or 0.5 for 12 hours',
+            info: 'e.g. 4 for 4 days or 0.5 for 12 hours',
           },
           {
             name: 'Assignment duration in minutes',
             value: '',
-            placeholder: 'e.g. 4 for 4 minutes or 0.5 for 30 seconds',
+            info: 'e.g. 4 for 4 minutes or 0.5 for 30 seconds',
           },
           {
             name: 'Assignments per HIT',
             value: '',
-            placeholder: 'e.g. 9 for 9 assignments',
+            info: 'e.g. 9 for 9 assignments',
           },
         ],
       },
@@ -203,13 +203,13 @@ export default Vue.extend({
         items: [
           {
             name: 'Default Requirements',
-            info: 'US-based, 95% approval, more than 1.000 hits',
+            hint: 'US-based, 95% approval, more than 1.000 hits',
             type: 'checkbox',
             value: false,
           },
           {
             name: 'Guard Hit by Qualification',
-            info: 'Make the above qualification an exclusion criteria for this HIT',
+            hint: 'Make the above qualification an exclusion criteria for this HIT',
             type: 'checkbox',
             value: false,
           },
@@ -226,7 +226,7 @@ export default Vue.extend({
           {
             name: 'Entrypoint',
             value: '',
-            placeholder: 'URL of your Experiment (iframe)',
+            info: 'URL of your Experiment (iframe)',
           },
         ],
       },
@@ -256,28 +256,103 @@ export default Vue.extend({
     async handleSave() {
       const id = this.$route.query.id || ''
       const settings = this.settings
-      if (settings.guardHitByAdditionalQualificationids){
-        settings.guardHitByAdditionalQualificationids = (settings.guardHitByAdditionalQualificationids as string).split(",")
-      }
-      if (settings.excludeWorkersByQualificationid){
-        settings.excludeWorkersByQualificationid = (settings.excludeWorkersByQualificationid as string).split(",")
-      }
-      console.log(settings)
-
-      const res = await api.saveSettings({ id, experiment: settings })
-
-      if (res.success) {
-        this.$toasted.success(res.message, {
-          position: 'bottom-right',
-          duration: 3000,
-        })
-        this.$router.push({ name: 'Overview' })
-      } else {
-        this.$toasted.error(res.message, {
+      if (!this.validateSettings(settings)) {
+        this.$toasted.error('Please fill out all required fields', {
           position: 'bottom-right',
           duration: 5000,
         })
       }
+      else {
+        const res = await api.saveSettings({ id, experiment: settings })
+        if (res.success) {
+          this.$toasted.success(res.message, {
+            position: 'bottom-right',
+            duration: 3000,
+          })
+          this.$router.push({ name: 'Overview' })
+        } else {
+          this.$toasted.error(res.message, {
+            position: 'bottom-right',
+            duration: 5000,
+          })
+        }
+      }
+    },
+    validateSettings(settings: Partial<Experiment>) {
+      let isValid = true
+      if (!settings.assignmentDurationInMinutes) {
+        this.$toasted.error(
+          'Please pass a value for the assignment duration.', {
+            position: 'bottom-right',
+            duration: 5000
+          }
+        )
+        isValid = false
+      }      
+      if (!settings.assignmentsPerHit) {
+        this.$toasted.error(
+          'Please pass a value for the assignments per Hit.', {
+            position: 'bottom-right',
+            duration: 5000
+          }
+        )
+        isValid = false
+      }
+      if (!settings.description ) {
+        this.$toasted.error(
+          'Please pass a value for the description.', {
+            position: 'bottom-right',
+            duration: 5000
+          }
+        )
+        isValid = false
+      }
+      if (!settings.endpoint) {
+        this.$toasted.error(
+          'Please pass a value for the endpoint.', {
+            position: 'bottom-right',
+            duration: 5000
+          }
+        )
+        isValid = false
+      }
+      if (!settings.experimentName ) {
+        this.$toasted.error(
+          'Please pass a value for the experiment Name.', {
+            position: 'bottom-right',
+            duration: 5000
+          }
+        )
+        isValid = false
+      }
+      if (!settings.hitExpiresAfter ) {
+        this.$toasted.error(
+          'Please pass a date for the expiration of the HIT.', {
+            position: 'bottom-right',
+            duration: 5000
+          }
+        )
+        isValid = false
+      }
+      if (!settings.title ) {
+        this.$toasted.error(
+          'Please pass a value for the title of the HIT.', {
+            position: 'bottom-right',
+            duration: 5000
+          }
+        )
+        isValid = false
+      }
+      if (!settings.rewardPerAssignment ) {
+        this.$toasted.error(
+          'Please pass a value for the reward per Assignment.', {
+            position: 'bottom-right',
+            duration: 5000
+          }
+        )
+        isValid = false
+      }
+      return isValid
     },
     handleDelete() {
       this.modalIsVisible = true
@@ -298,7 +373,6 @@ export default Vue.extend({
       }
     },
     async loadExperimentSettings() {
-      console.log("this: ",this)
       const id = this.$route.query.id     
       if (!this.addExperiment && this.initial && id) {
         const result = await api.getExperiments({ id })
