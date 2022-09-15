@@ -168,7 +168,6 @@ import BaseWrapper from '@/components/BaseWrapper.vue'
 import Table from '@/components/overview/Table.vue'
 import api from '@/api/index'
 import { Experiment, Hit, Route, APIRes } from '@/lib/types'
-import AssignmentModal from '@/components/overview/Assignment-Modal.vue'
 import BaseTextarea from '~/components/BaseTextarea.vue'
 
 type OverviewData = {
@@ -201,7 +200,6 @@ export default Vue.extend({
     BaseWrapper,
     BaseButton,
     Table,
-    AssignmentModal,
     BaseTextarea
 },
   data: (): OverviewData => ({

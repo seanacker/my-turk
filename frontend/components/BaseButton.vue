@@ -173,10 +173,6 @@ export default Vue.extend({
         background-color: rgba(color(green), 0.1);
       }
     }
-
-    &.green {
-      color: green
-    }
   }
 }
 </style>

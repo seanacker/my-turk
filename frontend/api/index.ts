@@ -12,7 +12,6 @@ export default {
   },
 
   saveSettings: (payload: Payload): Promise<APIRes> => {
-    console.log(payload)
     return sendData('saveExperiment', payload)
   },
 
