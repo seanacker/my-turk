@@ -106,7 +106,7 @@ export default Vue.extend({
   .BaseModal-Content {
     background-color: #fff;
     padding: 30px;
-    width: 35vw;
+    width: 65vw;
     box-shadow: 5px 5px 0px 0 rgba(lighten(color(gray-dark), 10%), 0.75);
     transform: scale(0.85) translateZ(0);
     transition: all 0.3s $ease;

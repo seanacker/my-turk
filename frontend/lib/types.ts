@@ -60,6 +60,8 @@ export type BaseText = {
 }
 
 export type WorkersData = {
+  isExperimentView: boolean | undefined
+  experimentId: string,
   HITId: string,
   title: string,
   creationTime: string,
@@ -78,11 +80,16 @@ export type WorkersData = {
   submitted: any[] | null,
   approved: any[] | null,
   rejected: any[] | null,
-  feedback?: string
+  feedback?: string,
+  approveMessages: string[],
+  rejectMessages: string[],
+  saveMessage: boolean | undefined
+  awardQualificationId?: string
 }
   
-export type Workers = {
-  id: string
+export type Worker = {
+  id: string,
+  HITId: string,
   assignmentID: string
   started: {
     time: string,
@@ -100,6 +107,7 @@ export type Workers = {
     time: string,
     date: string,
   },
+  awardQualificationId?: string
 }
 
 export type Route = {
@@ -108,4 +116,15 @@ export type Route = {
   params: Record<string, any>
 }
 
+export type Message = {
+  id: string
+  type: string
+  message: string
+}
+
+export type Assignment = {
+  AssignmentId: string,
+  WorkerId: string,
+  HITId: string
+}
 
