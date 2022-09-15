@@ -506,6 +506,26 @@ app.post('/getMessages', async (req, res) => {
   }
 })
 
+app.post('/notifyWorkers', async (req, res) => {
+  let data = req.body;
+  let result = await notifyWorkers(data).catch(err => ({
+    error: err
+  }));
+  if (!result.error) {
+    return res.send({
+      success: true,
+      message: 'Notified Workers',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: result.error.message,
+      error: result.error.code
+    });
+  }
+});
+
 
 
 
@@ -767,7 +787,7 @@ const rejectAssignment = ({ id, feedback }) => {
   });
 };
 
-const contactWorkers = ({ subject, message, workerIDs }) => {
+const notifyWorkers = ({ subject, message, workerIDs }) => {
   var params = {
     MessageText: message,
     Subject: subject,

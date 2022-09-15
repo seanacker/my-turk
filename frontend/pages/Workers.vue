@@ -257,9 +257,6 @@ export default Vue.extend({
           }
         }
       }
-      console.log(this.submitted)
-      console.log(this.approved)
-      console.log(this.rejected)
     },
     async getMessages() {
       const approveRes = await api.getMessages({type: 'approve'})
