@@ -28,7 +28,7 @@ export type Experiment = {
   awardQualificationName: string,
   awardQualificationDescription: string,
   awardQualificationId: string,
-  hitExpiresAfterDays: string,
+  hitExpiresAfter: string,
   assignmentDurationInMinutes: string,
   assignmentsPerHit: string,
   defaultRequirements: boolean,
@@ -36,6 +36,8 @@ export type Experiment = {
   rewardPerAssignment: string,
   hits: Hit[],
   endpoint: string,
+  guardHitByAdditionalQualificationids: string[] | string
+  excludeWorkersByQualificationid: string[] | string
 }
 
 export type Hit = {
