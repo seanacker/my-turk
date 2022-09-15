@@ -7,7 +7,16 @@
       :disabled="disabled"
       :placeholder="placeholder"
     />
-    <label class="Label">{{ label }}</label>
+    <label class="Label">
+      {{ label }}
+      <div v-if="info" @mouseenter="toggleShowInfoText()" @mouseleave="toggleShowInfoText()">
+        <div class="Icon"><fa icon="info"></fa></div>
+        <p class="InfoText" v-if="showInfoText">
+          {{info}}
+        </p>
+      </div>
+    </label>
+
   </div>
 </template>
 <script lang="ts">
@@ -36,8 +45,13 @@ export default Vue.extend({
       type: String,
       default: '',
     },
+    info: {
+      type: String,
+    }
   },
-  data: () => ({}),
+  data: () => ({
+    showInfoText: false
+  }),
   computed: {
     mValue: {
       get(): string {
@@ -56,6 +70,9 @@ export default Vue.extend({
   },
   methods: {
     handleKeyPress() {},
+    toggleShowInfoText() {
+      this.showInfoText = !this.showInfoText
+    }
   },
 })
 </script>
@@ -80,6 +97,9 @@ export default Vue.extend({
     transform: translateY(-30px);
     font-size: rem(12px);
     transition: all 0.2s ease-out;
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
   }
 
   input {
@@ -100,6 +120,19 @@ export default Vue.extend({
         font-size: rem(12px);
       }
     }
+  }
+  .InfoText {
+    position: relative;
+    background-color: yellow;
+    color: black;
+    border: 1px solid black;
+    width: 300px;
+  }
+  .Icon {
+    margin-left: 5px;
+    margin-bottom: 2px;
+    padding: 5px;
+    line-height: -5px;
   }
 }
 </style>

@@ -63,7 +63,7 @@ type SettingsData =  {
         name: string, 
         value: string | boolean, 
         disabled?: boolean, 
-        hint?: string,
+        info?: string,
         type?: string,
         placeholder?: string
       }[]
@@ -203,25 +203,25 @@ export default Vue.extend({
         items: [
           {
             name: 'Default Requirements',
-            hint: 'US-based, 95% approval, more than 1.000 hits',
+            info: 'US-based, 95% approval, more than 1.000 hits',
             type: 'checkbox',
             value: false,
           },
           {
             name: 'Guard Hit by Qualification',
-            hint: 'Make the above qualification an exclusion criteria for this HIT',
+            info: 'Make the above qualification an exclusion criteria for this HIT',
             type: 'checkbox',
             value: false,
           },
           {
             name: 'Guard Hit by additional QualificationIDs',
             value: '',
-            hint: 'Please type in the QualificationIDs a Worker needs to participate on the HIT. Seperate different IDs with a comma.',
+            info: 'Please type in the QualificationIDs a Worker needs to participate on the HIT. Seperate different IDs with a comma.',
           },
           {
             name: 'Exclude Workers by QualificationID',
             value: '',
-            hint: 'Please type in any additional QualificationIDs on which to exclude workers from the HIT. Seperate different IDs with a comma.',
+            info: 'Please type in any additional QualificationIDs on which to exclude workers from the HIT. Seperate different IDs with a comma.',
           },
           {
             name: 'Entrypoint',
