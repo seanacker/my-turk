@@ -1,6 +1,10 @@
 <template>
   <div >
-    <table :style="{minHeight: modalIsVisible ? '500px' : '', transition: 'all 0.5s ease-out'}">
+    <table :style="{
+      minHeight: modalIsVisible ? '500px' : '', 
+      transition: 'all 0.5s ease-out',
+      marginBottom: showScheduleNewHIT != '' ? '300px' : ''
+      }">
       <tr v-if="!experiments" light>
         <td class="is-loading">Title</td>
         <td class="is-loading">Description</td>
@@ -38,28 +42,42 @@
           <td class="align-right">{{ experiment.pending }}</td>
           <td class="align-right">{{ experiment.waitingForApproval}}</td>
           <td class="align-right">{{ experiment.completed }}</td>
-          <td class="button align-center" >
+          <td class="button align-center" :style="{display: 'block'}">
             <BaseButton
                 v-if="experiment.endpoint !== 'development'"
                 second
                 square
-                notLast
-                title="new hit"
+                title="new hit (UTC)"
                 fullWidth
-                @click="onNewHitClick(experiment)"
-              />
+                notlast
+                @click="onNewHITClick(experiment)"
+              
+              >
+              </BaseButton>
+            <div class="scheduleWrapper">
+              <Datetime v-if="showScheduleNewHIT==experiment._id" v-model="scheduledDateTime"/>
+                <div :style="{display: 'flex'}">
+                  <BaseButton 
+                    second 
+                    square
+                    notLast
+                    :style="{backgroundColor: '#ff5555', color: 'white', width: '50%'}"
+                    title="close"
+                    @click="onCloseNewHITClick()"
+                    v-if="showScheduleNewHIT==experiment._id"
+                  />
+                  <BaseButton
+                    prime
+                    square
+                    green
+                    :style="{backgroundColor: '#00bfa5', color: 'white', width: '50%'}"
+                    title="submit"
+                    @click="onSubmitNewHitClick(experiment)"
+                    v-if="showScheduleNewHIT==experiment._id"
+                  />
+                </div>
+              </div>
             </td>
-            <td class="button">
-              <BaseButton
-              v-if="experiment.endpoint !== 'development'"
-              second
-              square
-              notLast
-              title="qualify all"
-              fullWidth
-              @click="onNewHitClick(experiment)"
-            />
-          </td>
           <td class="button">
             <BaseButton
               v-if="experiment.endpoint !== 'development'"
@@ -110,20 +128,22 @@
           </td>
           <td :style="{whiteSpace: 'nowrap'}">
             {{ index + 1 }}: <span :style="{fonts}">{{ hit.HITId }}</span>&nbsp;
-            <BaseCopy :value="hit.HITId" />
+            <BaseCopy :value="hit.HITId" /> <br/>
+            Status: <span :style="{color: hit.HITStatus == 'pending' ? 'orange' : 'green' }">{{ hit.HITStatus }}</span>            
           </td>
-          <td class="align-right">{{ hit.available }}</td>
-          <td class="align-right">{{ hit.pending }}</td>
-          <td class="align-right">{{ hit.waitingForApproval }}</td>
-          <td class="align-right">{{ hit.completed }}</td>
+          <td v-if="hit.HITStatus=='pending'" colspan="4">scheduled for: {{hit.scheduledDateTime}}</td>
+          <td v-if="hit.HITStatus!='pending'" class="align-right">{{ hit.available }}</td>
+          <td v-if="hit.HITStatus!='pending'" class="align-right">{{ hit.pending }}</td>
+          <td v-if="hit.HITStatus!='pending'" class="align-right">{{ hit.waitingForApproval }}</td>
+          <td v-if="hit.HITStatus!='pending'" class="align-right">{{ hit.completed }}</td>
           <td class="button">
               <BaseButton notLast second square fullWidth @click="onHitClick(hit, experiment)">
                 Fullscreen
               </BaseButton>
           </td>
           <td v-if="hitStatus(hit)=='cancelable'" class="button">
-            <BaseButton second square fullWidth @click="onCancelHitClick(experiment, hit)">
-              Expire
+            <BaseButton second square fullWidth @click="onCancelHitClick(hit)">
+              Cancel
             </BaseButton>
           </td>
           <td v-if="hitStatus(hit)=='expireable'" class="button">
@@ -190,6 +210,8 @@ import BaseModal from '../BaseModal.vue'
 import WorkersInline from '../../pages/WorkersInline.vue'
 import { Experiment, Hit, Assignment } from '../../lib/types'
 import api from '@/api'
+//@ts-ignore
+import Datetime from 'vuejs-datetimepicker';
 
 export default Vue.extend({
   name: 'Tags',
@@ -198,7 +220,8 @@ export default Vue.extend({
     BaseCopy,
     BaseModal,
     WorkersInline,
-  },
+    Datetime
+},
   props: {
     experiments: {
       type: Array,
@@ -210,8 +233,9 @@ export default Vue.extend({
     activeHITId: '',
     emailSubject: '',
     emailMessage: '',
-    modalIsVisible: false
-
+    modalIsVisible: false,
+    showScheduleNewHIT: '',
+    scheduledDateTime: ''
   }),
   methods: {
     onExperimentClick(experiment: Experiment) {
@@ -248,8 +272,8 @@ export default Vue.extend({
         },
       })
     },
-    onCancelHitClick(experiment: Experiment, hit: Hit) {
-      this.$emit('cancelHIT', experiment, hit)
+    onCancelHitClick(hit: Hit) {
+      this.$emit('cancelHIT', hit)
     },
     onExpireHitClick(experiment: Experiment, hit: Hit) {
       this.$emit('expireHIT', experiment, hit)
@@ -257,8 +281,15 @@ export default Vue.extend({
     onDeleteHitClick(experiment: Experiment, hit: Hit) {
       this.$emit('deleteHIT', experiment, hit)
     },
-    onNewHitClick(experiment: Experiment) {
-      this.$emit('createHIT', experiment)
+    onNewHITClick(experiment: Experiment) {      
+      this.showScheduleNewHIT=experiment._id
+      const date = new Date()
+      this.scheduledDateTime= date.toISOString().slice(0,16).replace('T', ' ') + ' (now)'
+    },
+    onSubmitNewHitClick(experiment: Experiment) {
+      this.$emit('createHIT', experiment, this.scheduledDateTime)
+      this.showScheduleNewHIT = ''
+      this.scheduledDateTime = ''
     },
     onApproveWorkersClick(rewardPerAssignment: string, awardQualificationID: string) {
       this.$emit('showAcceptAssignments', rewardPerAssignment, awardQualificationID)
@@ -277,11 +308,11 @@ export default Vue.extend({
     hitStatus(hit: Hit) {
       const pending = parseInt(hit.pending.split('/')[0])
       const waitingForApproval = parseInt(hit.waitingForApproval.split('/')[0])
-      console.log(hit)
-      if (hit.status == "Pending") return 'cancelable'
-      if (hit.status == "Assignable") return 'expireable'
+      console.log("hitstatus",hit)
+      if (hit.HITStatus == "pending") return 'cancelable'
+      if (hit.HITStatus == "Assignable") return 'expireable'
       if (waitingForApproval == 0 && pending == 0) return 'deleteable'     
-      if (hit.status == "Reviewable" || hit.status == "Reviewing") return 'approvable'    
+      if (hit.HITStatus == "Reviewable" || hit.HITStatus == "Reviewing") return 'approvable'    
       return 
     },
     toggleActiveHIT(HITId: string) {
@@ -321,6 +352,13 @@ export default Vue.extend({
           }     
         this.closeModal()
       }
+    },
+    onScheduleNewHitClick(experiment: Experiment) {
+      this.showScheduleNewHIT = experiment._id
+    },
+    onCloseNewHITClick() {
+      this.showScheduleNewHIT = ''
+      this.scheduledDateTime = ''
     },
   }
 })
@@ -406,5 +444,27 @@ export default Vue.extend({
 }
 .no-wrap {
   white-space: nowrap
+}
+.scheduleWrapper {
+  display: flex;
+  position: absolute; 
+  flex-direction: column;
+  z-index: 1
+}
+
+.year-month-wrapper {
+  background-color: white !important;
+}
+
+.month, .year {
+  color: black !important
+}
+
+.nav-r, .nav-l, .activePort, .okButton{
+  background-color: color(green) !important
+}
+
+.days, .okButton {
+  color: white !important;
 }
 </style>

@@ -81,7 +81,16 @@ export default {
   notifyWorkers: (payload: Payload): Promise<APIRes> => {
     return sendData('notifyWorkers', payload)
   },
+  deleteHITFromExperiment: (payload: Payload): Promise<APIRes> => {
+    return sendData('deleteHITFromExperiment', payload)
+  },
+  cancelScheduledHIT: (payload: Payload): Promise<APIRes> => {
+    console.log("cancel scheduled hit called")
+    return sendData('cancelScheduledHIT', payload)
+  }
 }
+
+
 
 /**
  * POST Request.

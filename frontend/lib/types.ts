@@ -38,19 +38,22 @@ export type Experiment = {
   endpoint: string,
   guardHitByAdditionalQualificationids: string[] | string
   excludeWorkersByQualificationid: string[] | string
+  
 }
 
 export type Hit = {
-    HITId: string,
-    available: string,
-    pending: string,
-    waitingForApproval: string,
-    completed: string,
-    maxAssignments: string,
-    creationTime: number,
-    title: string,
-    status: string,
-    numberOfAssignmentsAvailable?: number
+  HITId: string,
+  available: string,
+  pending: string,
+  waitingForApproval: string,
+  completed: string,
+  maxAssignments: string,
+  creationTime: number,
+  title: string,
+  HITStatus: string,
+  numberOfAssignmentsAvailable?: number
+  scheduledDateTime?: string
+  timeoutId?: string
 }
 
 export type BaseText = {
