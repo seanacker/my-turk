@@ -49,7 +49,7 @@
                 square
                 title="new hit (UTC)"
                 fullWidth
-                notlast
+                notLast
                 @click="onNewHITClick(experiment)"
               
               >
@@ -89,20 +89,19 @@
               @click="onQualifyAllClick(experiment)"
             />
           </td>
-          <td class="button" :style="{display: 'block'}">
-            <div class="handleWorkersWrapper">
-              <BaseButton
+          <td class="button" :style="{display: 'block'}">      
+            <BaseButton
                 second 
                 square
-                title="handle workers"
+                title="handle workers"                
                 fullWidth
                 @click="handleWorkersVisible=true"
               />
+            <div class="handleWorkersWrapper">
               <BaseButton
                 v-if="experiment.endpoint !== 'development' && handleWorkersVisible"
                 second
-                square
-                notLast
+                square                
                 title="notify workers"
                 fullWidth
                 @click="modalIsVisible=true"
@@ -110,8 +109,7 @@
               <BaseButton
                 v-if="experiment.endpoint !== 'development' && handleWorkersVisible"
                 second
-                square
-                notLast
+                square                
                 title="approve workers"
                 @click="onApproveWorkersClick(experiment.rewardPerAssignment, experiment.awardQualificationID)"
               />
@@ -466,6 +464,10 @@ export default Vue.extend({
   position: absolute; 
   flex-direction: column;
   z-index: 1
+}
+
+.handleWorkersWrapper {
+  width: auto
 }
 
 .year-month-wrapper {
