@@ -23,8 +23,7 @@
     <BaseRow v-for="experiment in experiments" :key="experiment._id" bold>
       <span class="Anchor" @click="onExperimentClick(experiment)">
         {{ experiment.experimentName }}&nbsp;
-        <i class="far fa-edit"></i>
-        <fa icon="edit"/>
+        <fa icon="pen-to-square"></fa>
       </span>
       <span class="is-wide">{{ experiment.description }}</span>
       <span class="is-narrow align-right">{{ experiment.available }}</span>
