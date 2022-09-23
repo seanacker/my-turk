@@ -11274,7 +11274,11 @@
   "resolved" "https://registry.npmjs.org/vue-toasted/-/vue-toasted-1.1.28.tgz"
   "version" "1.1.28"
 
+<<<<<<< HEAD
 "vue@^2 || ^3.2.13", "vue@^2.0.0", "vue@^2.6.12", "vue@^2.6.14", "vue@~2", "vue@2.x":
+=======
+"vue@^2 || ^3.2.13", "vue@^2.0.0", "vue@^2.6.12", "vue@^2.6.14", "vue@>= 3.0.0 < 4", "vue@2.x":
+>>>>>>> master
   "integrity" "sha512-mUDXXgBIFr9dk0k/3dpB6wtnCxRhe9mbGxWLtha9mTUrEWkdkZW1d58vl98VKWH067NA8f1Wj4Qwq7y7DDYfyw=="
   "resolved" "https://registry.npmjs.org/vue/-/vue-2.7.5.tgz"
   "version" "2.7.5"
@@ -11487,6 +11491,7 @@
   "integrity" "sha512-svjudQRPPa0YiOYa2lM/Gacw0r6PvxptHj4FuEKQ2kX05ZLkjbVc5MnPs6its5j7IZljnIqSVo/OsY2X0IpHGA=="
   "resolved" "https://registry.npmjs.org/webpack/-/webpack-5.73.0.tgz"
   "version" "5.73.0"
+<<<<<<< HEAD
   dependencies:
     "@types/eslint-scope" "^3.7.3"
     "@types/estree" "^0.0.51"
@@ -11515,6 +11520,8 @@
 
 "webpack@>=2":
   "version" "5.73.0"
+=======
+>>>>>>> master
   dependencies:
     "@types/eslint-scope" "^3.7.3"
     "@types/estree" "^0.0.51"
@@ -11541,6 +11548,37 @@
     "watchpack" "^2.3.1"
     "webpack-sources" "^3.2.3"
 
+<<<<<<< HEAD
+=======
+"webpack@>=2":
+  "version" "5.73.0"
+  dependencies:
+    "@types/eslint-scope" "^3.7.3"
+    "@types/estree" "^0.0.51"
+    "@webassemblyjs/ast" "1.11.1"
+    "@webassemblyjs/wasm-edit" "1.11.1"
+    "@webassemblyjs/wasm-parser" "1.11.1"
+    "acorn" "^8.4.1"
+    "acorn-import-assertions" "^1.7.6"
+    "browserslist" "^4.14.5"
+    "chrome-trace-event" "^1.0.2"
+    "enhanced-resolve" "^5.9.3"
+    "es-module-lexer" "^0.9.0"
+    "eslint-scope" "5.1.1"
+    "events" "^3.2.0"
+    "glob-to-regexp" "^0.4.1"
+    "graceful-fs" "^4.2.9"
+    "json-parse-even-better-errors" "^2.3.1"
+    "loader-runner" "^4.2.0"
+    "mime-types" "^2.1.27"
+    "neo-async" "^2.6.2"
+    "schema-utils" "^3.1.0"
+    "tapable" "^2.1.1"
+    "terser-webpack-plugin" "^5.1.3"
+    "watchpack" "^2.3.1"
+    "webpack-sources" "^3.2.3"
+
+>>>>>>> master
 "webpackbar@^4.0.0":
   "integrity" "sha512-k1qRoSL/3BVuINzngj09nIwreD8wxV4grcuhHTD8VJgUbGcy8lQSPqv+bM00B7F+PffwIsQ8ISd4mIwRbr23eQ=="
   "resolved" "https://registry.npmjs.org/webpackbar/-/webpackbar-4.0.0.tgz"

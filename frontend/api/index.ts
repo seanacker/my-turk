@@ -58,6 +58,29 @@ export default {
   rejectAssignment: (payload: Payload): Promise<APIRes> => {
     return sendData('rejectAssignment', payload)
   },
+
+  approveAssignments: (payload: Payload): Promise<APIRes> => {
+    return sendData('approveAssignments', payload)
+  },
+
+  rejectAssignments: (payload: Payload): Promise<APIRes> => {
+    return sendData('rejectAssignments', payload)
+  },
+
+  getMessages: (payload: Payload): Promise<APIRes> => {
+    return sendData('getMessages', payload)
+  },
+
+  deleteMessage: (payload: Payload): Promise<APIRes> => {
+    return sendData('deleteMessage', payload)
+  },
+    
+  createMessage: (payload: Payload): Promise<APIRes> => {
+    return sendData('createMessage', payload)
+  },
+  notifyWorkers: (payload: Payload): Promise<APIRes> => {
+    return sendData('notifyWorkers', payload)
+  },
 }
 
 /**

@@ -9,11 +9,14 @@
       { 'is-red': red },
       { 'is-green': green },
       { 'is-gray-light': grayLight },
+      { 'is-full-width': fullWidth},
+      { 'not-last': notLast },
+
     ]"
     @click="$emit('click')"
   >
     <slot></slot>
-    <span>{{ title }}</span>
+    <span :style="{whiteSpace: 'nowrap'}">{{ title }}</span>
   </div>
 </template>
 <script lang="ts">
@@ -54,6 +57,14 @@ export default Vue.extend({
       type: Boolean,
       default: false,
     },
+    fullWidth: {
+      type: Boolean,
+      default: false
+    },
+    notLast: {
+      type: Boolean,
+      default: false
+    }
   },
 })
 </script>
@@ -72,6 +83,17 @@ export default Vue.extend({
   transition: all 0.2s $ease;
   user-select: none;
   box-shadow: 0px 2px 20px 0 rgba(lighten(color(gray-dark), 10%), 0);
+  font-family: font(regular);
+  text-align: center;
+  white-space: nowrap;
+
+  &.not-last {
+      border-right: 0 !important;
+    }
+
+  &.is-full-width {
+    width: 100%
+  }
 
   &:hover {
     box-shadow: 0px 5px 20px 0 rgba(lighten(color(gray-dark), 10%), 0.5);

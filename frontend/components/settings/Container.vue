@@ -10,19 +10,19 @@
         <template v-for="(item, i) in group.items">
           <BaseCheckbox
             v-if="item.type && item.type === 'checkbox'"
-            :key="i"
+            :key="i + '-checkbox'"
             :label="item.name || item"
             :value="item.value"
-            :hint="item.hint"
+            :info="item.info"
             @keyPress="handleKeyPress"
           />
-
           <BaseInput
             v-else
-            :key="i"
+            :key="i + '-input'"
             :label="item.name || item"
             :value="item.value"
             :disabled="item.disabled"
+            :info="item.info"
             :placeholder="item.placeholder || ''"
             @keyPress="handleKeyPress"
           />

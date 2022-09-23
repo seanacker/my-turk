@@ -1,14 +1,19 @@
 <template>
-  <div class="BaseInput" :class="{ 'is-disabled': disabled }">
-    <input
-      v-model="mValue"
-      :type="type"
-      name
-      :disabled="disabled"
-      :placeholder="placeholder"
-    />
-    <label class="Label">{{ label }}</label>
-  </div>
+    <div class="BaseInput" :class="{ 'is-disabled': disabled }">
+      <input
+        v-model="mValue"
+        :type="type"
+        name
+        :disabled="disabled"
+        :placeholder="placeholder"
+      />
+      <label class="TitleLabel">
+        <b>{{ label }}</b>
+      </label>
+      <label class="InfoLabel">
+        <i>{{info}}</i>
+      </label>
+    </div>
 </template>
 <script lang="ts">
 import Vue from 'vue'
@@ -36,6 +41,9 @@ export default Vue.extend({
       type: String,
       default: '',
     },
+    info: {
+      type: String,
+    }
   },
   data: () => ({}),
   computed: {
@@ -55,7 +63,7 @@ export default Vue.extend({
     },
   },
   methods: {
-    handleKeyPress() {},
+    handleKeyPress() {}
   },
 })
 </script>
@@ -65,6 +73,9 @@ export default Vue.extend({
   position: relative;
   padding: 10px 18px;
   width: 100%;
+  display: flex; 
+  flex-direction: column;
+  margin-bottom: 20px;
 
   &.is-disabled {
     background-color: lighten(color(bg), 5%);
@@ -73,13 +84,28 @@ export default Vue.extend({
     }
   }
 
-  .Label {
+  .TitleLabel {
     position: absolute;
     left: 18px;
     top: 10px;
     transform: translateY(-30px);
     font-size: rem(12px);
     transition: all 0.2s ease-out;
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+  }
+
+  .InfoLabel {
+    position: absolute;
+    left: 18px;
+    bottom: -50px;
+    transform: translateY(-30px);
+    font-size: rem(12px);
+    transition: all 0.2s ease-out;
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
   }
 
   input {
