@@ -2,7 +2,7 @@
   <BaseWrapper title="" green>
     <div class="Container">
       <span class="Hint">
-        <fa icon="info-circle"/>
+        <fa icon="circle-info"/>
         <span
           >Your credentials might be under ./username/.aws/<br />
           Otherwise create new credentials
