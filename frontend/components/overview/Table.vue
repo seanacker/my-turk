@@ -89,9 +89,17 @@
               @click="onQualifyAllClick(experiment)"
             />
           </td>
-          <td class="button">
+          <td class="button" :style="{display: 'block'}">
+            <div class="handleWorkersWrapper">
               <BaseButton
-                v-if="experiment.endpoint !== 'development'"
+                second 
+                square
+                title="handle workers"
+                fullWidth
+                @click="handleWorkersVisible=true"
+              />
+              <BaseButton
+                v-if="experiment.endpoint !== 'development' && handleWorkersVisible"
                 second
                 square
                 notLast
@@ -99,25 +107,31 @@
                 fullWidth
                 @click="modalIsVisible=true"
               />
-            </td>
-          <td class="button">
-            <BaseButton
-              v-if="experiment.endpoint !== 'development'"
-              second
-              square
-              notLast
-              title="approve workers"
-              @click="onApproveWorkersClick(experiment.rewardPerAssignment, experiment.awardQualificationID)"
-            />
-          </td>
-          <td class="button">
-            <BaseButton
-              v-if="experiment.endpoint !== 'development'"
-              second
-              square
-              title="reject workers"
-              @click="onRejectWorkersClick()"
-            />
+              <BaseButton
+                v-if="experiment.endpoint !== 'development' && handleWorkersVisible"
+                second
+                square
+                notLast
+                title="approve workers"
+                @click="onApproveWorkersClick(experiment.rewardPerAssignment, experiment.awardQualificationID)"
+              />
+              <BaseButton
+                v-if="experiment.endpoint !== 'development' && handleWorkersVisible"
+                second
+                square
+                title="reject workers"
+                @click="onRejectWorkersClick()"
+              />
+              <BaseButton
+                v-if="handleWorkersVisible"
+                second 
+                square
+                
+                title="close"
+                fullWidth
+                @click="handleWorkersVisible=false"
+              />
+          </div>
           </td>
       </tr>
       <template v-for="(hit, index) in experiment.hits" >
@@ -235,7 +249,9 @@ export default Vue.extend({
     emailMessage: '',
     modalIsVisible: false,
     showScheduleNewHIT: '',
-    scheduledDateTime: ''
+    scheduledDateTime: '',
+    handleWorkersVisible: false
+
   }),
   methods: {
     onExperimentClick(experiment: Experiment) {
@@ -445,7 +461,7 @@ export default Vue.extend({
 .no-wrap {
   white-space: nowrap
 }
-.scheduleWrapper {
+.scheduleWrapper, .handleWorkersWrapper {
   display: flex;
   position: absolute; 
   flex-direction: column;
