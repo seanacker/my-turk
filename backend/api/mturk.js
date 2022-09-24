@@ -189,7 +189,7 @@ app.post('/getExperiments', async (req, res) => {
 
         console.log("Searching for HIT ", hit.HITId);
         let mHIT = {}
-        if (hit.HITStatus == 'pending') {
+        if (hit.HITStatus == 'pending' || 'failed') {
           result[i].hits[j] = hit
         }
         else {
@@ -732,6 +732,12 @@ app.post('/deleteHITFromExperiment', async (req, res) => {
     })
   }
   const containingExperiment = containingExperimentArray[0]
+  if (!containingExperiment || !containingExperiment.hits) {
+    return res.send({
+      success: false,
+      message: 'Could not find the containing experiment'
+    })
+  }
   containingExperiment.hits = containingExperiment.hits.filter((_HIT) => {
     if(_HIT.HITId != HITId) return _HIT
   })
@@ -998,29 +1004,38 @@ const loadScheduledHITs = async () => {
   const experiments = await mongo.findData()
   let scheduledHITs = []
   for (const experiment of experiments) {
-    for (const HIT of experiment.hits) {
-      if (HIT.HITStatus == 'pending' ) {
-        const now = Date.now()
-        // delay to utc
-        const target = Date.parse(HIT.scheduledDateTime) + 7200000 
-        const delay =  target - now 
-        const scheduleId = +setTimeout(() => {
-          scheduleHIT({HIT: {
-            AssignmentDurationInSeconds: HIT.AssignmentDurationInSeconds,
-            Description: HIT.Description,
-            Reward: HIT.Reward,
-            Title: HIT.Title,
-            AutoApprovalDelayInSeconds: HIT.AutoApprovalDelayInSeconds,
-            Keywords: HIT.Keywords,
-            LifetimeInSeconds: HIT.LifetimeInSeconds,
-            MaxAssignments: HIT.MaxAssignments,
-            Question: HIT.Question,
-            QualificationRequirements: HIT.QualificationRequirements,
-          },
-          HITId: HIT.HITId})}, delay)
-        HIT.scheduleId = scheduleId
-        updateHIT(HIT)
-        console.log(`Scheduled HIT ${HIT.HITId} at ${HIT.scheduledDateTime}`)
+    for (const HIT of experiment.hits) {    
+        if (HIT.HITStatus == 'pending') {
+          const now = Date.now()
+          const target = Date.parse(HIT.scheduledDateTime) + 7200000
+          if (target > now) {
+          // delay to utc
+          const target = Date.parse(HIT.scheduledDateTime) + 7200000 
+          const delay =  target - now 
+          const scheduleId = +setTimeout(() => {
+            scheduleHIT({HIT: {
+              AssignmentDurationInSeconds: HIT.AssignmentDurationInSeconds,
+              Description: HIT.Description,
+              Reward: HIT.Reward,
+              Title: HIT.Title,
+              AutoApprovalDelayInSeconds: HIT.AutoApprovalDelayInSeconds,
+              Keywords: HIT.Keywords,
+              LifetimeInSeconds: HIT.LifetimeInSeconds,
+              MaxAssignments: HIT.MaxAssignments,
+              Question: HIT.Question,
+              QualificationRequirements: HIT.QualificationRequirements,
+            },
+            HITId: HIT.HITId})}, delay)
+          // to be able to cancel the HIT we need to update the scheduleId in the db
+          HIT.scheduleId = scheduleId
+          updateHIT(HIT)
+          console.log(`Scheduled HIT ${HIT.HITId} at ${HIT.scheduledDateTime}`)
+        }
+        else {
+          HIT.HITStatus = 'failed'
+          updateHIT(HIT)
+          console.log(`Scheduled HIT ${HIT.HITId} scheduled for ${HIT.scheduledDateTime} was missed probably due to downtime of the server`)
+        } 
       }
     }
   }

@@ -3,19 +3,19 @@
     <tr v-if="!workers" class="light">
       <td class="is-loading is-wide">WorkerID</td>
       <td class="is-loading is-wide">AssignmentID</td>
-      <td class="is-loading is-narrow align-right">Started</td>
-      <td class="is-loading is-narrow align-right">Finished</td>
-      <td class="is-loading align-right">Approved</td>
-      <td class="is-loading align-right" v-if="isExperimentView">HITId</td>      
+      <td class="is-loading is-narrow ">Started</td>
+      <td class="is-loading is-narrow ">Finished</td>
+      <td class="is-loading ">Approved</td>
+      <td class="is-loading " v-if="isExperimentView">HITId</td>      
     </tr>
 
     <tr v-else>
       <td class="">WorkerID</td>
       <td class="is-wide">AssignmentID</td>
-      <td class="is-narrow align-right">Started</td>
-      <td class="is-narrow align-right">Finished</td>
-      <td class="is-narrow align-right">Approved</td>
-      <td class="is-narrow align-right" v-if="isExperimentView">HITId</td>    
+      <td class="is-narrow ">Started</td>
+      <td class="is-narrow ">Finished</td>
+      <td class="is-narrow ">Approved</td>
+      <td class="is-narrow " v-if="isExperimentView">HITId</td>    
     </tr>
 
     <tr v-for="worker in workers" :key="worker.id">
@@ -27,17 +27,17 @@
         {{ worker.assignmentID }}&nbsp;
         <BaseCopy :value="worker.assignmentID" />
       </td>
-      <td class="align-right">
+      <td>
         <div>{{ worker.started.time }}</div>
         <div class="is-small">{{ worker.started.date }}</div>
       </td>
 
-      <td class="align-right">
+      <td>
         <div>{{ worker.finished.time || '' }}</div>
         <div>{{ worker.finished.date || '' }}</div>
       </td>
 
-      <td class="align-right">
+      <td>
         <div>{{ worker.approved.time || '' }}</div>
         <div class="is-small">{{ worker.approved.date || '' }}</div>
       </td>

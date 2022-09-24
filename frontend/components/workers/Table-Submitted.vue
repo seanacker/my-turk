@@ -27,16 +27,16 @@
         <BaseCopy :value="worker.assignmentID" />
       </td>
 
-      <td class="align-right">
+      <td>
         <div>{{ worker.started.time }}</div>
         <div class="is-small">{{ worker.started.date }}</div>
       </td>
 
-      <td class="align-right">
+      <td>
         <div>{{ worker.finished.time || '' }}</div>
         <div class="is-small">{{ worker.finished.date || '' }}</div>
       </td>
-      <td class="align-right">
+      <td>
         <div :style="{display: 'flex', flexDirection: 'row'}">
           <BaseButton square second @click="onApprove(worker.id, worker.assignmentID)">
             ACCEPT

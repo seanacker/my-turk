@@ -3,46 +3,43 @@
     <table :style="{
       minHeight: modalIsVisible ? '500px' : '', 
       transition: 'all 0.5s ease-out',
-      marginBottom: showScheduleNewHIT != '' ? '300px' : ''
       }">
       <tr v-if="!experiments" light>
         <td class="is-loading">Title</td>
         <td class="is-loading">Description</td>
-        <td class="is-loading align-right">Available</td>
-        <td class="is-loading align-right">Pending</td>
-        <td class="is-loading align-right">Waiting</td>
-        <td class="is-loading align-right">Completed</td>
+        <td class="is-loading align-center">Available</td>
+        <td class="is-loading align-center">Pending</td>
+        <td class="is-loading align-center">Waiting</td>
+        <td class="is-loading align-center">Completed</td>
         <td class="is-loading">blub</td>
       </tr>
 
       <tr v-else light>
         <td>Title</td>
         <td>Description</td>
-        <td class="align-right">Available</td>
-        <td class="align-right">Pending</td>
-        <td class="align-right">Waiting<br/> for<br/> approval</td>
-        <td class="align-right">Completed</td>
+        <td class="align-center">Available</td>
+        <td class="align-center">Pending</td>
+        <td class="align-center">Waiting<br/> for<br/> approval</td>
+        <td class="align-center">Completed</td>
         <td></td>
       </tr>
       <template v-for="experiment in experiments" bold>
         <tr :key="experiment._id">
           <td >
-            <div class="Anchor" @click="onExperimentClick(experiment)" :style="{display: 'flex'}">
-              <div class="no-wrap">{{experiment.experimentName}}</div>          
-              <fa v-if="activeExperimentId==experiment._id" icon="arrow-up"/>
-              <fa v-else icon="arrow-down"/>
-            </div>
-            <span v-if="activeExperimentId==experiment._id" :style="{display: 'flex', flexDirection: 'column', border: '1px solid black', borderRadius: '5px', marginTop: '10px'}">
+                <input :id="experiment._id" class="toggle" type="checkbox" @click="toggleActiveExperiment(experiment)"/>
+                <label :for="experiment._id" class="lbl-toggle" :style="{textAlign: 'left'}">{{experiment.experimentName}}</label>
+
+            <div v-if="activeExperimentId==experiment._id" class="experimentMenuWrapper">
               <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px'}" class="hoverable">edit</span>
               <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px'}" class="hoverable">overview</span>
-            </span>
+            </div>
           </td>
           <td>{{ experiment.description }}</td>
-          <td class="align-right">{{ experiment.available }}</td>
-          <td class="align-right">{{ experiment.pending }}</td>
-          <td class="align-right">{{ experiment.waitingForApproval}}</td>
-          <td class="align-right">{{ experiment.completed }}</td>
-          <td class="button align-center" :style="{display: 'block'}">
+          <td class="align-center">{{ experiment.available }}</td>
+          <td class="align-center">{{ experiment.pending }}</td>
+          <td class="align-center">{{ experiment.waitingForApproval}}</td>
+          <td class="align-center">{{ experiment.completed }}</td>
+          <td class="button align-center" >
             <BaseButton
                 v-if="experiment.endpoint !== 'development'"
                 second
@@ -54,20 +51,20 @@
               
               >
               </BaseButton>
-            <div class="scheduleWrapper">
+            <div class="scheduleWrapper" :style="{border: '1px solid black'}">
               <Datetime v-if="showScheduleNewHIT==experiment._id" v-model="scheduledDateTime"/>
                 <div :style="{display: 'flex'}">
                   <BaseButton 
                     second 
                     square
                     notLast
-                    :style="{backgroundColor: '#ff5555', color: 'white', width: '50%'}"
+                    :style="{backgroundColor: '#ff5555', color: 'white', width: '50%', borderLeft: '0', borderBottom: '0'}"
                     title="close"
                     @click="onCloseNewHITClick()"
                     v-if="showScheduleNewHIT==experiment._id"
                   />
                   <BaseButton
-                    prime
+                    second
                     square
                     green
                     :style="{backgroundColor: '#00bfa5', color: 'white', width: '50%'}"
@@ -89,14 +86,14 @@
               @click="onQualifyAllClick(experiment)"
             />
           </td>
-          <td class="button" :style="{display: 'block'}">      
+          <td class="button">      
             <BaseButton
-                second 
-                square
-                title="handle workers"                
-                fullWidth
-                @click="handleWorkersVisible=true"
-              />
+                  second 
+                  square
+                  title="handle workers"                 
+                  fullWidth
+                  @click="handleWorkersVisible=!handleWorkersVisible"
+                />
             <div class="handleWorkersWrapper">
               <BaseButton
                 v-if="experiment.endpoint !== 'development' && handleWorkersVisible"
@@ -132,6 +129,7 @@
           </div>
           </td>
       </tr>
+      <br/>
       <template v-for="(hit, index) in experiment.hits" >
         <tr :key="hit.HITId + 'header'">
           <td>
@@ -141,17 +139,25 @@
           <td :style="{whiteSpace: 'nowrap'}">
             {{ index + 1 }}: <span :style="{fonts}">{{ hit.HITId }}</span>&nbsp;
             <BaseCopy :value="hit.HITId" /> <br/>
-            Status: <span :style="{color: hit.HITStatus == 'pending' ? 'orange' : 'green' }">{{ hit.HITStatus }}</span>            
+            Status: 
+            <span :style="{color: hit.HITStatus == 'pending' ? 'orange' : hit.HITStatus == 'failed' ? 'red' : 'green' }">
+              {{ hit.HITStatus }}
+            </span>            
           </td>
-          <td v-if="hit.HITStatus=='pending'" colspan="4">scheduled for: {{hit.scheduledDateTime}}</td>
-          <td v-if="hit.HITStatus!='pending'" class="align-right">{{ hit.available }}</td>
-          <td v-if="hit.HITStatus!='pending'" class="align-right">{{ hit.pending }}</td>
-          <td v-if="hit.HITStatus!='pending'" class="align-right">{{ hit.waitingForApproval }}</td>
-          <td v-if="hit.HITStatus!='pending'" class="align-right">{{ hit.completed }}</td>
+          <td v-if="hit.HITStatus=='pending' || hit.HITStatus=='failed'" colspan="4">scheduled for: {{hit.scheduledDateTime}}</td>
+          <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center">{{ hit.available }}</td>
+          <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center">{{ hit.pending }}</td>
+          <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center">{{ hit.waitingForApproval }}</td>
+          <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center">{{ hit.completed }}</td>
           <td class="button">
               <BaseButton notLast second square fullWidth @click="onHitClick(hit, experiment)">
                 Fullscreen
               </BaseButton>
+          </td>
+          <td v-if="hitStatus(hit)=='failed'" class="button">
+            <BaseButton second square fullWidth @click="onCancelHitClick(hit)">
+              Delete
+            </BaseButton>
           </td>
           <td v-if="hitStatus(hit)=='cancelable'" class="button">
             <BaseButton second square fullWidth @click="onCancelHitClick(hit)">
@@ -169,8 +175,8 @@
             </BaseButton>
           </td>
           <td v-if="hitStatus(hit)=='approvable'" class="button">
-            <BaseButton  second square fullWidth @click="onQualifyAllFromHitClick(experiment, hit)">
-              Qualify all
+            <BaseButton second square fullWidth @click="onNotifyApprovable()">
+              Handle
             </BaseButton>
           </td>
         </tr>
@@ -252,7 +258,7 @@ export default Vue.extend({
 
   }),
   methods: {
-    onExperimentClick(experiment: Experiment) {
+    toggleActiveExperiment(experiment: Experiment) {
       if(this.activeExperimentId == experiment._id) this.activeExperimentId = ""
       else this.activeExperimentId = experiment._id
     },
@@ -295,10 +301,23 @@ export default Vue.extend({
     onDeleteHitClick(experiment: Experiment, hit: Hit) {
       this.$emit('deleteHIT', experiment, hit)
     },
-    onNewHITClick(experiment: Experiment) {      
+    onNewHITClick(experiment: Experiment) {
+      if(this.showScheduleNewHIT==experiment._id) {
+        this.showScheduleNewHIT = ""
+        return 
+      }     
       this.showScheduleNewHIT=experiment._id
       const date = new Date()
       this.scheduledDateTime= date.toISOString().slice(0,16).replace('T', ' ') + ' (now)'
+    },
+    onNotifyApprovable() {
+      this.$toasted.show(
+        "There is still assignments that need to be approved or rejected. Please handle those before further actions can be taken!", 
+        {
+          type: 'error',
+          position: 'bottom-right',
+          duration: 5000,
+        })
     },
     onSubmitNewHitClick(experiment: Experiment) {
       this.$emit('createHIT', experiment, this.scheduledDateTime)
@@ -322,11 +341,11 @@ export default Vue.extend({
     hitStatus(hit: Hit) {
       const pending = parseInt(hit.pending.split('/')[0])
       const waitingForApproval = parseInt(hit.waitingForApproval.split('/')[0])
-      console.log("hitstatus",hit)
+      if (hit.HITStatus == "failed") return 'failed'
       if (hit.HITStatus == "pending") return 'cancelable'
       if (hit.HITStatus == "Assignable") return 'expireable'
       if (waitingForApproval == 0 && pending == 0) return 'deleteable'     
-      if (hit.HITStatus == "Reviewable" || hit.HITStatus == "Reviewing") return 'approvable'    
+      if (hit.HITStatus == "Reviewable" || hit.HITStatus == "Reviewing") return 'approvable'
       return 
     },
     toggleActiveHIT(HITId: string) {
@@ -463,12 +482,10 @@ export default Vue.extend({
   display: flex;
   position: absolute; 
   flex-direction: column;
-  z-index: 1
+  z-index: 1;
+  margin: 10px;
 }
 
-.handleWorkersWrapper {
-  width: auto
-}
 
 .year-month-wrapper {
   background-color: white !important;
@@ -484,5 +501,23 @@ export default Vue.extend({
 
 .days, .okButton {
   color: white !important;
+}
+
+.experimentMenuWrapper {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid black;
+  border-radius: 5px;
+  margin-top: 10px;
+  position: absolute;
+  background-color: white;
+  z-index: 1;
+  > span {
+    padding: 0 20px;
+  }
+}
+
+.align-center {
+  text-align: center
 }
 </style>
