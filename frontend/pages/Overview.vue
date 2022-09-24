@@ -400,7 +400,7 @@ export default Vue.extend({
               duration: 3000,
             })
           } else {
-            this.$toasted.show(messageRes.message, {
+            return this.$toasted.show(messageRes.message, {
               type: 'error',
               position: 'bottom-right',
               duration: 3000,
@@ -443,7 +443,7 @@ export default Vue.extend({
             duration: 3000,
           })
         } else {
-          this.$toasted.show(messageRes.message, {
+          return this.$toasted.show(messageRes.message, {
             type: 'error',
             position: 'bottom-right',
             duration: 3000,

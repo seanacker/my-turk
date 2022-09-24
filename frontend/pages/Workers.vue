@@ -351,13 +351,13 @@ export default Vue.extend({
         })
       }
     },
-    closeModal(): void {
+    closeModal(): any {
       this.feedback = ''
       this.assignmentID = ''
       this.modalApproveIsVisible = false
       this.modalRejectIsVisible = false
     },
-    async approveAssignment(): Promise<void> {
+    async approveAssignment(): Promise<any> {
       const id = this.assignmentID
       const feedback = this.approvalFeedback
       const awardQualificationID = this.awardQualificationID || ''
@@ -380,7 +380,7 @@ export default Vue.extend({
               duration: 3000,
             })
           } else {
-            this.$toasted.show(messageRes.message, {
+            return this.$toasted.show(messageRes.message, {
               type: 'error',
               position: 'bottom-right',
               duration: 3000,
@@ -404,7 +404,7 @@ export default Vue.extend({
         })
       }    
     },
-    async rejectAssignment(): Promise<void> {
+    async rejectAssignment(): Promise<any> {
       if (this.saveMessage) {
         const messageRes = await api.createMessage({message: this.rejectFeedback, type: 'reject'})
         if (messageRes.success) {
@@ -414,7 +414,7 @@ export default Vue.extend({
             duration: 3000,
           })
         } else {
-          this.$toasted.show(messageRes.message, {
+          return this.$toasted.show(messageRes.message, {
             type: 'error',
             position: 'bottom-right',
             duration: 3000,
