@@ -85,7 +85,6 @@ export default {
     return sendData('deleteHITFromExperiment', payload)
   },
   cancelScheduledHIT: (payload: Payload): Promise<APIRes> => {
-    console.log("cancel scheduled hit called")
     return sendData('cancelScheduledHIT', payload)
   }
 }
