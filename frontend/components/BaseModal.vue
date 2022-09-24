@@ -5,7 +5,7 @@
     :class="{ 'is-visible': visible }"
     @click="closeModal"
   >
-    <div class="BaseModal-Content">
+    <div class="BaseModal-Content" :style="{width: width}">
       <h3 class="Title">{{ title }}</h3>
       <slot></slot>
       <div class="BaseModal-Content-Buttons">
@@ -59,6 +59,10 @@ export default Vue.extend({
       type: Boolean,
       default: false,
     },
+    width: {
+      type: String,
+      default: '65vw'
+    }
   },
   data: () => ({}),
   methods: {
@@ -106,7 +110,6 @@ export default Vue.extend({
   .BaseModal-Content {
     background-color: #fff;
     padding: 30px;
-    width: 65vw;
     box-shadow: 5px 5px 0px 0 rgba(lighten(color(gray-dark), 10%), 0.75);
     transform: scale(0.85) translateZ(0);
     transition: all 0.3s $ease;

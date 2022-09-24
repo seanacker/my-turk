@@ -30,7 +30,9 @@ export default {
   ],
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
-  plugins: ['~/plugins/toasted.js'],
+  plugins: [
+    '~/plugins/toasted.js'
+  ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,

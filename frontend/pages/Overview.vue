@@ -8,20 +8,13 @@
         description="Overview of your experiments"
         :style="{ width: '80%' }"
       />
-
-      <div :style="{display: 'flex', flexDirection: 'column'}">
-        <button @click="toggleHeaderMenu" class="headerMenuButton">
-          <img v-if="showHeaderMenu" src="../public/closeicon.png"/>
-          <img v-else src="../public/burgermenuicon.png"/>
-        </button>
-        <div v-if="showHeaderMenu" class="HeaderMenu">
-          <BaseButton square second @click="addExperiment">new experiment</BaseButton>
-          <BaseButton square second @click="refreshPage">refresh</BaseButton>
-        </div>
-      </div>
     </div>
-
-    <BaseWrapper title="Production" red :hidden="prodIsHidden">
+    <div class="navigationWrapper">
+      <BaseButton prime @click="addExperiment">new experiment</BaseButton>
+      <BaseButton prime @click="addExperiment">guide</BaseButton>
+      <BaseButton prime @click="refreshPage">refresh</BaseButton>
+    </div>
+    <BaseWrapper title="Production" red :style="{overflow: 'inherit'}" :hidden="prodIsHidden">
       <Table
         :experiments="experiments.production"
         @createHIT="createHIT"
@@ -32,7 +25,7 @@
       />
     </BaseWrapper>
 
-    <BaseWrapper title="Sandbox" green :hidden="sandIsHidden">
+    <BaseWrapper title="Sandbox" green :style="{overflow: 'inherit'}" :hidden="sandIsHidden">
       <Table
         :experiments="experiments.sandbox"
         @acceptAssignments="showAcceptAssignments"
@@ -272,17 +265,17 @@ export default Vue.extend({
       this.experiments.sandbox = []
       this.getExperiments()
     },
-    async createHIT(experiment: Experiment) {
-      console.log(experiment)
-      const res = await api.createHIT(experiment)
-      console.log(res)
-
+    async createHIT(experiment: Experiment, scheduledDateTime: string) {
+      if (scheduledDateTime.includes('now')) scheduledDateTime = '0'
+      const res = await api.createHIT({experiment, scheduledDateTime})
+      console.log("createhit:res:",res)
       if (res.success) {
         this.$toasted.success(res.message, {
           position: 'bottom-right',
           duration: 3000,
         })
         const hit = res.data.HIT
+        console.log("createhit:hit:", hit)
         experiment = this.addHITtoExperiment(experiment, hit)
 
         const id = experiment._id
@@ -295,8 +288,15 @@ export default Vue.extend({
         })
       }
     },
-    async cancelHIT(experiment: Experiment, hit: Hit){
-      //needs to be implemented in timed hit publication
+    async cancelHIT(hit: Hit){
+      const deleteHITFromExperimentRes = await api.deleteHITFromExperiment(hit)
+      this.$toasted.success(deleteHITFromExperimentRes.message, {
+          position: 'bottom-right',
+          duration: 3000,
+        })
+      console.log("cancel scheduled hit method called")
+      await api.cancelScheduledHIT(hit)
+      this.refreshPage()
     },
     async expireHIT(experiment: Experiment, hit: Hit) {
       const expireRes = await api.expireHIT({HITId: hit.HITId})
@@ -334,27 +334,20 @@ export default Vue.extend({
       return experiment
     },
     addHITtoExperiment(experiment: Experiment, hit: Hit) {
-      const HITId = hit.HITId
       const maxAssignments = hit.maxAssignments
       const available = hit.available
       const pending = hit.pending
       const completed = hit.completed
-      const creationTime = hit.creationTime
-      const title = hit.title
-      const status = hit.status
       const waitingForApproval = 
         `${parseInt(maxAssignments) - parseInt(available) - parseInt(completed) - parseInt(pending)}`
 
       const mHIT = {
-        HITId: HITId,
-        title,
+        ...hit,
         available: `${available} / ${maxAssignments} `,
         pending: `${pending} / ${maxAssignments} `,
         waitingForApproval: `${waitingForApproval} / ${maxAssignments} `,
         completed: `${completed} / ${maxAssignments} `,
-        creationTime,
-        status,
-        maxAssignments
+        maxAssignments,
       }
 
       if (!experiment.hits) {
@@ -511,6 +504,18 @@ export default Vue.extend({
 <style lang="scss">
 .Overview {
   position: relative;
+}
+
+.navigationWrapper{
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: row;
+
+  > .BaseButton {
+    margin-right: 10px;
+  }
 }
 .HeaderWrapper {
   display: flex;
