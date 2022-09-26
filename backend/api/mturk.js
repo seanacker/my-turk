@@ -189,7 +189,7 @@ app.post('/getExperiments', async (req, res) => {
 
         console.log("Searching for HIT ", hit.HITId);
         let mHIT = {}
-        if (hit.HITStatus == 'pending' || 'failed') {
+        if (hit.HITStatus == 'pending' || hit.HITStatus =='failed') {
           result[i].hits[j] = hit
         }
         else {
@@ -291,7 +291,82 @@ app.post('/deleteExperiment', async (req, res) => {
 app.post('/createHIT', async (req, res) => {
   let data = req.body;
 
-  const createHITOptions = parseHITForCreation(data)
+  const lifetimeInSeconds = data.experiment.hitExpiresAfter * 60 * 60 * 24;
+  console.log(`params.experiment`, lifetimeInSeconds);
+
+  let createHITOptions = {
+    AssignmentDurationInSeconds: data.experiment.assignmentDurationInMinutes * 60,
+    Description: data.experiment.description,
+    Reward: data.experiment.rewardPerAssignment,
+    Title: data.experiment.title,
+    AutoApprovalDelayInSeconds: lifetimeInSeconds,
+    Keywords: data.experiment.keywords,
+    LifetimeInSeconds: lifetimeInSeconds,
+    MaxAssignments: data.experiment.assignmentsPerHit,
+    //////////////////////////////////////////////////////////////////////////
+    // there is a major issue here, needs to be turned back and investigated//
+    //////////////////////////////////////////////////////////////////////////
+    Question: `<?xml version=\"1.0\"?>\n<HTMLQuestion xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd\">\n  <HTMLContent><![CDATA[<html><head><title>HIT</title><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/></head><body><!-- You must include this JavaScript file -->\r\n<script src=\"https://assets.crowd.aws/crowd-html-elements.js\"></script>\r\n\r\n<!-- For the full list of available Crowd HTML Elements and their input/output documentation,\r\n      please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->\r\n\r\n<!-- You must include crowd-form so that your task submits answers to MTurk -->\r\n<crowd-form answer-format=\"flatten-objects\">\r\n\r\n  <crowd-instructions link-text=\"View instructions\" link-type=\"button\">\r\n    <short-summary>\r\n      <p>Provide a brief instruction here</p>\r\n    </short-summary>\r\n\r\n    <detailed-instructions>\r\n      <h3>Provide more detailed instructions here</h3>\r\n      <p>Include additional information</p>\r\n    </detailed-instructions>\r\n\r\n    <positive-example>\r\n      <p>Provide an example of a good answer here</p>\r\n      <p>Explain why it's a good answer</p>\r\n    </positive-example>\r\n\r\n    <negative-example>\r\n      <p>Provide an example of a bad answer here</p>\r\n      <p>Explain why it's a bad answer</p>\r\n    </negative-example>\r\n  </crowd-instructions>\r\n\r\n  <div>\r\n    <p>What is your favorite color for a bird?</p>\r\n    <crowd-input name=\"favoriteColor\" placeholder=\"example: pink\" required></crowd-input>\r\n  </div>\r\n\r\n  <div>\r\n    <p>Check this box if you like birds</p>\r\n    <crowd-checkbox name=\"likeBirds\" checked=\"true\" required></crowd-checkbox>\r\n  </div>\r\n\r\n  <div>\r\n    <p>On a scale of 1-10, how much do you like birds?</p>\r\n    <crowd-slider name=\"howMuch\" min=\"1\" max=\"10\" step=\"1\" pin=\"true\" required></crowd-slider>\r\n  </div>\r\n\r\n  <div>\r\n    <p>Write a short essay describing your favorite bird</p>\r\n    <crowd-text-area name=\"essay\" rows=\"4\" placeholder=\"Lorem ipsum...\" required></crowd-text-area>\r\n  </div>\r\n</crowd-form></body></html>]]></HTMLContent>\n  <FrameHeight>0</FrameHeight>\n</HTMLQuestion>\n`
+  };
+  var requirements = {
+    QualificationRequirements: []
+  }
+  if (data.experiment.defaultRequirements) {
+    requirements = {
+      
+      QualificationRequirements: [
+        {
+          Comparator: 'GreaterThanOrEqualTo',
+          QualificationTypeId: '000000000000000000L0',
+          IntegerValues: [95]
+        },
+        {
+          QualificationTypeId: '00000000000000000071',
+          Comparator: 'EqualTo',
+          LocaleValues: [
+            {
+              Country: 'US'
+            }
+          ]
+        },
+        {
+          QualificationTypeId: '00000000000000000040',
+          Comparator: 'GreaterThanOrEqualTo',
+          IntegerValues: [1000]
+        }
+      ]
+    };
+  }
+  console.log("Guard is " + data.experiment.guardHitbyQualification);
+  if (data.experiment.guardHitByQualification) {
+    requirements.QualificationRequirements.push(
+      {
+        QualificationTypeId: data.experiment.awardQualificationId,
+        Comparator: 'DoesNotExist',
+      }
+    );
+  }
+  if (data.experiment.guardHitByAdditionalQualificationids) {
+    for (const id of data.experiment.guardHitByAdditionalQualificationids.split(',')) {
+      requirements.QualificationRequirements.push(
+        {
+          QualificationTypeId: id,
+          Comparator: 'Exists'
+        }
+      )
+    }
+  }
+  if (data.experiment.excludeWorkersByQualificationid) {
+    for (const id of data.experiment.excludeWorkersByQualificationid.split(',')) {
+      requirements.QualificationRequirements.push(
+        {
+          QualificationTypeId: id,
+          Comparator: 'DoesNotExist'
+        }
+      )
+    }
+  }
+  createHITOptions = Object.assign(createHITOptions, requirements);
   let result
   const now = Date.now()
   // delay to utc
@@ -929,38 +1004,40 @@ const loadScheduledHITs = async () => {
   const experiments = await mongo.findData()
   let scheduledHITs = []
   for (const experiment of experiments) {
-    for (const HIT of experiment.hits) {    
-        if (HIT.HITStatus == 'pending') {
-          const now = Date.now()
-          const target = Date.parse(HIT.scheduledDateTime) + 7200000
-          if (target > now) {
-          // delay to utc
-          const target = Date.parse(HIT.scheduledDateTime) + 7200000 
-          const delay =  target - now 
-          const scheduleId = +setTimeout(() => {
-            scheduleHIT({HIT: {
-              AssignmentDurationInSeconds: HIT.AssignmentDurationInSeconds,
-              Description: HIT.Description,
-              Reward: HIT.Reward,
-              Title: HIT.Title,
-              AutoApprovalDelayInSeconds: HIT.AutoApprovalDelayInSeconds,
-              Keywords: HIT.Keywords,
-              LifetimeInSeconds: HIT.LifetimeInSeconds,
-              MaxAssignments: HIT.MaxAssignments,
-              Question: HIT.Question,
-              QualificationRequirements: HIT.QualificationRequirements,
-            },
-            HITId: HIT.HITId})}, delay)
-          // to be able to cancel the HIT we need to update the scheduleId in the db
-          HIT.scheduleId = scheduleId
-          updateHIT(HIT)
-          console.log(`Scheduled HIT ${HIT.HITId} at ${HIT.scheduledDateTime}`)
+    if(experiment.hits){
+      for (const HIT of experiment.hits) {    
+          if (HIT.HITStatus == 'pending') {
+            const now = Date.now()
+            const target = Date.parse(HIT.scheduledDateTime) + 7200000
+            if (target > now) {
+            // delay to utc
+            const target = Date.parse(HIT.scheduledDateTime) + 7200000 
+            const delay =  target - now 
+            const scheduleId = +setTimeout(() => {
+              scheduleHIT({HIT: {
+                AssignmentDurationInSeconds: HIT.AssignmentDurationInSeconds,
+                Description: HIT.Description,
+                Reward: HIT.Reward,
+                Title: HIT.Title,
+                AutoApprovalDelayInSeconds: HIT.AutoApprovalDelayInSeconds,
+                Keywords: HIT.Keywords,
+                LifetimeInSeconds: HIT.LifetimeInSeconds,
+                MaxAssignments: HIT.MaxAssignments,
+                Question: HIT.Question,
+                QualificationRequirements: HIT.QualificationRequirements,
+              },
+              HITId: HIT.HITId})}, delay)
+            // to be able to cancel the HIT we need to update the scheduleId in the db
+            HIT.scheduleId = scheduleId
+            updateHIT(HIT)
+            console.log(`Scheduled HIT ${HIT.HITId} at ${HIT.scheduledDateTime}`)
+          }
+          else {
+            HIT.HITStatus = 'failed'
+            updateHIT(HIT)
+            console.log(`Scheduled HIT ${HIT.HITId} scheduled for ${HIT.scheduledDateTime} was missed probably due to downtime of the server`)
+          } 
         }
-        else {
-          HIT.HITStatus = 'failed'
-          updateHIT(HIT)
-          console.log(`Scheduled HIT ${HIT.HITId} scheduled for ${HIT.scheduledDateTime} was missed probably due to downtime of the server`)
-        } 
       }
     }
   }
@@ -981,84 +1058,7 @@ const updateHIT = async (HIT) => {
     mongo.updateData({ _id: ObjectId(containingExperiment._id) }, containingExperiment)
 }
 
-const parseHITForCreation = (data) => {
-  const lifetimeInSeconds = data.experiment.hitExpiresAfter * 60 * 60 * 24;
-  console.log(`params.experiment`, lifetimeInSeconds);
 
-  let createHITOptions = {
-    AssignmentDurationInSeconds: data.experiment.assignmentDurationInMinutes * 60,
-    Description: data.experiment.description,
-    Reward: data.experiment.rewardPerAssignment,
-    Title: data.experiment.title,
-    AutoApprovalDelayInSeconds: lifetimeInSeconds,
-    Keywords: data.experiment.keywords,
-    LifetimeInSeconds: lifetimeInSeconds,
-    MaxAssignments: data.experiment.assignmentsPerHit,
-    //////////////////////////////////////////////////////////////////////////
-    // there is a major issue here, needs to be turned back and investigated//
-    //////////////////////////////////////////////////////////////////////////
-    Question: `<?xml version=\"1.0\"?>\n<HTMLQuestion xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd\">\n  <HTMLContent><![CDATA[<html><head><title>HIT</title><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/></head><body><!-- You must include this JavaScript file -->\r\n<script src=\"https://assets.crowd.aws/crowd-html-elements.js\"></script>\r\n\r\n<!-- For the full list of available Crowd HTML Elements and their input/output documentation,\r\n      please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->\r\n\r\n<!-- You must include crowd-form so that your task submits answers to MTurk -->\r\n<crowd-form answer-format=\"flatten-objects\">\r\n\r\n  <crowd-instructions link-text=\"View instructions\" link-type=\"button\">\r\n    <short-summary>\r\n      <p>Provide a brief instruction here</p>\r\n    </short-summary>\r\n\r\n    <detailed-instructions>\r\n      <h3>Provide more detailed instructions here</h3>\r\n      <p>Include additional information</p>\r\n    </detailed-instructions>\r\n\r\n    <positive-example>\r\n      <p>Provide an example of a good answer here</p>\r\n      <p>Explain why it's a good answer</p>\r\n    </positive-example>\r\n\r\n    <negative-example>\r\n      <p>Provide an example of a bad answer here</p>\r\n      <p>Explain why it's a bad answer</p>\r\n    </negative-example>\r\n  </crowd-instructions>\r\n\r\n  <div>\r\n    <p>What is your favorite color for a bird?</p>\r\n    <crowd-input name=\"favoriteColor\" placeholder=\"example: pink\" required></crowd-input>\r\n  </div>\r\n\r\n  <div>\r\n    <p>Check this box if you like birds</p>\r\n    <crowd-checkbox name=\"likeBirds\" checked=\"true\" required></crowd-checkbox>\r\n  </div>\r\n\r\n  <div>\r\n    <p>On a scale of 1-10, how much do you like birds?</p>\r\n    <crowd-slider name=\"howMuch\" min=\"1\" max=\"10\" step=\"1\" pin=\"true\" required></crowd-slider>\r\n  </div>\r\n\r\n  <div>\r\n    <p>Write a short essay describing your favorite bird</p>\r\n    <crowd-text-area name=\"essay\" rows=\"4\" placeholder=\"Lorem ipsum...\" required></crowd-text-area>\r\n  </div>\r\n</crowd-form></body></html>]]></HTMLContent>\n  <FrameHeight>0</FrameHeight>\n</HTMLQuestion>\n`
-  };
-  var requirements = {
-    QualificationRequirements: []
-  }
-  if (data.experiment.defaultRequirements) {
-    requirements = {
-      
-      QualificationRequirements: [
-        {
-          Comparator: 'GreaterThanOrEqualTo',
-          QualificationTypeId: '000000000000000000L0',
-          IntegerValues: [95]
-        },
-        {
-          QualificationTypeId: '00000000000000000071',
-          Comparator: 'EqualTo',
-          LocaleValues: [
-            {
-              Country: 'US'
-            }
-          ]
-        },
-        {
-          QualificationTypeId: '00000000000000000040',
-          Comparator: 'GreaterThanOrEqualTo',
-          IntegerValues: [1000]
-        }
-      ]
-    };
-  }
-  console.log("Guard is " + data.experiment.guardHitbyQualification);
-  if (data.experiment.guardHitByQualification) {
-    requirements.QualificationRequirements.push(
-      {
-        QualificationTypeId: data.experiment.awardQualificationId,
-        Comparator: 'DoesNotExist',
-      }
-    );
-  }
-  if (data.experiment.guardHitByAdditionalQualificationids) {
-    for (const id of data.experiment.guardHitByAdditionalQualificationids.split(',')) {
-      requirements.QualificationRequirements.push(
-        {
-          QualificationTypeId: id,
-          Comparator: 'Exists'
-        }
-      )
-    }
-  }
-  if (data.experiment.excludeWorkersByQualificationid) {
-    for (const id of data.experiment.excludeWorkersByQualificationid.split(',')) {
-      requirements.QualificationRequirements.push(
-        {
-          QualificationTypeId: id,
-          Comparator: 'DoesNotExist'
-        }
-      )
-    }
-  }
-  createHITOptions = Object.assign(createHITOptions, requirements);
-}
 
 const notifyWorkers = ({ subject, message, workerIDs }) => {
   var params = {

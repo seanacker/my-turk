@@ -53,6 +53,14 @@
               </BaseButton>
             <div class="scheduleWrapper" :style="{border: '1px solid black'}">
               <Datetime v-if="showScheduleNewHIT==experiment._id" v-model="scheduledDateTime"/>
+                <div v-if="showScheduleNewHIT==experiment._id" :style="{display: 'flex', flexDirection: 'column'}">
+                  <div :style="{backgroundColor: 'white', padding: '10px 0', }">
+                    <b>Los Angeles:</b> {{convertTZ('America/Los_Angeles')}}
+                  </div>
+                  <div :style="{backgroundColor: 'white', padding: '10px 0'}">
+                    <b>New York:</b> {{convertTZ('America/New_York')}}
+                  </div>
+                </div >
                 <div :style="{display: 'flex'}">
                   <BaseButton 
                     second 
@@ -120,8 +128,7 @@
               <BaseButton
                 v-if="handleWorkersVisible"
                 second 
-                square
-                
+                square                
                 title="close"
                 fullWidth
                 @click="handleWorkersVisible=false"
@@ -150,7 +157,7 @@
           <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center">{{ hit.waitingForApproval }}</td>
           <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center">{{ hit.completed }}</td>
           <td class="button">
-              <BaseButton notLast second square fullWidth @click="onHitClick(hit, experiment)">
+              <BaseButton :notLast="hitStatus(hit)!='undefined'" second square fullWidth @click="onHitClick(hit, experiment)">
                 Fullscreen
               </BaseButton>
           </td>
@@ -346,7 +353,7 @@ export default Vue.extend({
       if (hit.HITStatus == "Assignable") return 'expireable'
       if (waitingForApproval == 0 && pending == 0) return 'deleteable'     
       if (hit.HITStatus == "Reviewable" || hit.HITStatus == "Reviewing") return 'approvable'
-      return 
+      return 'unknown'
     },
     toggleActiveHIT(HITId: string) {
       if(this.activeHITId == HITId) this.activeHITId = ""
@@ -392,6 +399,10 @@ export default Vue.extend({
     onCloseNewHITClick() {
       this.showScheduleNewHIT = ''
       this.scheduledDateTime = ''
+    },
+    convertTZ(tzString: string) {
+      const scheduledFor = this.scheduledDateTime.replace(' (now)', '')
+      return (scheduledFor != "" ? new Date(scheduledFor) : new Date()).toLocaleString("en-US", {timeZone: tzString});   
     },
   }
 })
@@ -496,7 +507,7 @@ export default Vue.extend({
 }
 
 .nav-r, .nav-l, .activePort, .okButton{
-  background-color: color(green) !important
+  background-color: black !important
 }
 
 .days, .okButton {
