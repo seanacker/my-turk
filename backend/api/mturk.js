@@ -189,7 +189,7 @@ app.post('/getExperiments', async (req, res) => {
 
         console.log("Searching for HIT ", hit.HITId);
         let mHIT = {}
-        if (hit.HITStatus == 'pending' || 'failed') {
+        if (hit.HITStatus == 'pending' || hit.HITStatus =='failed') {
           result[i].hits[j] = hit
         }
         else {
@@ -1011,7 +1011,7 @@ const loadScheduledHITs = async () => {
   const experiments = await mongo.findData()
   let scheduledHITs = []
   for (const experiment of experiments) {
-    if (experiment.hits) {
+    if(experiment.hits){
       for (const HIT of experiment.hits) {    
           if (HIT.HITStatus == 'pending') {
             const now = Date.now()
@@ -1064,6 +1064,8 @@ const updateHIT = async (HIT) => {
     })
     mongo.updateData({ _id: ObjectId(containingExperiment._id) }, containingExperiment)
 }
+
+
 
 const notifyWorkers = ({ subject, message, workerIDs }) => {
   var params = {
