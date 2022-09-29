@@ -3,6 +3,7 @@
     <router-link
       v-if="route"
       class="BackButton"
+      :style="{top: top}"
       :to="{ name: route.path, params: route.params }"
     >
       <fa icon="angle-left"/>
@@ -38,6 +39,10 @@ export default Vue.extend({
       default: '',
     },
     prime: Boolean,
+    top: {
+      type: String,
+      default: '-32px'
+    },
     route: {
       type: Object,
       default: () => {},
@@ -59,7 +64,6 @@ export default Vue.extend({
     position: absolute;
     left: 0px;
     font-size: rem(13px);
-    top: -32px;
     transition: all 0.2s ease-out;
     cursor: pointer;
     padding: 5px;

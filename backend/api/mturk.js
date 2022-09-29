@@ -758,7 +758,7 @@ app.post('/deleteHITFromExperiment', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: 'Something went wrong'
+      message: 'Could not update DataBase'
     });
   }
 });
@@ -1073,6 +1073,7 @@ const notifyWorkers = ({ subject, message, workerIDs }) => {
     Subject: subject,
     WorkerIds: workerIDs
   };
+  if (!params.WorkerIds) return
   return new Promise((resolve, reject) => {
     mturk.notifyWorkers(params, (err, data) => {
       if (err) {

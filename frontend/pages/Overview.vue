@@ -11,7 +11,7 @@
     </div>
     <div class="navigationWrapper">
       <BaseButton prime @click="addExperiment">new experiment</BaseButton>
-      <BaseButton prime @click="addExperiment">guide</BaseButton>
+      <BaseButton prime @click="onGuideClick">guide</BaseButton>
       <BaseButton prime @click="refreshPage">refresh</BaseButton>
     </div>
     <BaseWrapper title="Production" red :style="{overflow: 'inherit'}" :hidden="prodIsHidden">
@@ -497,7 +497,13 @@ export default Vue.extend({
     toggleSaveMessage(){ 
       this.saveMessage = !this.saveMessage
     },
-
+    onGuideClick() {
+      this.$router.push({
+          name: 'Guide',
+          params: {},
+          query: {},
+        })
+    }
   },
 })
 </script>

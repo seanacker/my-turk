@@ -109,6 +109,7 @@
                 square                
                 title="notify workers"
                 fullWidth
+                :disabled="canNotifyWorkers(experiment)"
                 @click="modalIsVisible=true"
               />
               <BaseButton
@@ -207,7 +208,7 @@
         >
           <BaseTextarea
             name="subject"
-            :style="{marginBottom: '15px', marginTop: '50px'}"
+            :style="{marginBottom: '15px', marginTop: '50px', height: '40px'}"
             label="Please enter the subject of your email"
             :value="emailSubject"
             @keyPress="setEmailSubject"
@@ -372,26 +373,43 @@ export default Vue.extend({
       const activeExperiment = (this.experiments as Experiment[]).filter((iterExperiment: Experiment) => iterExperiment._id == experiment._id
       )[0]
       const hitList = activeExperiment.hits
+      let workerIDs = []
       for (const hit of hitList) {
         const assignmentRes = await api.listAssignments({ HITId: hit.HITId })
         if (assignmentRes.success) {
-            const workerIDs = assignmentRes.data.map((assignment: Assignment) => assignment.WorkerId)
-            const notificationRes = await api.notifyWorkers({subject: 'noob', message: 'hallo', workerIDs})
-            if(notificationRes.success) {
-              this.$toasted.success(notificationRes.message, {
-                position: 'bottom-right',
-                duration: 3000,
-              })
-            }
-            else {
-              this.$toasted.error(notificationRes.message, {
-                position: 'bottom-right',
-                duration: 3000,
-              })
-            }
-          }     
-        this.closeModal()
+          workerIDs.push(assignmentRes.data.map((assignment: Assignment) => assignment.WorkerId))
+        }     
       }
+      this.closeModal()
+      if(workerIDs) {
+        const notificationRes = await api.notifyWorkers({subject: this.emailSubject, message: this.emailMessage, workerIDs})
+        if(notificationRes.success) {
+          this.$toasted.success(notificationRes.message, {
+            position: 'bottom-right',
+            duration: 3000,
+          })
+        }
+        else {
+          this.$toasted.error(notificationRes.message, {
+            position: 'bottom-right',
+            duration: 3000,
+          })
+        }
+      }
+    },
+    async canNotifyWorkers(experiment: Experiment) {
+      const activeExperiment = (this.experiments as Experiment[]).filter((iterExperiment: Experiment) => iterExperiment._id == experiment._id
+      )[0]
+      const hitList = activeExperiment.hits
+      let workerIDs = []
+      for (const hit of hitList) {
+        const assignmentRes = await api.listAssignments({ HITId: hit.HITId })
+        console.log("assignmentRes:", assignmentRes)
+        if (assignmentRes.success) {
+          workerIDs.push(assignmentRes.data.map((assignment: Assignment) => assignment.WorkerId))
+        }     
+      }
+      return (workerIDs != []) 
     },
     onScheduleNewHitClick(experiment: Experiment) {
       this.showScheduleNewHIT = experiment._id
