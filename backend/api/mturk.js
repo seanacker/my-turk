@@ -642,6 +642,13 @@ app.post('/createQualificationType', async (req, res) => {
 
 app.post('/createMessage', async (req, res) => {
   let data = req.body;
+  if (!data) {
+    return res.send({
+      success: false,
+      message: "Please provide a valid Message",
+      error: result.error.code
+    });
+  } 
   let result = await mongo.insertData(data, "messages").catch(err => ({
     error: err
   }));
@@ -751,7 +758,7 @@ app.post('/deleteHITFromExperiment', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: 'Something went wrong'
+      message: 'Could not update DataBase'
     });
   }
 });
@@ -1066,6 +1073,7 @@ const notifyWorkers = ({ subject, message, workerIDs }) => {
     Subject: subject,
     WorkerIds: workerIDs
   };
+  if (!params.WorkerIds) return
   return new Promise((resolve, reject) => {
     mturk.notifyWorkers(params, (err, data) => {
       if (err) {
