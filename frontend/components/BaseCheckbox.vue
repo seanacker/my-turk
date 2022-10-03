@@ -8,7 +8,7 @@
       @click="handleCheck"
     />
     <label class="Label">{{ label }}</label>
-    <label class="Hint" :for="hint">{{ hint }}</label>
+    <label class="Hint" :for="info">{{ info }}</label>
   </div>
 </template>
 <script lang="ts">
@@ -21,7 +21,7 @@ export default Vue.extend({
       type: String,
       default: '',
     },
-    hint: {
+    info: {
       type: String,
       default: '',
     },

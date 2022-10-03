@@ -78,12 +78,14 @@ export default Vue.extend({
   margin-bottom: 20px;
 
   &.is-disabled {
-    background-color: lighten(color(bg), 5%);
     .Label {
       top: 20px;
     }
+    input {
+      color: white;
+      background-color: #737373
+    }    
   }
-
   .TitleLabel {
     position: absolute;
     left: 18px;
@@ -113,7 +115,8 @@ export default Vue.extend({
     margin: 0;
     padding: 0;
     background-color: transparent;
-    border: none;
+    border: 1px solid darkgrey;
+    padding: 4px;
     font-family: font(regular);
     width: 100%;
     font-size: rem(14px);

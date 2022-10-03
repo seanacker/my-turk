@@ -146,35 +146,7 @@ export default Vue.extend({
           {
             name: 'Keywords',
             value: 'user test, data completion, information extraction',
-            info: 'seperated by comma',
-          },
-        ],
-      },
-
-      {
-        title: 'Qualification and Rewards',
-        items: [
-          {
-            name: 'Award Qualification name',
-            value: '',
-            info: 'Fill in if you want to qualify your workers',
-          },
-          {
-            name: 'Award Qualification description',
-            value: '',
-            info: 'Fill in if you want to qualify your workers',
-          },
-          {
-            name: 'Award Qualification ID',
-            value: '',
-            disabled: true,
-            info:
-              'auto-generated from qualification name and qualification description',
-          },
-          {
-            name: 'Reward per Assignment',
-            value: '',
-            info: 'e.g. 3.5 for 3.5$',
+            info: 'These can be searched for by potential participants. Please seperate them by comma',
           },
         ],
       },
@@ -199,29 +171,56 @@ export default Vue.extend({
         ],
       },
       {
+        title: 'Qualification and Rewards',
+        items: [
+          {
+            name: 'Award Qualification name',
+            value: '',
+            info: 'Fill in if you want to qualify your workers',
+          },
+          {
+            name: 'Award Qualification description',
+            value: '',
+            info: 'Fill in if you want to qualify your workers',
+          },
+          {
+            name: 'Award Qualification ID',
+            value: '',
+            disabled: true,
+            info:
+              'This is auto-generated from the qualification name and the qualification description by MTurk once the experiment is saved. It is the value used to ex- or include workers from HITs. ',
+          },
+          {
+            name: 'Reward per Assignment',
+            value: '',
+            info: 'e.g. 3.5 for 3.5$',
+          },
+        ],
+      },
+      {
         title: 'Requirements and Entrypoint',
         items: [
           {
             name: 'Default Requirements',
-            hint: 'US-based, 95% approval, more than 1.000 hits',
+            info: 'US-based, 95% approval, more than 1.000 hits',
             type: 'checkbox',
             value: false,
           },
           {
             name: 'Guard Hit by Qualification',
-            hint: 'Make the above qualification an exclusion criteria for this HIT',
+            info: `Make the qualification ID from this experiment an exclusion criteria for this HIT`,
             type: 'checkbox',
             value: false,
           },
           {
             name: 'Guard Hit by additional QualificationIDs',
             value: '',
-            info: 'Please type in the QualificationIDs a Worker needs to participate on the HIT. Seperate different IDs with a comma.',
+            info: 'Please type in the Qualification IDs a Worker needs to participate on the HIT. Seperate different IDs with a comma.',
           },
           {
             name: 'Exclude Workers by QualificationID',
             value: '',
-            info: 'Please type in any additional QualificationIDs on which to exclude workers from the HIT. Seperate different IDs with a comma.',
+            info: 'Please type in any additional Qualification IDs on which to exclude workers from the HIT. Seperate different IDs with a comma.',
           },
           {
             name: 'Entrypoint',

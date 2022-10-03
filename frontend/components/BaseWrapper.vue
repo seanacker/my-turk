@@ -9,7 +9,7 @@
       { 'is-hidden': hidden },
     ]"
   >
-    <div class="TitleWrapper">
+    <div class="TitleWrapper" :style="{borderRadius: roundBorder ? '25px 25px 0 0 ' : ''}">
       <h2 class="Title">{{ title }}</h2>
     </div>
 
@@ -38,6 +38,7 @@ export default Vue.extend({
       type: Boolean,
       default: false,
     },
+    roundBorder: Boolean
   },
 })
 </script>

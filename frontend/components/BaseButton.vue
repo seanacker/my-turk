@@ -7,12 +7,15 @@
       { 'is-square': square },
       { 'is-inline': inline },
       { 'is-red': red },
+      { 'is-white': white},
       { 'is-green': green },
       { 'is-gray-light': grayLight },
       { 'is-full-width': fullWidth},
-      { 'not-last': notLast },
+      { 'no-border-right': noBorderRight },
+      { 'no-border-bottom': noBorderBottom },
 
     ]"
+    :style="{backgroundColor: white ? 'white' : ''}"
     @click="$emit('click')"
   >
     <slot></slot>
@@ -61,8 +64,16 @@ export default Vue.extend({
       type: Boolean,
       default: false
     },
-    notLast: {
+    noBorderRight: {
       type: Boolean,
+      default: false
+    },
+    white: {
+      type: Boolean,
+      default: false
+    },
+    noBorderBottom: {
+      type: Boolean, 
       default: false
     }
   },
@@ -82,14 +93,17 @@ export default Vue.extend({
   line-height: 1;
   transition: all 0.2s $ease;
   user-select: none;
-  box-shadow: 0px 2px 20px 0 rgba(lighten(color(gray-dark), 10%), 0);
+  box-shadow: 0px 2px 20px 0 rgba(lighten(color(gray-dark), 10%), 0.4);
   font-family: font(regular);
   text-align: center;
   white-space: nowrap;
 
-  &.not-last {
+  &.no-border-right {
       border-right: 0 !important;
     }
+  &.no-border-bottom {
+    border-bottom: 0 !important;
+  }
 
   &.is-full-width {
     width: 100%
@@ -115,6 +129,14 @@ export default Vue.extend({
 
     &:hover {
       box-shadow: 0px 5px 20px 0 lighten(color(red), 10%);
+    }
+  }
+  &.is-white {
+    background-color: white;
+
+    &:hover {
+      background-color: #CACBCC !important;
+      transform: none !important;
     }
   }
 

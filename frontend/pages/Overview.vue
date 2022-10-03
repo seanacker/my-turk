@@ -14,7 +14,7 @@
       <BaseButton prime @click="onGuideClick">guide</BaseButton>
       <BaseButton prime @click="refreshPage">refresh</BaseButton>
     </div>
-    <BaseWrapper title="Production" red :style="{overflow: 'inherit'}" :hidden="prodIsHidden">
+    <BaseWrapper title="Production" red :style="{overflow: 'inherit'}" :hidden="prodIsHidden" roundBorder>
       <Table
         :experiments="experiments.production"
         @createHIT="createHIT"
@@ -25,7 +25,7 @@
       />
     </BaseWrapper>
 
-    <BaseWrapper title="Sandbox" green :style="{overflow: 'inherit'}" :hidden="sandIsHidden">
+    <BaseWrapper title="Sandbox" green :style="{overflow: 'inherit'}" :hidden="sandIsHidden" roundBorder>
       <Table
         :experiments="experiments.sandbox"
         @acceptAssignments="showAcceptAssignments"
