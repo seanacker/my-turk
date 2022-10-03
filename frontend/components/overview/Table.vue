@@ -26,12 +26,11 @@
       <template v-for="experiment in experiments" bold>
         <tr :key="experiment._id">
           <td >
-                <input :id="experiment._id" class="toggle" type="checkbox" @click="toggleActiveExperiment(experiment)"/>
-                <label :for="experiment._id" class="lbl-toggle" :style="{textAlign: 'left'}">{{experiment.experimentName}}</label>
-
-            <div v-if="activeExperimentId==experiment._id" class="experimentMenuWrapper">
-              <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px'}" class="hoverable">edit</span>
-              <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px'}" class="hoverable">overview</span>
+            <input :id="experiment._id" class="toggle" type="checkbox" @click="toggleActiveExperiment(experiment)"/>
+            <label :for="experiment._id" class="lbl-toggle" :style="{textAlign: 'left'}">{{experiment.experimentName}}</label>
+            <div  v-if="activeExperimentId==experiment._id" class="experimentMenuWrapper">
+              <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px', borderBottom: '1px solid black'}" class="hoverable">EDIT</span>
+              <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px'}" class="hoverable">OVERVIEW</span>
             </div>
           </td>
           <td>{{ experiment.description }}</td>
@@ -39,21 +38,21 @@
           <td class="align-center">{{ experiment.pending }}</td>
           <td class="align-center">{{ experiment.waitingForApproval}}</td>
           <td class="align-center">{{ experiment.completed }}</td>
-          <td class="button align-center" >
+          <td class="button align-center">
             <BaseButton
                 v-if="experiment.endpoint !== 'development'"
                 second
                 square
                 title="new hit (UTC)"
-                fullWidth
-                notLast
+                fullWidth                
                 @click="onNewHITClick(experiment)"
               
               >
               </BaseButton>
-            <div class="scheduleWrapper" :style="{border: '1px solid black'}">
-              <Datetime v-if="showScheduleNewHIT==experiment._id" v-model="scheduledDateTime"/>
-                <div v-if="showScheduleNewHIT==experiment._id" :style="{display: 'flex', flexDirection: 'column'}">
+            <div class="scheduleWrapper" :style="{border: '1px solid black'}">              
+              <Datetime v-if="showScheduleNewHIT==experiment._id" v-model="scheduledDateTime"></Datetime>
+              <fa v-if="showScheduleNewHIT==experiment._id" icon="circle-info" class="dateTimeInformation" @mouseover="showTimeInformation=true" @mouseleave="showTimeInformation=false"/>
+                <div v-if="showScheduleNewHIT==experiment._id && showTimeInformation" :style="{display: 'flex', flexDirection: 'column'}">
                   <div :style="{backgroundColor: 'white', padding: '10px 0', }">
                     <b>Los Angeles:</b> {{convertTZ('America/Los_Angeles')}}
                   </div>
@@ -64,8 +63,7 @@
                 <div :style="{display: 'flex'}">
                   <BaseButton 
                     second 
-                    square
-                    notLast
+                    square                    
                     :style="{backgroundColor: '#ff5555', color: 'white', width: '50%', borderLeft: '0', borderBottom: '0'}"
                     title="close"
                     @click="onCloseNewHITClick()"
@@ -87,8 +85,7 @@
             <BaseButton
               v-if="experiment.endpoint !== 'development'"
               second
-              square
-              notLast
+              square              
               title="qualify all"
               fullWidth
               @click="onQualifyAllClick(experiment)"
@@ -109,13 +106,17 @@
                 square                
                 title="notify workers"
                 fullWidth
+                white
+                noBorderBottom
                 :disabled="canNotifyWorkers(experiment)"
                 @click="modalIsVisible=true"
               />
               <BaseButton
                 v-if="experiment.endpoint !== 'development' && handleWorkersVisible"
                 second
-                square                
+                square
+                white
+                noBorderBottom           
                 title="approve workers"
                 @click="onApproveWorkersClick(experiment.rewardPerAssignment, experiment.awardQualificationID)"
               />
@@ -123,13 +124,16 @@
                 v-if="experiment.endpoint !== 'development' && handleWorkersVisible"
                 second
                 square
+                white
+                noBorderBottom
                 title="reject workers"
                 @click="onRejectWorkersClick()"
               />
               <BaseButton
                 v-if="handleWorkersVisible"
                 second 
-                square                
+                square
+                white                
                 title="close"
                 fullWidth
                 @click="handleWorkersVisible=false"
@@ -158,7 +162,7 @@
           <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center">{{ hit.waitingForApproval }}</td>
           <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center">{{ hit.completed }}</td>
           <td class="button">
-              <BaseButton :notLast="hitStatus(hit)!='undefined'" second square fullWidth @click="onHitClick(hit, experiment)">
+              <BaseButton :noBorderRight="hitStatus(hit)=='undefined'" second square fullWidth @click="onHitClick(hit, experiment)">
                 Fullscreen
               </BaseButton>
           </td>
@@ -262,7 +266,8 @@ export default Vue.extend({
     modalIsVisible: false,
     showScheduleNewHIT: '',
     scheduledDateTime: '',
-    handleWorkersVisible: false
+    handleWorkersVisible: false,
+    showTimeInformation: false
 
   }),
   methods: {
@@ -439,7 +444,7 @@ export default Vue.extend({
     font-size: 12px;
   }
   td.button {
-    padding: 0
+    padding: 0 10px 0 0
   }
 
 .Overview input[type='checkbox'] {
@@ -536,14 +541,20 @@ export default Vue.extend({
   display: flex;
   flex-direction: column;
   border: 1px solid black;
-  border-radius: 5px;
   margin-top: 10px;
   position: absolute;
   background-color: white;
   z-index: 1;
+  box-shadow: 0px 2px 20px 0 rgba(lighten(color(gray-dark), 10%), 0.4);
+  font-weight: bold;
   > span {
     padding: 0 20px;
   }
+}
+.dateTimeInformation {
+  position: absolute;
+  top: 5px;
+  right: 5px;
 }
 
 .align-center {

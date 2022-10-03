@@ -54,7 +54,7 @@ app.post('/login', async (req, res) => {
     console.log(e);
     return res.send({
       success: false,
-      message: 'Your Access-Key-ID or your Secret-Access-Key is wrong'
+      message: 'Your login failed.Your Access-Key-ID or your Secret-Access-Key might be wrong.'
     });
   }
 });
@@ -74,7 +74,8 @@ app.post('/addExperiment', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: 'Something went wrong'
+      message: 'Could not add the experiment to the Database.',
+      error: result.error.code ?? 500
     });
   }
 });
@@ -91,7 +92,7 @@ app.post('/listHITs', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: 'Something went wrong'
+      message: 'Something went wrong. Retrieved error from MTurk: ' + result.error.message
     });
   }
 })
@@ -105,7 +106,7 @@ app.post('/saveExperiment', async (req, res) => {
   data.experiment.endpoint = endpoint.indexOf("sandbox") == -1 ? "production" : "sandbox";
   const { awardQualificationName, awardQualificationDescription, awardQualificationId } = data.experiment;
 
-  if (awardQualificationName && awardQualificationDescription) {
+  if (awardQualificationName && awardQualificationDescription && !awardQualificationId) {
     let result = await createQualificationType(awardQualificationName, awardQualificationDescription).catch(err => ({ error: err }));
 
     if (!result.error) {
@@ -115,8 +116,8 @@ app.post('/saveExperiment', async (req, res) => {
     else {
       return res.send({
         success: false,
-        message: result.error.message,
-        error: result.error.code
+        message: 'Could not create the qualification ID. Received error message from MTurk: ' + result.error.message,
+        error: result.error.code ?? 500
       });
     }
   }
@@ -132,7 +133,7 @@ app.post('/saveExperiment', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: 'Something went wrong'
+      message: 'Could not update the DataBase. Error calling /saveExperiment.'
     });
   }
 });
@@ -256,13 +257,13 @@ app.post('/getExperiments', async (req, res) => {
     return res.send({
       success: true,
       endpoint: search_for,
-      message: `found ${result.length} experiments`,
+      message: `Found ${result.length} experiments`,
       data: mResult
     });
   } else {
     return res.send({
       success: false,
-      message: 'Something went wrong'
+      message: `Could not retrieve the data with id: ${id} caling /getExperiments`
     });
   }
 });
@@ -281,7 +282,7 @@ app.post('/deleteExperiment', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: 'Something went wrong'
+      message: `Could not delete the Experiment with id: ${id}. Retrieved error message from db:`
     });
   }
 });
@@ -391,8 +392,8 @@ app.post('/createHIT', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: result.error.message,
-      error: result.error.code
+      message: 'Something went wrong calling /createHIT: ' + result.error.message,
+      error: result.error.code ?? 500
     });
   }
 });
@@ -410,8 +411,8 @@ app.post('/getHIT', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: result.error.message,
-      error: result.error.code
+      message: `Could not get HIT with data: ${data}. Retrieved error message from MTurk:` + result.error.message,
+      error: result.error.code ?? 500
     });
   }
 });
@@ -428,8 +429,8 @@ app.post('/expireHIT', async (req,res) => {
   } else {
     return res.send({
       success: false,
-      message: result.error.message,
-      error: result.error.code
+      message: `Could not expire HIT with data: ${data}. Retrieved error message from MTurk:` + result.error.message,
+      error: result.error.code ?? 500
     });
   }
 });
@@ -446,8 +447,8 @@ app.post('/deleteHIT', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: result.error.message,
-      error: result.error.code
+      message:  `Could not delete HIT with id: ${HITId}. Retrieved error message from MTurk:` + result.error.message,
+      error: result.error.code ?? 500
     });
   }
 });
@@ -465,8 +466,8 @@ app.post('/approveAssignment', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: result.error.errors,
-      error: 'Something went wrong'
+      message: `Could not approve Assignment with data: ${data}. Retrieved error message from MTurk: ` + result.error.message,
+      error: result.error.code ?? 500
     });
   }
 });
@@ -511,7 +512,7 @@ app.post('/approveAssignments', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: 'Some assignments could not be approved',
+      message: 'Some assignments could not be approved. Retrieved error message from MTurk: ' + result.error.message,
       data: results
     });
   }
@@ -556,7 +557,7 @@ app.post('/rejectAssignments', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: 'Some assignments could not be rejected',
+      message: 'Could not reject all assignments. Retrieved error message from MTurk: ' + result.error.message,
       data: results
     });
   }
@@ -576,7 +577,7 @@ app.post('/rejectAssignment', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: 'Something went wrong'
+      message: `Could not reject the asssignment with data: ${data}. Retrieved error message from MTurk: ` +  result.error.messag
     });
   }
 });
@@ -594,8 +595,8 @@ app.post('/qualifyWorker', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: result.error.errors,
-      error: 'Something went wrong'
+      message: `Could not qualify worker with data: ${data}. Retrieved error message from MTurk: ` + result.error.message,
+      error: result.error.code ?? 500
     });
   }
 });
@@ -615,7 +616,8 @@ app.post('/listAssignments', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: 'Something went wrong'
+      message: 'Could not list Assignments. Retrieved error message from MTurk:' + result.error.message,
+      error: result.error.code ?? 500
     });
   }
 });
@@ -634,8 +636,8 @@ app.post('/createQualificationType', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: result.error.message,
-      error: result.error.code
+      message: `Could not create Qualification Type with data: ${data}. Retrieved error message from MTurk:` + result.error.message,
+      error: result.error.code ?? 500
     });
   }
 });
@@ -661,8 +663,8 @@ app.post('/createMessage', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: result.error.message,
-      error: result.error.code
+      message: "Could not create Message. Retrieved error message from db:" + result.error.message,
+      error: result.error.code ?? 500
     });
   }
 });
@@ -681,8 +683,8 @@ app.post('/deleteMessage', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: result.error.message,
-      error: result.error.code
+      message: `Could not deleate Message with data: ${data}. Retrieved error message from database:` + result.error.message,
+      error: result.error.code ?? 500
     });
   }
 });
@@ -701,6 +703,13 @@ app.post('/getMessages', async (req, res) => {
       data: result
     });
   }
+  else {
+    return res.send({
+      success: false,
+      message: `Could not deleate Message with data: ${data}. Retrieved error message from database:` + result.error.message,
+      error: result.error.code ?? 500
+    });
+  }
 })
 
 app.post('/notifyWorkers', async (req, res) => {
@@ -717,7 +726,7 @@ app.post('/notifyWorkers', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: result.error.message,
+      message: `Could not notify workers with data: ${data}. Retrieved error message from MTurk:` + result.error.message,
       error: result.error.code
     });
   }
@@ -742,7 +751,8 @@ app.post('/deleteHITFromExperiment', async (req, res) => {
   if (!containingExperiment || !containingExperiment.hits) {
     return res.send({
       success: false,
-      message: 'Could not find the containing experiment'
+      message: 'Could not find the containing experiment',
+      error: 500
     })
   }
   containingExperiment.hits = containingExperiment.hits.filter((_HIT) => {
@@ -758,7 +768,7 @@ app.post('/deleteHITFromExperiment', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: 'Could not update DataBase'
+      message: 'Could not delete HIT from Experiment. Retrieved error message from database:' + result.error.message
     });
   }
 });
