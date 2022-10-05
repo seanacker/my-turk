@@ -14,24 +14,22 @@
       <BaseButton prime @click="onGuideClick">guide</BaseButton>
       <BaseButton prime @click="refreshPage">refresh</BaseButton>
     </div>
-    <BaseWrapper title="Production" red :style="{overflow: 'inherit'}" :hidden="prodIsHidden" roundBorder>
+    <BaseWrapper title="Production" red :style="{overflow: 'inherit'}" v-if="!prodIsHidden" roundBorder style="margin-bottom: 450px;">
       <Table
         :experiments="experiments.production"
         @createHIT="createHIT"
-        @onHitDeleteClick="handleDeleteHIT"
         @expireHIT="expireHIT"
         @deleteHIT="deleteHIT"
         @cancelHIT="cancelHIT"
       />
     </BaseWrapper>
 
-    <BaseWrapper title="Sandbox" green :style="{overflow: 'inherit'}" :hidden="sandIsHidden" roundBorder>
+    <BaseWrapper title="Sandbox" green style="overflow: inherit; min-width: 1700px !important; margin-bottom: 450px" v-if="!sandIsHidden" roundBorder >
       <Table
         :experiments="experiments.sandbox"
         @acceptAssignments="showAcceptAssignments"
         @rejectAssignment="showRejectAssignments"
         @createHIT="createHIT"
-        @onHitDeleteClick="handleDeleteHIT"
         @expireHIT="expireHIT"
         @deleteHIT="deleteHIT"
         @cancelHIT="cancelHIT"
@@ -52,7 +50,7 @@
     <BaseModal
       :visible="acceptAssignmentModalVisible"
       title="Accept Assignments"
-      :rewardPerAssignment="rewardPerAssignment"
+      :rewardPerAssignment="rewardPerAssignmentForModal"
       :awardQualificationID="awardQualificationID"
       :cancel="{ label: 'cancel' }"
       :accept="{ label: 'Approve', type: 'success' }"
@@ -106,7 +104,7 @@
     <BaseModal
       :visible="rejectAssignmentModalVisible"
       title="Reject Assignments"
-      :rewardPerAssignment="rewardPerAssignment"
+      :rewardPerAssignment="rewardPerAssignmentForModal"
       :cancel="{ label: 'cancel' }"
       :accept="{ label: 'Reject', type: 'warning' }"
       @onAccept="rejectAssignments"
@@ -148,7 +146,7 @@
           </option>
         </select>
       </div>
-  </BaseModal>
+    </BaseModal>
   </div>
 </template>
 <script lang="ts">
@@ -183,6 +181,8 @@ type OverviewData = {
   saveMessage: boolean
   approveMessages: string[],
   rejectMessages: string[],
+  parsedQualificationIDs: string,
+  intervalID: any
 }
 
 export default Vue.extend({
@@ -218,13 +218,15 @@ export default Vue.extend({
     rejectFeedback: "",
     saveMessage: false,
     approveMessages: [],
-    rejectMessages: []
+    rejectMessages: [],
+    parsedQualificationIDs: "",
+    intervalID: undefined
   }),
-  mounted() {
-    this.getExperiments()
+  async mounted() {
+    await this.getExperiments()
     this.getMessages()
+    this.intervalID = setInterval(() => window.location.reload(), 3600000) 
   },
-
   methods: {
     async getExperiments(): Promise<void> {
       const result = await api.getExperiments({ groupBy: 'endpoint' })
@@ -242,14 +244,25 @@ export default Vue.extend({
           JSON.stringify(result.data.sandbox)
         )
       }
+      for (const experiment of this.experiments.sandbox) {
+        this.parsedQualificationIDs = this.parsedQualificationIDs + experiment.experimentName + ': ' + experiment.awardQualificationId + ';'
+      }
+      for (const experiment of this.experiments.production) {
+        this.parsedQualificationIDs = this.parsedQualificationIDs + experiment.experimentName + ': ' + experiment.awardQualificationId + ';'
+      }
     },
     async addExperiment(): Promise<void> {
       const res = await api.addExperiment({})
 
       if (res.success) {
+        clearInterval(this.intervalID)
         this.$router.push({
           name: 'Settings',
-          params: { addExperiment: 'true' },
+          params: { 
+            addExperiment: 'true',
+            qualificationIDs: this.parsedQualificationIDs
+          }
+          ,
           query: { id: res.data.id },
         })
       } else {
@@ -290,25 +303,43 @@ export default Vue.extend({
     },
     async cancelHIT(hit: Hit){
       const deleteHITFromExperimentRes = await api.deleteHITFromExperiment(hit)
-      this.$toasted.success(deleteHITFromExperimentRes.message, {
+      if (!deleteHITFromExperimentRes.success) {
+        this.$toasted.success(deleteHITFromExperimentRes.message, {
           position: 'bottom-right',
           duration: 3000,
         })
+      }
+      else {
+        this.$toasted.error(deleteHITFromExperimentRes.message, {
+          position: 'bottom-right',
+          duration: 3000,
+        })
+      }
       console.log("cancel scheduled hit method called")
       await api.cancelScheduledHIT(hit)
       this.refreshPage()
     },
     async expireHIT(experiment: Experiment, hit: Hit) {
       const expireRes = await api.expireHIT({HITId: hit.HITId})
-      this.$toasted.success(expireRes.message, {
+      if (!expireRes.success) {
+        this.$toasted.success(expireRes.message, {
           position: 'bottom-right',
           duration: 3000,
         })
+      }
+      else {
+        this.$toasted.error(expireRes.message, {
+          position: 'bottom-right',
+          duration: 3000,
+        })
+      }
       this.refreshPage()
     },
     async deleteHIT(experiment: Experiment, hit: Hit) {
+      
       console.log("deleted HIT", hit)
       const deleteRes = await api.deleteHIT({HITId: hit.HITId})
+      console.log(deleteRes)
         if (deleteRes.success) {
           this.$toasted.success(deleteRes.message, {
             position: 'bottom-right',
@@ -326,6 +357,7 @@ export default Vue.extend({
           })
         }
         this.refreshPage()
+        
     },
     deleteHITfromExperiment(experiment: Experiment, hit: Hit): Experiment {
       experiment.hits = experiment.hits.filter((_hit) => {
@@ -413,7 +445,7 @@ export default Vue.extend({
       if (res.success) {
         this.$toasted.success(res.message, {
             position: 'bottom-right',
-            duration: 100000,
+            duration: 5000,
           })
       }
       else {
@@ -503,7 +535,7 @@ export default Vue.extend({
           params: {},
           query: {},
         })
-    }
+    },
   },
 })
 </script>

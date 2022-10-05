@@ -38,13 +38,13 @@
       </td>
       <td>
         <div :style="{display: 'flex', flexDirection: 'row'}">
-          <BaseButton square second @click="onApprove(worker.id, worker.assignmentID)">
+          <BaseButton marginRight="10px" square second @click="onApprove(worker.id, worker.assignmentID)">
             ACCEPT
           </BaseButton>
-          <BaseButton square second @click="onReject(worker.assignmentID)">
+          <BaseButton marginRight="10px" square second @click="onReject(worker.assignmentID)">
             REJECT
           </BaseButton>
-          <BaseButton second square @click="onQualify(worker.id)"
+          <BaseButton marginRight="10px" second square @click="onQualify(worker.id)"
             >ASSIGN QUALIFICATION
         </BaseButton>
         </div>

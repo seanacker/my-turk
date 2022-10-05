@@ -1,5 +1,8 @@
 <template>
     <div class="BaseInput" :class="{ 'is-disabled': disabled }">
+      <label class="TitleLabel">
+        <b>{{ label }}</b>
+      </label>
       <input
         v-model="mValue"
         :type="type"
@@ -7,11 +10,8 @@
         :disabled="disabled"
         :placeholder="placeholder"
       />
-      <label class="TitleLabel">
-        <b>{{ label }}</b>
-      </label>
       <label class="InfoLabel">
-        <i>{{info}}</i>
+        <i v-html="info"></i>
       </label>
     </div>
 </template>
@@ -115,8 +115,7 @@ export default Vue.extend({
     margin: 0;
     padding: 0;
     background-color: transparent;
-    border: 1px solid darkgrey;
-    padding: 4px;
+    border: none;
     font-family: font(regular);
     width: 100%;
     font-size: rem(14px);

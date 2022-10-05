@@ -41,9 +41,9 @@
         <div>{{ worker.approved.time || '' }}</div>
         <div class="is-small">{{ worker.approved.date || '' }}</div>
       </td>
-      <td v-if="isExperimentView" class="Anchor" @click="onHitClick(worker.HITId, worker.awardQualificationId)"
-        >{{ worker.HITId}}</td
-      >
+      <td v-if="isExperimentView" class="Anchor" @click="onHitClick(worker.HITId, worker.awardQualificationId)">
+        {{ worker.HITId}}
+      </td>
     </tr>
   </table>
 </template>

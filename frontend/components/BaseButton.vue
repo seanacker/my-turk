@@ -9,13 +9,14 @@
       { 'is-red': red },
       { 'is-white': white},
       { 'is-green': green },
+      { 'is-orange': orange },
       { 'is-gray-light': grayLight },
       { 'is-full-width': fullWidth},
       { 'no-border-right': noBorderRight },
       { 'no-border-bottom': noBorderBottom },
 
     ]"
-    :style="{backgroundColor: white ? 'white' : ''}"
+    :style="{backgroundColor: white ? 'white' : '', marginRight: marginRight}"
     @click="$emit('click')"
   >
     <slot></slot>
@@ -72,9 +73,17 @@ export default Vue.extend({
       type: Boolean,
       default: false
     },
+    orange: {
+      type: Boolean,
+      default: false
+    },
     noBorderBottom: {
       type: Boolean, 
       default: false
+    },
+    marginRight: {
+      type: Number,
+      default: 0
     }
   },
 })
@@ -147,9 +156,17 @@ export default Vue.extend({
       box-shadow: 0px 5px 20px 0 rgba(color(green), 0.5);
     }
   }
+  &.is-orange {
+    background-color: color(orange);
+
+    &:hover {
+      box-shadow: 0px 5px 20px 0 rgba(color(orange), 0.5);
+    }
+  }
 
   &.is-gray-light {
     background-color: color(gray-light);
+    color: black;
 
     &:hover {
       box-shadow: 0px 5px 20px 0 rgba(color(gray-light), 0.5);

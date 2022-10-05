@@ -11,6 +11,7 @@
       :endpoint="settings.endpoint"
       :has-hits="experiment.hits.length > 0"
       @updateSettings="updateSettings"
+      :qualificationIDs="_qualificationIDs"
     />
 
     <div class="ButtonWrapper">
@@ -29,6 +30,15 @@
         @click="handleSave"
       />
     </div>
+    <div class="saveButton">
+      <BaseButton
+        prime
+        square
+        title="Save Settings"
+        :green="true"
+        @click="handleSave"
+      />
+    </div>  
     <BaseModal
       :visible="modalIsVisible"
       title="Delete Experiment"
@@ -67,7 +77,8 @@ type SettingsData =  {
         hint?: string,
         type?: string,
       }[]
-    }[]
+    }[],
+    _qualificationIDs: string
 }
 
 export default Vue.extend({
@@ -110,9 +121,10 @@ export default Vue.extend({
     initial: {
       type: Boolean,
       default: true,
-    },
+    }
   },
   data: (): SettingsData => ({
+    _qualificationIDs: '',
     modalIsVisible: false,
     route: {
       path: 'Overview',
@@ -191,6 +203,12 @@ export default Vue.extend({
               'This is auto-generated from the qualification name and the qualification description by MTurk once the experiment is saved. It is the value used to ex- or include workers from HITs. ',
           },
           {
+            name: 'Automaticaly assign Qualification',
+            info: `Automaticaly assign the Qualification to workers that participated on it once a new hit is created.`,
+            type: 'checkbox',
+            value: false,
+          },
+          {
             name: 'Reward per Assignment',
             value: '',
             info: 'e.g. 3.5 for 3.5$',
@@ -201,31 +219,32 @@ export default Vue.extend({
         title: 'Requirements and Entrypoint',
         items: [
           {
+            name: 'Guard Hit by additional QualificationIDs',
+            value: '',
+            info: 'Please type in the Qualification IDs a Worker needs to participate on the HITs of this experiment. Seperate different IDs with a comma.',
+          },
+          {
+            name: 'Exclude Workers by QualificationID',
+            value: '',
+            info: 'Please type in any additional Qualification IDs on which to exclude workers from HITs of this experiment. Seperate different IDs with a comma.',
+          },
+          {
             name: 'Default Requirements',
-            info: 'US-based, 95% approval, more than 1.000 hits',
+            info: 'Workers must be US-based,have 95% approval and more than 1.000 approved hits.',
             type: 'checkbox',
             value: false,
           },
           {
             name: 'Guard Hit by Qualification',
-            info: `Make the qualification ID from this experiment an exclusion criteria for this HIT`,
+            info: `Make the qualification ID from this experiment an exclusion criteria for every HIT of the experiment.`,
+
             type: 'checkbox',
             value: false,
           },
           {
-            name: 'Guard Hit by additional QualificationIDs',
-            value: '',
-            info: 'Please type in the Qualification IDs a Worker needs to participate on the HIT. Seperate different IDs with a comma.',
-          },
-          {
-            name: 'Exclude Workers by QualificationID',
-            value: '',
-            info: 'Please type in any additional Qualification IDs on which to exclude workers from the HIT. Seperate different IDs with a comma.',
-          },
-          {
             name: 'Entrypoint',
             value: '',
-            info: 'URL of your Experiment (iframe)',
+            info: 'URL of the HITs of your Experiment (iframe)',
           },
         ],
       },
@@ -238,6 +257,9 @@ export default Vue.extend({
         this.settings = experiment
       },
     },
+  },
+  beforeMount() {
+    this._qualificationIDs = this.$route.params.qualificationIDs
   },
   mounted() {
     this.loadExperimentSettings()
@@ -255,6 +277,7 @@ export default Vue.extend({
     async handleSave() {
       const id = this.$route.query.id || ''
       const settings = this.settings
+      console.log("settings: ", settings)
       if (!this.validateSettings(settings)) {
         this.$toasted.error('Please fill out all required fields', {
           position: 'bottom-right',
@@ -415,6 +438,10 @@ export default Vue.extend({
     .ButtonWrapper {
       flex-direction: row;
     }
+  }
+  .saveButton{
+    position: relative;
+    bottom: 20px;
   }
 }
 </style>

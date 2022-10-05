@@ -37,7 +37,8 @@ export type Experiment = {
   hits: Hit[],
   endpoint: string,
   guardHitByAdditionalQualificationids: string[] | string
-  excludeWorkersByQualificationid: string[] | string
+  excludeWorkersByQualificationid: string[] | string,
+  automaticalyAssignQualification: boolean
   
 }
 

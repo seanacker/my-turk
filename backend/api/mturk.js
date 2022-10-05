@@ -44,6 +44,7 @@ app.post('/login', async (req, res) => {
     mturk = new AWS.MTurk();
     let balance = await getBalance(mturk);
     loadScheduledHITs()
+    setInterval(() => qualifyAllAutoQualifiedAssignments(), 60000)
     return res.send({
       success: true,
       balance: balance,
@@ -86,7 +87,6 @@ app.post('/listHITs', async (req, res) => {
   if (result) {
     return res.send({
       success: true,
-      message: 'added experiment',
       data: result
     });
   } else {
@@ -371,7 +371,7 @@ app.post('/createHIT', async (req, res) => {
   let result
   const now = Date.now()
   // delay to utc
-  const target = Date.parse(data.scheduledDateTime) + 7200000 
+  const target = Date.parse(data.scheduledDateTime)
   const delay =  target - now 
   if (data.scheduledDateTime == '0' || delay < 0) {
     result = await createHIT(createHITOptions).catch(err => ({ error: err }));
@@ -441,10 +441,17 @@ app.post('/deleteHIT', async (req, res) => {
   if (!result.error) {
     return res.send({
       success: true,
-      message: 'deleted HIT',
+      message: 'deleted HIT from MTurk',
       data: result
     });
-  } else {
+  } else if (result.error.message.includes('Disposed')){
+    return res.send({
+      success: true,
+      message: 'HIT is allready deleted from MTurk',
+      data: result
+    });
+  }  
+  else {
     return res.send({
       success: false,
       message:  `Could not delete HIT with id: ${HITId}. Retrieved error message from MTurk:` + result.error.message,
@@ -636,7 +643,7 @@ app.post('/createQualificationType', async (req, res) => {
   } else {
     return res.send({
       success: false,
-      message: `Could not create Qualification Type with data: ${data}. Retrieved error message from MTurk:` + result.error.message,
+      message: `Could not create qualification type with data: ${data}. Retrieved error message from MTurk:` + result.error.message,
       error: result.error.code ?? 500
     });
   }
@@ -737,6 +744,7 @@ app.post('/deleteHITFromExperiment', async (req, res) => {
   const HITId = data.HITId 
   const experiments = await mongo.findData(data={},"experiments")
   var containingExperimentArray = experiments.filter((experiment) => {
+    if (!experiment.hits) return false
     return experiment.hits.some((_HIT) => {
       return HITId === _HIT.HITId
     })
@@ -845,7 +853,6 @@ const listHITs = (params) => {
         console.log(err, err.stack); // an error occurred
         reject(err);
       } else {
-        console.log(data); // successful response
         resolve(data);
       }
     });
@@ -942,7 +949,8 @@ const qualify = ({ awardQualificationID, workerID }) => {
   let params = {
     QualificationTypeId: awardQualificationID,
     WorkerId: workerID,
-    SendNotification: false
+    SendNotification: false,
+    IntegerValue: 1
   };
   return new Promise((resolve, reject) => {
     mturk.associateQualificationWithWorker(params, (err, data) => {
@@ -1001,14 +1009,17 @@ const rejectAssignment = ({ id, feedback }) => {
 };
 
 const scheduleHIT = async (HIT) => {
+  const experiments = await mongo.findData(data={},"experiments")
+  var containingExperiment = experiments.filter((experiment) => {
+    if (!experiment.hits) return false
+    return experiment.hits.some((_HIT) => {
+      return HIT.HITId === _HIT.HITId
+    })
+  })[0]
+  if (containingExperiment.guardHitByQualification) autoQualifyWorkers(containingExperiment)
   const result = await createHIT(HIT.HIT).catch(err => ({ error: err }));
   if (!result.error) {
-    const experiments = await mongo.findData(data={},"experiments")
-    var containingExperiment = experiments.filter((experiment) => {
-      return experiment.hits.some((_HIT) => {
-        return HIT.HITId === _HIT.HITId
-      })
-    })[0] 
+
     containingExperiment.hits = containingExperiment.hits.map((_HIT) => {
       if(_HIT.HITId == HIT.HITId) return result.HIT
       return _HIT
@@ -1016,6 +1027,23 @@ const scheduleHIT = async (HIT) => {
     mongo.updateData({ _id: ObjectId(containingExperiment._id) }, containingExperiment)
   }
 };
+
+const autoQualifyWorkers = async (experiment) => {
+  const hits = experiment.hits.filter((HIT) => HIT.HITStatus != 'pending')
+  const hitIds = hits.map(hit => hit.HITId)
+  var assignments = []
+  for (const hitId of hitIds){
+   const assignmentRes = await listAssignments({HITId: hitId})
+   if (!assignmentRes.error) {
+    assignments.push(assignmentRes.Assignments)
+   }
+  }
+  assignments = assignments.flat()
+  for(const assignment of assignments) {
+    console.log(`assigning worker with id ${assignment.WorkerId} with qualificationId ${experiment.awardQualificationId}`)
+    qualify({ awardQualificationID: experiment.awardQualificationId, workerID: assignment.WorkerId })
+  }
+}
 
 const loadScheduledHITs = async () => {
   const experiments = await mongo.findData()
@@ -1025,10 +1053,10 @@ const loadScheduledHITs = async () => {
       for (const HIT of experiment.hits) {    
           if (HIT.HITStatus == 'pending') {
             const now = Date.now()
-            const target = Date.parse(HIT.scheduledDateTime) + 7200000
+            const target = Date.parse(HIT.scheduledDateTime)
             if (target > now) {
             // delay to utc
-            const target = Date.parse(HIT.scheduledDateTime) + 7200000 
+            const target = Date.parse(HIT.scheduledDateTime)
             const delay =  target - now 
             const scheduleId = +setTimeout(() => {
               scheduleHIT({HIT: {
@@ -1064,6 +1092,7 @@ const loadScheduledHITs = async () => {
 const updateHIT = async (HIT) => {
   const experiments = await mongo.findData(data={},"experiments")
     var containingExperiment = experiments.filter((experiment) => {
+      if (!experiment.hits) return false
       return experiment.hits.some((_HIT) => {
         return HIT.HITId === _HIT.HITId
       })
@@ -1075,7 +1104,29 @@ const updateHIT = async (HIT) => {
     mongo.updateData({ _id: ObjectId(containingExperiment._id) }, containingExperiment)
 }
 
-
+const qualifyAllAutoQualifiedAssignments = async () => {
+  const experiments = await mongo.findData(data={},"experiments")
+  const experimentsToQualify = experiments.filter((experiment) => experiment.automaticalyAssignQualification )
+  experimentsToQualify.map((experiment) => {
+    const awardQualificationID = experiment.awardQualificationId
+    experiment.hits.map(async (hit) => {
+      if (hit.HITStatus != 'pending' && hit.HITStatus != 'failed'){
+        const assignmentRes = listAssignments({HITId: hit.HITId})
+        if (assignmentRes.success && assignmentRes.data) {
+          console.log("qualifiable data: ",assignmentRes.data)
+          assignmentRes.data.map( async (assignment) => {
+            if (assignment.AssignmentStatus == "Submitted") {
+              qualifyWorker({
+                awardQualificationID: awardQualificationID,
+                workerID: assignment.WorkerId,
+              })
+            }
+          })
+        }
+      }
+    })
+  })
+}
 
 const notifyWorkers = ({ subject, message, workerIDs }) => {
   var params = {

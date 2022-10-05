@@ -6,7 +6,10 @@
   >
     <div class="Container">
       <div v-for="(group, index) in groups" :key="index" class="Groups">
-        <h3 v-if="group.title" class="GroupTitle">{{ group.title }}</h3>
+        <h3           
+          class="GroupTitle" 
+          v-html="group.title"></h3>
+        <i v-if="group.title == 'Requirements and Entrypoint'"  v-html="'<br/><i>Your Existing Experiments have the following qualification IDs: <br/> </br>' + parsedQualificationIDs + '</i></br>'" style="padding-left: 20px;"></i>
         <template v-for="(item, i) in group.items">
           <BaseCheckbox
             v-if="item.type && item.type === 'checkbox'"
@@ -14,6 +17,7 @@
             :label="item.name || item"
             :value="item.value"
             :info="item.info"
+            :hint="item.hint"
             @keyPress="handleKeyPress"
           />
           <BaseInput
@@ -41,6 +45,7 @@ import { Experiment } from '@/lib/types'
 
 type SettingsContainerData = {
   settings: Partial<Experiment>,
+    parsedQualificationIDs: string,
   modes: {
     sandbox: boolean,
     production: boolean,
@@ -49,7 +54,7 @@ type SettingsContainerData = {
     value: string,
     label: string,
     isSelected: boolean,
-  }[]
+  }[],
 }
 
 export default Vue.extend({
@@ -72,9 +77,14 @@ export default Vue.extend({
       type: Boolean,
       default: false,
     },
+    qualificationIDs: {
+      type: String,
+      default: ''
+    }
   },
   data: (): SettingsContainerData => ({
     settings: {},
+    parsedQualificationIDs: '',
     modes: {
       sandbox: true,
       production: false,
@@ -108,6 +118,9 @@ export default Vue.extend({
       },
     },
   },
+  beforeMount() {
+    this.parsedQualificationIDs = this.qualificationIDs.split(';').join(' <br/>')
+  },
   methods: {
     handleKeyPress(option: any) {
       Object.assign(this.settings, option)
@@ -117,6 +130,9 @@ export default Vue.extend({
 })
 </script>
 <style scoped lang="scss">
+  i {
+    font-size: 12px
+  }
 .Container {
   position: relative;
   transform: translateX(-20px);

@@ -18,7 +18,7 @@
       <BaseButton
         second
         title="Qualify All"
-        class="QualifyBtn"
+        :class="'QualifyBtn ' + experimentID "
         @click="handleQualifyAll"
       />
     </div>
@@ -113,6 +113,10 @@ export default Vue.extend({
     TableSubmitted,
   },
   props: {
+    experimentID: {
+      type: String,
+      default: ''
+    },
     HITId: {
       type: String,
       default: '',

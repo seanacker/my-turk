@@ -8,7 +8,7 @@
       @click="handleCheck"
     />
     <label class="Label">{{ label }}</label>
-    <label class="Hint" :for="info">{{ info }}</label>
+    <label class="Info" :for="info">{{ info }}</label>
   </div>
 </template>
 <script lang="ts">
@@ -32,7 +32,7 @@ export default Vue.extend({
     value: {
       type: Boolean,
       default: false,
-    },
+    }
   },
   computed: {
     mValue: {
@@ -80,7 +80,7 @@ this.$emit('keyPress', {
   }
 
   input,
-  .Hint {
+  .Info {
     outline: none;
     margin: 0;
     padding: 0;
@@ -88,11 +88,8 @@ this.$emit('keyPress', {
     border: none;
     font-family: font(regular);
     font-size: rem(14px);
+    padding-left: 10px;
   }
-  .Hint {
-    padding-left: 15px;
-    width: 100%;
-    user-select: none;
-  }
+
 }
 </style>

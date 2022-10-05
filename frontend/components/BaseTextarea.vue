@@ -92,6 +92,7 @@ export default Vue.extend({
 
   textarea {
     outline: none;
+    border: 0;
     margin: 0;
     padding: 10px;
     border-color: color(gray-dark);
@@ -102,7 +103,6 @@ export default Vue.extend({
     font-size: rem(14px);
     height: 100px;
     display: block;
-    box-shadow: 2px 2px 0px 0 rgba(lighten(color(gray-dark), 10%), 0.2);
     line-height: 1.5;
 
     &:focus {

@@ -6,7 +6,7 @@
     @click="closeModal"
   >
     <div class="BaseModal-Content" :style="{width: width}">
-      <h3 class="Title">{{ title }}</h3>
+      <h3 class="Title" style="color: black">{{ title }}</h3>
       <slot></slot>
       <div class="BaseModal-Content-Buttons">
         <BaseButton
@@ -117,6 +117,7 @@ export default Vue.extend({
 
   .Title {
     margin-top: 0;
+    color: black;
   }
 
   p {
