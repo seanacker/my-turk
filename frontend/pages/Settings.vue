@@ -204,7 +204,7 @@ export default Vue.extend({
           },
           {
             name: 'Automaticaly assign Qualification',
-            info: `Automaticaly assign the Qualification to workers that participated on it once a new hit is created.`,
+            info: `Automaticaly assign the Qualification to workers that participated on it (every minute periodicaly and before a new HIT is created).`,
             type: 'checkbox',
             value: false,
           },

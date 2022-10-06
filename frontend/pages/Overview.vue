@@ -21,6 +21,7 @@
         @expireHIT="expireHIT"
         @deleteHIT="deleteHIT"
         @cancelHIT="cancelHIT"
+        :parsedQualificationIDs="parsedQualificationIDs"
       />
     </BaseWrapper>
 
@@ -35,6 +36,7 @@
         @cancelHIT="cancelHIT"
         @showAcceptAssignments="showAcceptAssignments"
         @showRejectAssignments="showRejectAssignments"
+        :parsedQualificationIDs="parsedQualificationIDs"
       />
     </BaseWrapper>
 
@@ -229,6 +231,7 @@ export default Vue.extend({
   },
   methods: {
     async getExperiments(): Promise<void> {
+      this.parsedQualificationIDs = ""
       const result = await api.getExperiments({ groupBy: 'endpoint' })
       this.prodIsHidden = result.endpoint === 'sandbox'
       console.log(this.prodIsHidden)
@@ -239,10 +242,6 @@ export default Vue.extend({
         this.experiments = result.data
         this.experiments.production = result.data.production || []
         this.experiments.sandbox = result.data.sandbox || []
-        console.log(
-          'sandbox experiments: ',
-          JSON.stringify(result.data.sandbox)
-        )
       }
       for (const experiment of this.experiments.sandbox) {
         this.parsedQualificationIDs = this.parsedQualificationIDs + experiment.experimentName + ': ' + experiment.awardQualificationId + ';'

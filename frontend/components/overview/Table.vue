@@ -52,7 +52,7 @@
         <tr :key="experiment._id">
           <td >
             <input :id="experiment._id" class="toggle" type="checkbox" @click="toggleActiveExperimentForExperimentMenu(experiment)"/>
-            <label :for="experiment._id" class="lbl-toggle" :style="{textAlign: 'left'}">{{experiment.experimentName}}</label>
+            <label :for="experiment._id" class="lbl-toggle" style="text-align: left; font-size: 20px">{{experiment.experimentName}}</label>
             <div  v-if="activeExperimentIdForExperimentMenu==experiment._id" class="experimentMenuWrapper">
               <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px', borderBottom: '1px solid black'}" class="hoverable">EDIT</span>
               <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px'}" class="hoverable">OVERVIEW</span>
@@ -77,9 +77,8 @@
               >
               </BaseButton>
             <div class="scheduleWrapper" :style="{border: '1px solid black'}">              
-              <Datetime v-if="showScheduleNewHIT==experiment._id" v-model="scheduledDateTime"></Datetime>
-              <fa v-if="showScheduleNewHIT==experiment._id" icon="circle-info" class="dateTimeInformation" @mouseover="showTimeInformation=true" @mouseleave="showTimeInformation=false"/>
-                <div v-if="showScheduleNewHIT==experiment._id && showTimeInformation" :style="{display: 'flex', flexDirection: 'column'}">
+              <Datetime v-if="showScheduleNewHIT==experiment._id" v-model="scheduledDateTime" readonly></Datetime>              
+                <div v-if="showScheduleNewHIT==experiment._id" :style="{display: 'flex', flexDirection: 'column'}">
                   <div :style="{backgroundColor: 'white', padding: '10px 0', }">
                     <b>Los Angeles:</b> {{convertTZ('America/Los_Angeles')}}
                   </div>
@@ -164,11 +163,11 @@
           </td>
         </tr>
         <br/>
-        <template v-for="(hit, index) in experiment.hits" >
+        <template v-for="(hit, index) in experiment.hits">
           <tr :key="hit.HITId + 'header'">
             <td style="white-space: nowrap">
               <input :id="hit.HITId" class="toggle" type="checkbox" @click="toggleActiveHIT(hit.HITId)"/>
-              <label :style="{whiteSpace: 'nowrap'}" :for="hit.HITId" class="lbl-toggle">{{ hit.HITId }}</label>
+              <label :style="{whiteSpace: 'nowrap', fontSize: hit.HITId.includes('-') ? '10px' : '12px'}" :for="hit.HITId" class="lbl-toggle">{{ hit.HITId }}</label>
             </td>
             <td>
               Status: 
@@ -258,6 +257,10 @@ export default Vue.extend({
       type: Array,
       default: null,
     },
+    parsedQualificationIDs: {
+      type: String,
+      default: ''
+    }
   },
   data: () => ({
     activeExperimentIdForExperimentMenu: '',
@@ -305,7 +308,7 @@ export default Vue.extend({
       this.$router.push({
         name: 'Settings',
         query: { id: experiment._id },
-        params: { experiment: experiment as any, initial: 'false' },
+        params: { experiment: experiment as any, initial: 'false', qualificationIDs: this.parsedQualificationIDs },
       })
     },
     onExperimentOverviewClick(experiment: Experiment) {

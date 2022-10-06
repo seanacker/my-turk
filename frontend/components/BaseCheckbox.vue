@@ -1,7 +1,6 @@
 <template>
   <div class="BaseCheckbox">
     <input
-      :id="hint"
       v-model="mValue"
       :checked="mValue"
       type="checkbox"

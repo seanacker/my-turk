@@ -44,7 +44,7 @@ app.post('/login', async (req, res) => {
     mturk = new AWS.MTurk();
     let balance = await getBalance(mturk);
     loadScheduledHITs()
-    setInterval(() => qualifyAllAutoQualifiedAssignments(), 60000)
+    setInterval(() => qualifyAllAutoQualifiedAssignments(), 600000)
     return res.send({
       success: true,
       balance: balance,
@@ -87,6 +87,7 @@ app.post('/listHITs', async (req, res) => {
   if (result) {
     return res.send({
       success: true,
+      message: 'added experiment',
       data: result
     });
   } else {
