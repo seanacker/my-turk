@@ -38,7 +38,8 @@ export type Experiment = {
   endpoint: string,
   guardHitByAdditionalQualificationids: string[] | string
   excludeWorkersByQualificationid: string[] | string,
-  automaticalyAssignQualification: boolean
+  automaticalyAssignQualification: boolean,
+  automaticalyEndHITs: boolean
   
 }
 
@@ -130,5 +131,18 @@ export type Assignment = {
   AssignmentId: string,
   WorkerId: string,
   HITId: string
+}
+
+export type SettingsGroup = {
+  title: string,
+  items: {
+    name: string,
+    value: string | boolean,
+    info: string,
+    disabled?: boolean,
+    hint?: string,
+    type?: string,
+    isQualificationId?: boolean
+  }[],
 }
 

@@ -10,27 +10,23 @@
       />
     </div>
     <div class="navigationWrapper">
-      <BaseButton prime @click="addExperiment">new experiment</BaseButton>
-      <BaseButton prime @click="onGuideClick">guide</BaseButton>
-      <BaseButton prime @click="refreshPage">refresh</BaseButton>
     </div>
-    <BaseWrapper title="Production" red :style="{overflow: 'inherit'}" v-if="!prodIsHidden" roundBorder style="margin-bottom: 450px;">
+    <BaseWrapper 
+      title="Production" 
+      red 
+      :style="{overflow: 'inherit'}" 
+      v-if="!prodIsHidden" 
+      roundBorder 
+      style="margin-bottom: 450px;"
+      @addExperiment="addExperiment"
+      @reload="refreshPage"
+      mainTable
+    >
       <Table
         :experiments="experiments.production"
         @createHIT="createHIT"
-        @expireHIT="expireHIT"
-        @deleteHIT="deleteHIT"
-        @cancelHIT="cancelHIT"
-        :parsedQualificationIDs="parsedQualificationIDs"
-      />
-    </BaseWrapper>
-
-    <BaseWrapper title="Sandbox" green style="overflow: inherit; min-width: 1700px !important; margin-bottom: 450px" v-if="!sandIsHidden" roundBorder >
-      <Table
-        :experiments="experiments.sandbox"
         @acceptAssignments="showAcceptAssignments"
         @rejectAssignment="showRejectAssignments"
-        @createHIT="createHIT"
         @expireHIT="expireHIT"
         @deleteHIT="deleteHIT"
         @cancelHIT="cancelHIT"
@@ -40,34 +36,56 @@
       />
     </BaseWrapper>
 
-    <BaseModal
-      :visible="modalIsVisible"
-      title="Delete HIT"
-      :cancel="{ label: 'cancel' }"
-      :accept="{ label: 'accept', type: 'cancel' }"
-      @onAccept="deleteHIT"
-      @onCancel="closeModal"
-    >      <p>Are you sure you want to delete this HIT?</p>
-    </BaseModal>
+    <BaseWrapper 
+      title="Sandbox" 
+      green 
+      style="overflow: inherit; min-width: 1700px !important; margin-bottom: 450px" 
+      v-if="!sandIsHidden" 
+      roundBorder
+      @addExperiment="addExperiment"
+      @reload="refreshPage"
+      mainTable
+    >
+      <Table
+        :experiments="experiments.sandbox"
+        @acceptAssignments="showAcceptAssignments"
+        @rejectAssignment="showRejectAssignments"
+        @createHIT="createHIT"
+        @expireHIT="expireHIT"
+        @deleteHIT="deleteHIT"
+        @cancelHIT="cancelHIT"
+        @reload="refreshPage"
+        @showAcceptAssignments="showAcceptAssignments"
+        @showRejectAssignments="showRejectAssignments"
+        @addExperiment="addExperiment"
+        :parsedQualificationIDs="parsedQualificationIDs"
+
+      />
+    </BaseWrapper>
     <BaseModal
       :visible="acceptAssignmentModalVisible"
       title="Accept Assignments"
       :rewardPerAssignment="rewardPerAssignmentForModal"
       :awardQualificationID="awardQualificationID"
+      :disabled="acceptIDs == []"
       :cancel="{ label: 'cancel' }"
       :accept="{ label: 'Approve', type: 'success' }"
       type="accept"
       @onAccept="acceptAssignments"
       @onCancel="closeModal"
-    >       
+    >
       <p>
         Before you approve Assignments make sure that, if necessary,
-        you have qualified all Workers with their Award Qualification.
+        you have <b>qualified all Workers with their Award Qualification</b>.
       </p>
       <p>
-        Fill in a list of AssignmentIDs you want to accept.
+        Fill in a list of <b>AssignmentIDs</b> you want to accept.
         The List should be seperated by any non-alphabetic character.
       </p>
+      <div style="display: flex; flex-direction: column">
+        Submitted Workers:
+        
+      </div>
       <BaseTextarea 
         name="assignmentids"
         label="AssignmentIDs"
@@ -100,7 +118,7 @@
         
       </select>
       <p>
-        Approving these Assignments will cost you {{this.priceForAccepting}}$
+        Approving these Assignments will cost you {{priceForAccepting}}$
       </p>
     </BaseModal>
     <BaseModal
@@ -108,16 +126,17 @@
       title="Reject Assignments"
       :rewardPerAssignment="rewardPerAssignmentForModal"
       :cancel="{ label: 'cancel' }"
+      :disabled="!rejectIDs"
       :accept="{ label: 'Reject', type: 'warning' }"
       @onAccept="rejectAssignments"
       @onCancel="closeModal"
     > 
       <p>
         Before you reject Assignments make sure that, if necessary,
-        you have qualified all Workers with their Award Qualification.
+        you have <b>qualified all Workers with their Award Qualification</b>.
       </p>
       <p>
-        Fill in a list of AssignmentIDs you want to reject.
+        Fill in a list of <b>AssignmentIDs</b> you want to reject.
         The List should be seperated by any non-alphabetic character.
       </p>
       <BaseTextarea 
@@ -160,13 +179,12 @@ import BaseModal from '@/components/BaseModal.vue'
 import BaseWrapper from '@/components/BaseWrapper.vue'
 import Table from '@/components/overview/Table.vue'
 import api from '@/api/index'
-import { Experiment, Hit, Route, APIRes } from '@/lib/types'
+import { Experiment, Hit, Route, APIRes, Message } from '@/lib/types'
 import BaseTextarea from '~/components/BaseTextarea.vue'
 
 type OverviewData = {
   route: Route
   hit: Hit | undefined
-  modalIsVisible: boolean
   experiments: { production: Experiment[]; sandbox: Experiment[] }
   prodIsHidden: boolean
   sandIsHidden: boolean
@@ -181,8 +199,8 @@ type OverviewData = {
   approvalFeedback: string
   rejectFeedback: string
   saveMessage: boolean
-  approveMessages: string[],
-  rejectMessages: string[],
+  approveMessages: Message[],
+  rejectMessages: Message[],
   parsedQualificationIDs: string,
   intervalID: any
 }
@@ -203,7 +221,6 @@ export default Vue.extend({
       name: 'Click here to SignOut',
       params: { loggedOut: true },
     },
-    modalIsVisible: false,
     experiments: { production: [], sandbox: [] },
     prodIsHidden: false,
     sandIsHidden: false,
@@ -299,6 +316,7 @@ export default Vue.extend({
           duration: 5000,
         })
       }
+      this.refreshPage()
     },
     async cancelHIT(hit: Hit){
       const deleteHITFromExperimentRes = await api.deleteHITFromExperiment(hit)
@@ -315,7 +333,7 @@ export default Vue.extend({
         })
       }
       console.log("cancel scheduled hit method called")
-      await api.cancelScheduledHIT(hit)
+      api.cancelScheduledHIT(hit)
       this.refreshPage()
     },
     async expireHIT(experiment: Experiment, hit: Hit) {
@@ -402,7 +420,6 @@ export default Vue.extend({
     },
 
     closeModal() {
-      this.modalIsVisible = false
       this.acceptAssignmentModalVisible = false
       this.rejectAssignmentModalVisible = false
     },
@@ -420,6 +437,13 @@ export default Vue.extend({
       console.log(this.rejectIDs)
     },
     async acceptAssignments() {
+      if (this.acceptIDs.length == 0){
+        return this.$toasted.error('Please fill in the assignment IDs you want to accept. You can find them if you click on each HIT or if you overview the experiment.', {
+              type: 'success',
+              position: 'bottom-right',
+              duration: 3000,
+            })
+      }
       if (this.saveMessage) {
           const messageRes = await api.createMessage(
             {message: this.approvalFeedback, type: 'approve'}
@@ -465,6 +489,13 @@ export default Vue.extend({
       }
     },
     async rejectAssignments()  {
+      if (this.rejectIDs.length == 0){
+        return this.$toasted.error('Please fill in the assignment IDs you want to reject. You can find them if you click on each HIT or if you overview the experiment.', {
+              type: 'success',
+              position: 'bottom-right',
+              duration: 3000,
+            })
+      }
       if (this.saveMessage) {
         const messageRes = await api.createMessage({message: this.rejectFeedback, type: 'reject'})
         if (messageRes.success) {

@@ -16,8 +16,8 @@
       { 'no-border-bottom': noBorderBottom },
 
     ]"
-    :style="{backgroundColor: white ? 'white' : '', marginRight: marginRight}"
-    @click="$emit('click')"
+    :style="{backgroundColor: disabled ? 'grey' : white ? 'white' : '', marginRight: marginRight}"
+    @click="disabled ? null : $emit('click')"
   >
     <slot></slot>
     <span :style="{whiteSpace: 'nowrap'}">{{ title }}</span>
@@ -84,6 +84,10 @@ export default Vue.extend({
     marginRight: {
       type: Number,
       default: 0
+    },
+    disabled: {
+      type: Boolean,
+      default: false    
     }
   },
 })

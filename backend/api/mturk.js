@@ -44,7 +44,7 @@ app.post('/login', async (req, res) => {
     mturk = new AWS.MTurk();
     let balance = await getBalance(mturk);
     loadScheduledHITs()
-    setInterval(() => qualifyAllAutoQualifiedAssignments(), 600000)
+    setInterval(() => qualifyAllAutoQualifiedAssignments(), 60000)
     return res.send({
       success: true,
       balance: balance,
@@ -98,21 +98,39 @@ app.post('/listHITs', async (req, res) => {
   }
 })
 
+app.post('/getQualificationIDs', async (req, res) => {
+  let result = await mongo.findData({}, QualificationIDs);
+  if (result) {
+    return res.send({
+      success: true,
+      message: 'got all qualification IDs',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: 'Something went wrong calling /getQualificationIDs. Retrieved error from DB: ' + result.error.message
+    });
+  }
+})
+
 
 app.post('/saveExperiment', async (req, res) => {
+  
   let data = req.body;
   let id = data.id;
 
   delete data.experiment._id;
   data.experiment.endpoint = endpoint.indexOf("sandbox") == -1 ? "production" : "sandbox";
-  const { awardQualificationName, awardQualificationDescription, awardQualificationId } = data.experiment;
+  const { experimentName, description, generateAQualificationIdForThisExperiment, awardQualificationId } = data.experiment;
 
-  if (awardQualificationName && awardQualificationDescription && !awardQualificationId) {
-    let result = await createQualificationType(awardQualificationName, awardQualificationDescription).catch(err => ({ error: err }));
+  if (generateAQualificationIdForThisExperiment && !awardQualificationId) {
+    let result = await createQualificationType(experimentName, description).catch(err => ({ error: err }));
 
     if (!result.error) {
       console.log(result.QualificationType.QualificationTypeId);
       data.experiment.awardQualificationId = result.QualificationType.QualificationTypeId;
+      mongo.insertData("QualificationIDs", {experimentName, qualificationTypeId: result.QualificationType.QualificationTypeId})
     }
     else {
       return res.send({
@@ -348,8 +366,10 @@ app.post('/createHIT', async (req, res) => {
       }
     );
   }
-  if (data.experiment.guardHitByAdditionalQualificationids) {
-    for (const id of data.experiment.guardHitByAdditionalQualificationids.split(',')) {
+  const keys = Object.keys(data.experiment)
+  for (const key of keys){
+    if (key.includes('include')){
+      const id = key.split(' ')[1]
       requirements.QualificationRequirements.push(
         {
           QualificationTypeId: id,
@@ -358,8 +378,9 @@ app.post('/createHIT', async (req, res) => {
       )
     }
   }
-  if (data.experiment.excludeWorkersByQualificationid) {
-    for (const id of data.experiment.excludeWorkersByQualificationid.split(',')) {
+  for (const key of keys){
+    if (key.includes('exclude')){
+      const id = key.split(' ')[1]
       requirements.QualificationRequirements.push(
         {
           QualificationTypeId: id,
@@ -368,19 +389,28 @@ app.post('/createHIT', async (req, res) => {
       )
     }
   }
-  createHITOptions = Object.assign(createHITOptions, requirements);
-  let result
   const now = Date.now()
   // delay to utc
   const target = Date.parse(data.scheduledDateTime)
   const delay =  target - now 
+  if (data.scheduledDateTime != '0' && delay >= 0)  {
+    requirements.available = `0 / ${data.experiment.assignmentsPerHit}`
+  }
+  createHITOptions = Object.assign(createHITOptions, requirements);
+  let result
+
   if (data.scheduledDateTime == '0' || delay < 0) {
+    if(data.experiment.automaticalyExpireHits) {
+      expireAllRunningHITs(data.experiment) 
+    }
     result = await createHIT(createHITOptions).catch(err => ({ error: err }));
   }
   else {
     const HITId = uuid()
     //hack since nodejs.settimeout doesnt return a number but instead a complex object which cant be sent vie res.send
-    const timeout = +setTimeout(() => {scheduleHIT({HIT: createHITOptions, HITId})}, delay) 
+    const timeout = +setTimeout(async () => {
+      scheduleHIT({HIT: createHITOptions, HITId}, data.experiment)
+    }, delay) 
     result = {HIT: {...createHITOptions, HITStatus: 'pending', scheduledDateTime: data.scheduledDateTime, HITId, timeoutId: timeout}, error: false}
     
   }
@@ -1009,7 +1039,11 @@ const rejectAssignment = ({ id, feedback }) => {
   });
 };
 
-const scheduleHIT = async (HIT) => {
+const scheduleHIT = async (HIT, experiment) => {
+  if(experiment.automaticalyExpireHits) {
+    const updatedExperiment = await updateExperimentsFromMyTurk(experiment._id)
+    expireAllRunningHITs(updatedExperiment) 
+  }
   const experiments = await mongo.findData(data={},"experiments")
   var containingExperiment = experiments.filter((experiment) => {
     if (!experiment.hits) return false
@@ -1072,7 +1106,7 @@ const loadScheduledHITs = async () => {
                 Question: HIT.Question,
                 QualificationRequirements: HIT.QualificationRequirements,
               },
-              HITId: HIT.HITId})}, delay)
+              HITId: HIT.HITId}), experiment}, delay)
             // to be able to cancel the HIT we need to update the scheduleId in the db
             HIT.scheduleId = scheduleId
             updateHIT(HIT)
@@ -1112,12 +1146,12 @@ const qualifyAllAutoQualifiedAssignments = async () => {
     const awardQualificationID = experiment.awardQualificationId
     experiment.hits.map(async (hit) => {
       if (hit.HITStatus != 'pending' && hit.HITStatus != 'failed'){
-        const assignmentRes = listAssignments({HITId: hit.HITId})
-        if (assignmentRes.success && assignmentRes.data) {
-          console.log("qualifiable data: ",assignmentRes.data)
-          assignmentRes.data.map( async (assignment) => {
+        const assignmentRes = await listAssignments({HITId: hit.HITId})
+        if (!assignmentRes.error && assignmentRes.Assignments) {
+          console.log("qualifiable data: ",assignmentRes.Assignments)
+          assignmentRes.Assignments.map( async (assignment) => {
             if (assignment.AssignmentStatus == "Submitted") {
-              qualifyWorker({
+              qualify({
                 awardQualificationID: awardQualificationID,
                 workerID: assignment.WorkerId,
               })
@@ -1126,6 +1160,15 @@ const qualifyAllAutoQualifiedAssignments = async () => {
         }
       }
     })
+  })
+}
+
+const expireAllRunningHITs = (experiment) => {
+  const hits = experiment.hits
+  hits.map((hit) => {
+    if(hit.HITStatus == 'Assignable' || hit.HITStatus == 'Unassignable' || hit.HITStatus == 'Reviewable' || hit.HITStatus == 'NotReviewed'){
+      expireHIT({HITId: hit.HITId})
+    }
   })
 }
 
@@ -1148,5 +1191,109 @@ const notifyWorkers = ({ subject, message, workerIDs }) => {
     });
   });
 };
+
+
+const updateExperimentsFromMyTurk = async (experimentId) => {
+  const experiments = await mongo.findData({ _id: ObjectId(experimentId)})
+
+  if (experiments) {
+    const experiment = experiments[0]
+    let hits = experiment.hits;      
+    let exp = {};
+
+    exp.available = 0;
+    exp.pending = 0;
+    exp.waitingForApproval = 0;
+    exp.completed = 0;
+    exp.maxAssignments = 0;
+
+    console.log("requesting HIT list");
+    let hitRes = (await listHITs({MaxResults: 100}).catch(err => ({ error: err })));
+    let mHITList = [];
+    if (!hitRes.error) {
+      mHITList = hitRes.HITs;
+      console.log("Got HITList with " + mHITList.length + " entries");
+    } else {
+      console.log("error while requesting HITlist: " + hitRes.error);
+    }    
+    let mHITs = {}
+    for (var j = 0; j<mHITList.length; j++) {
+      var hitDetail = mHITList[j];
+      mHITs[hitDetail.HITId] = hitDetail;
+    }
+    console.log("HITlist split into HITs");
+
+    for (var j = 0; hits && j < hits.length; j++) {
+      let hit = hits[j];
+
+      console.log("Searching for HIT ", hit.HITId);
+      let mHIT = {}
+      if (hit.HITStatus == 'pending' || hit.HITStatus =='failed') {
+        experiment.hits[j] = hit
+      }
+      else {
+        if (mHITs.hasOwnProperty(hit.HITId)) {
+          mHIT = mHITs[hit.HITId];
+          console.log("HIT found with id " + mHIT.HITId);
+        } else {
+          console.log("HIT not found in list, request via getHIT")
+          mHIT = (await getHIT({HITId: hit.HITId}).catch(err => ({ error: err }))).HIT;
+        }
+
+
+        if (mHIT) {
+          let hitID = mHIT.HITId;
+          let maxAssignments = mHIT.MaxAssignments;
+          let available = mHIT.NumberOfAssignmentsAvailable;
+          let pending = mHIT.NumberOfAssignmentsPending;
+          let completed = mHIT.NumberOfAssignmentsCompleted;
+          let creationTime = mHIT.CreationTime;
+          let title = mHIT.Title;
+          let waitingForApproval =
+            maxAssignments - available - completed - pending;
+          let HITStatus = mHIT.HITStatus;
+
+          mHIT = {
+            HITId: hitID,
+            title: title,
+            available: `${available} / ${maxAssignments}`,
+            pending: `${pending} / ${maxAssignments}`,
+            waitingForApproval: `${waitingForApproval} / ${maxAssignments}`,
+            completed: `${completed} / ${maxAssignments}`,
+            creationTime: creationTime,
+            HITStatus: HITStatus
+          };
+
+          experiment.hits[j] = mHIT;
+
+          exp.available = exp.available + available;
+          exp.pending = exp.pending + pending;
+          exp.waitingForApproval = exp.waitingForApproval + waitingForApproval;
+          exp.completed = exp.completed + completed;
+          exp.maxAssignments = exp.maxAssignments + maxAssignments;
+
+          experiment.available = `${exp.available} / ${exp.maxAssignments}`;
+          experiment.pending = `${exp.pending} / ${exp.maxAssignments}`;
+          experiment.waitingForApproval = `${exp.waitingForApproval} / ${
+            exp.maxAssignmentsupdateHIT
+            }`;
+          experiment.completed = `${exp.completed} / ${exp.maxAssignments}`;
+        } else {
+          experiment.hits = [];
+          experiment.available = `${exp.available} / ${exp.maxAssignments}`;
+          experiment.pending = `${exp.pending} / ${exp.maxAssignments}`;
+          experiment.waitingForApproval = `${exp.waitingForApproval} / ${
+            exp.maxAssignments
+            }`;
+          experiment.completed = `${exp.completed} / ${exp.maxAssignments}`;
+        }
+      }      
+    }
+
+    mongo.updateData({_id: ObjectId(experiment._id)}, experiment)
+    return experiment
+  }
+  
+}
 
 module.exports = app ;

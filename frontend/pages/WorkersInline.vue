@@ -388,7 +388,6 @@ export default Vue.extend({
 .WorkersInline {
   position: relative;
   flex-basis: 100%;
-  background-color: grey;
 
   > .BaseButton.is-prime {
     visibility: hidden;

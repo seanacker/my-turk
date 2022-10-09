@@ -20,6 +20,7 @@
           prime
           square
           :title="accept.label"
+          :disabled="disabled"
           :green="accept.type === 'success'"
           :red="accept.type === 'warning'"
           @click="onAccept"
@@ -50,6 +51,10 @@ export default Vue.extend({
       default: () => ({
         label: 'accept',
       }),
+    },
+    disabled: {
+      type: Boolean,
+      default: false
     },
     title: {
       type: String,

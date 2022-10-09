@@ -19,7 +19,7 @@
 
     <tr v-for="worker in workers" :key="worker.id">
       <td :style="{ fontSize:'12px'}">
-        {{ worker.id }}&nbsp;<br/>
+        {{ worker.id }}&nbsp;
         <BaseCopy :value="worker.assignmentID" />
       </td>
       <td :style="{fontSize:'12px'}">
