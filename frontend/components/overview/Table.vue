@@ -51,9 +51,9 @@
             />
           </BaseModal>
         <tr :key="experiment._id" v-if="true">
-          <td >
-            <input :id="experiment._id" class="toggle" type="checkbox" @click="toggleActiveExperimentForExperimentMenu(experiment)"/>
-            <label :for="experiment._id" class="lbl-toggle" style="text-align: left; font-size: 20px">{{experiment.experimentName}}</label>
+          <td v-click-outside="closeExperimentMenu">
+            <input :id="experiment._id" class="toggle" type="checkbox" />
+            <label @click="toggleActiveExperimentForExperimentMenu(experiment)"  :for="experiment._id" class="lbl-toggle" style="text-align: left; font-size: 20px">{{experiment.experimentName}}</label>
             <div  v-if="activeExperimentIdForExperimentMenu==experiment._id" class="experimentMenuWrapper">
               <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px', borderBottom: '1px solid black', cursor: 'pointer'}" class="hoverable">EDIT</span>
               <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px', borderBottom: '1px solid black', cursor: 'pointer'}" class="hoverable">OVERVIEW</span>
@@ -119,7 +119,7 @@
                 @click="onQualifyAllClick(experiment)"
               />
             </td>
-            <td class="button">      
+            <td class="button" v-click-outside="closeHandleWorkersMenu">      
               <BaseButton
                     prime 
                     square
@@ -167,7 +167,7 @@
         <br :key="'br'+index" v-if="true"/>
         <template v-for="(hit, index) in experiment.hits">
           <tr :key="hit.HITId + 'body'" v-if="true">
-            <td style="white-space: nowrap">
+            <td style="white-space: nowrap" v-click-outside="closeActiveHIT">
               <input :id="hit.HITId" class="toggle" type="checkbox" @click="toggleActiveHIT(hit.HITId)"/>
               <label :style="{whiteSpace: 'nowrap', fontSize: hit.HITId.includes('-') ? '10px' : '12px', marginTop: index == 0 ? '40px' : ''}" :for="hit.HITId" class="lbl-toggle">{{ hit.HITId }}</label>
             </td>
@@ -277,6 +277,8 @@ import { Experiment, Hit, Assignment } from '../../lib/types'
 import api from '@/api'
 //@ts-ignore
 import Datetime from 'vuejs-datetimepicker';
+//@ts-ignore
+import vClickOutside from 'v-click-outside'
 
 type TableData = {
   activeExperimentIdForExperimentMenu: string,
@@ -303,7 +305,10 @@ export default Vue.extend({
     BaseModal,
     WorkersInline,
     Datetime
-},
+  },
+  directives: {
+    clickOutside: vClickOutside.directive
+  },
   props: {
     experiments: {
       type: Array as () => Experiment[],
@@ -312,6 +317,10 @@ export default Vue.extend({
     parsedQualificationIDs: {
       type: String,
       default: ''
+    },
+    refreshIntervalId: {
+      type: Number,
+      default: 0
     }
   },
   data: () :TableData => ({
@@ -345,8 +354,13 @@ export default Vue.extend({
       return new Date(hit.scheduledDateTime as string).toLocaleTimeString("en-US")
     },
     toggleActiveExperimentForExperimentMenu(experiment: Experiment) {
+      console.log('toggle invoked')
       if(this.activeExperimentIdForExperimentMenu == experiment._id) this.activeExperimentIdForExperimentMenu = ""
       else this.activeExperimentIdForExperimentMenu = experiment._id
+    },
+    closeExperimentMenu() {
+      console.log('close invoked')
+      this.activeExperimentIdForExperimentMenu = ""
     },
     toggleActiveExperimentForHandleWorkersMenu(experiment: Experiment) {
       if (this.activeExperimentIdForHandleWorkersMenu == experiment._id) {
@@ -366,6 +380,7 @@ export default Vue.extend({
       this.activeExperimentIdForHandleWorkersMenu = ""
     },
     onExperimentEditClick(experiment: Experiment) {
+      clearInterval(this.refreshIntervalId)
       this.$router.push({
         name: 'Settings',
         query: { id: experiment._id },
@@ -373,6 +388,7 @@ export default Vue.extend({
       })
     },
     onExperimentOverviewClick(experiment: Experiment) {
+      clearInterval(this.refreshIntervalId)
       const hitList = experiment.hits.map(hit => hit.HITId).toString()
       this.$router.push({
         name: 'Workers',
@@ -403,6 +419,7 @@ export default Vue.extend({
       }
     },
     onHitClick(hit: Hit, experiment: Experiment) {
+      clearInterval(this.refreshIntervalId)
       this.$router.push({
         name: 'Workers',
         params: {},
@@ -451,7 +468,7 @@ export default Vue.extend({
     onRejectWorkersClick() {
       this.$emit('showRejectAssignments')
     },
-    async onQualifyAllClick(experiment: Experiment): Promise<void> {
+    async  onQualifyAllClick(experiment: Experiment): Promise<void> {
       this.awardid = experiment.awardQualificationId
       const qualifiable = []
       for (const HIT of experiment.hits) {
@@ -519,6 +536,9 @@ export default Vue.extend({
     toggleActiveHIT(HITId: string) {
       if(this.activeHITId == HITId) this.activeHITId = ""
       else this.activeHITId = HITId
+    },
+    closeActiveHIT() {
+      this.activeHITId = ""
     },
     closeModal() {
         this.modalIsVisible = ''

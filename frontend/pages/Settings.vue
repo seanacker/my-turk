@@ -171,6 +171,11 @@ export default Vue.extend({
             value: '',
             info: 'e.g. 9 for 9 assignments',
           },
+          {
+            name: 'Assignments Goal',
+            value: '',
+            info: 'e.g. 150 if no new HITs should be automatically created once 150 assignments are submitted',
+          },
         ],
       },
       {
@@ -189,7 +194,7 @@ export default Vue.extend({
         ],
       },
       {
-        title: 'Qualifications',
+        title: 'Qualifications and HIT settings',
         items: [
           {
             name: 'Generate a Qualification ID for this Experiment',
@@ -216,6 +221,12 @@ export default Vue.extend({
             info: `Automaticaly expire all running HITs once a new HIT for the experiment is created.`,
             type: 'checkbox',
             value: true,
+          },
+          {
+            name: 'Automaticaly start HITs',
+            value: false,
+            type: 'checkbox',
+            info: 'Automaticaly end each HIT once 80% of the assignments are finished and start a new one.'
           },
         ],
       },
@@ -261,14 +272,14 @@ export default Vue.extend({
       requirements.items.push({
         name: `Exclude${id}`,
         value: false,
-        info: `Exclude Workers from ${name} (with the qualification id ${id})`,
+        info: `Exclude Workers from experiment ${name} (with the qualification id ${id})`,
         type: 'checkbox',
         isQualificationId: true
       })
       if (id && id != '') requirements.items.push({
         name: `Include${id}`,
         value: false,
-        info: `Make the participation on ${name} a requirement for this experiment (only workers with the qualification id ${id}) can participate.`,
+        info: `Make the participation on experiment ${name} a requirement for this experiment (only workers with the qualification id ${id}) can participate.`,
         type: 'checkbox',
         isQualificationId: true
       })
@@ -293,6 +304,7 @@ export default Vue.extend({
 
   },
   mounted() {
+    console.log(this.$route.params)
     this.loadExperimentSettings()
   },
   methods: {
@@ -399,6 +411,24 @@ export default Vue.extend({
       if (!settings.rewardPerAssignment ) {
         this.$toasted.error(
           'Please pass a value for the reward per Assignment.', {
+            position: 'bottom-right',
+            duration: 10000
+          }
+        )
+        isValid = false
+      }
+      if ((!settings.assignmentsGoal && settings.automaticalyStartHits) || (settings.assignmentsGoal && !settings.automaticalyStartHits)) {
+        this.$toasted.error(
+          'If you choose to automatically end HITs once 80% of the assignments are finished please tick the corresponding box and set a goal of total assignments.', {
+            position: 'bottom-right',
+            duration: 10000
+          }
+        )
+        isValid = false
+      }
+      if (settings.generateAQualificationIdForThisExperiment && !settings.automaticalyAssignQualification  && settings.automaticalyStartHits) {
+        this.$toasted.error(
+          'If you choose to gernerate a qualificationID and you want to automaticaly start HITs please automaticaly assign qualification to workers.', {
             position: 'bottom-right',
             duration: 10000
           }

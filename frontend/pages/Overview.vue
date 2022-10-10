@@ -24,6 +24,7 @@
     >
       <Table
         :experiments="experiments.production"
+        :refreshIntervalId="refreshIntervalId"
         @createHIT="createHIT"
         @acceptAssignments="showAcceptAssignments"
         @rejectAssignment="showRejectAssignments"
@@ -48,6 +49,7 @@
     >
       <Table
         :experiments="experiments.sandbox"
+        :refreshIntervalId="refreshIntervalId"
         @acceptAssignments="showAcceptAssignments"
         @rejectAssignment="showRejectAssignments"
         @createHIT="createHIT"
@@ -202,7 +204,7 @@ type OverviewData = {
   approveMessages: Message[],
   rejectMessages: Message[],
   parsedQualificationIDs: string,
-  intervalID: any
+  refreshIntervalId: any
 }
 
 export default Vue.extend({
@@ -239,12 +241,12 @@ export default Vue.extend({
     approveMessages: [],
     rejectMessages: [],
     parsedQualificationIDs: "",
-    intervalID: undefined
+    refreshIntervalId: undefined
   }),
   async mounted() {
     await this.getExperiments()
     this.getMessages()
-    this.intervalID = setInterval(() => window.location.reload(), 3600000) 
+    this.refreshIntervalId = setInterval(() => this.refreshPage(), 600000) 
   },
   methods: {
     async getExperiments(): Promise<void> {
@@ -260,18 +262,15 @@ export default Vue.extend({
         this.experiments.production = result.data.production || []
         this.experiments.sandbox = result.data.sandbox || []
       }
-      for (const experiment of this.experiments.sandbox) {
-        this.parsedQualificationIDs = this.parsedQualificationIDs + experiment.experimentName + ': ' + experiment.awardQualificationId + ';'
-      }
-      for (const experiment of this.experiments.production) {
-        this.parsedQualificationIDs = this.parsedQualificationIDs + experiment.experimentName + ': ' + experiment.awardQualificationId + ';'
+      const qualificationIDs = await api.getQualificationIDs({})
+      for (const qualificationID of qualificationIDs.data) {
+        this.parsedQualificationIDs += (qualificationID.experimentName + ': ' + qualificationID.qualificationTypeId + ';')
       }
     },
     async addExperiment(): Promise<void> {
       const res = await api.addExperiment({})
-
       if (res.success) {
-        clearInterval(this.intervalID)
+        clearInterval(this.refreshIntervalId)
         this.$router.push({
           name: 'Settings',
           params: { 
@@ -558,13 +557,6 @@ export default Vue.extend({
     },
     toggleSaveMessage(){ 
       this.saveMessage = !this.saveMessage
-    },
-    onGuideClick() {
-      this.$router.push({
-          name: 'Guide',
-          params: {},
-          query: {},
-        })
     },
   },
 })
