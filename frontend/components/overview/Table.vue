@@ -23,9 +23,10 @@
         <td class="align-center">Completed</td>
         <td></td>
       </tr>
-      <template v-for="experiment in experiments" bold>
+      <template v-for="(experiment, index) in experiments" bold>
         <BaseModal
             :visible="modalIsVisible==experiment._id"
+            v-if="true"
             :key="experiment._id + 'Emailmodal'"
             title="Send Email"
             :cancel="{ label: 'cancel' }"
@@ -33,7 +34,7 @@
             :style="{width:'100%', margin: 'auto'}"
             @onAccept="notifyWorkers(experiment)"
             @onCancel="closeModal"
-          > This email will be send to all workers that have finished a HIT for {{experiment.experimentName}}
+          > This email will be send to all workers that have <b>finished a HIT for {{experiment.experimentName}}</b>
             <BaseTextarea
               name="subject"
               :style="{marginBottom: '15px', marginTop: '50px', height: '40px'}"
@@ -49,13 +50,14 @@
               @keyPress="setEmailMessage"
             />
           </BaseModal>
-        <tr :key="experiment._id">
-          <td >
-            <input :id="experiment._id" class="toggle" type="checkbox" @click="toggleActiveExperimentForExperimentMenu(experiment)"/>
-            <label :for="experiment._id" class="lbl-toggle" style="text-align: left; font-size: 20px">{{experiment.experimentName}}</label>
+        <tr :key="experiment._id" v-if="true">
+          <td v-click-outside="closeExperimentMenu">
+            <input :id="experiment._id" class="toggle" type="checkbox" />
+            <label @click="toggleActiveExperimentForExperimentMenu(experiment)"  :for="experiment._id" class="lbl-toggle" style="text-align: left; font-size: 20px">{{experiment.experimentName}}</label>
             <div  v-if="activeExperimentIdForExperimentMenu==experiment._id" class="experimentMenuWrapper">
-              <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px', borderBottom: '1px solid black'}" class="hoverable">EDIT</span>
-              <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px'}" class="hoverable">OVERVIEW</span>
+              <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px', borderBottom: '1px solid black', cursor: 'pointer'}" class="hoverable">EDIT</span>
+              <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px', borderBottom: '1px solid black', cursor: 'pointer'}" class="hoverable">OVERVIEW</span>
+              <span @click="onExperimentDeleteClick(experiment._id)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px', backgroundColor: '#ff5555', color: 'black', cursor: 'pointer'}" class="hoverable">DELETE</span>
             </div>
           </td>
           <td>
@@ -77,14 +79,14 @@
               >
               </BaseButton>
             <div class="scheduleWrapper" :style="{border: '1px solid black'}">              
-              <Datetime v-if="showScheduleNewHIT==experiment._id" v-model="scheduledDateTime" readonly></Datetime>              
+              <Datetime style="cursor: pointer;" v-if="showScheduleNewHIT==experiment._id" v-model="scheduledDateTime" readonly></Datetime>              
                 <div v-if="showScheduleNewHIT==experiment._id" :style="{display: 'flex', flexDirection: 'column'}">
-                  <div :style="{backgroundColor: 'white', padding: '10px 0', }">
+                  <i :style="{backgroundColor: 'white', padding: '10px 0', }">
                     <b>Los Angeles:</b> {{convertTZ('America/Los_Angeles')}}
-                  </div>
-                  <div :style="{backgroundColor: 'white', padding: '10px 0'}">
+                  </i>
+                  <i :style="{backgroundColor: 'white', padding: '10px 0'}">
                     <b>New York:</b> {{convertTZ('America/New_York')}}
-                  </div>
+                  </i>
                 </div >
                 <div :style="{display: 'flex'}">
                   <BaseButton 
@@ -117,7 +119,7 @@
                 @click="onQualifyAllClick(experiment)"
               />
             </td>
-            <td class="button">      
+            <td class="button" v-click-outside="closeHandleWorkersMenu">      
               <BaseButton
                     prime 
                     square
@@ -141,7 +143,7 @@
                   white
                   noBorderBottom           
                   title="approve workers"
-                  @click="onApproveWorkersClick(experiment.rewardPerAssignment, experiment.awardQualificationID)"
+                  @click="onApproveWorkersClick(experiment.rewardPerAssignment, experiment.awardQualificationId)"
                 />
                 <BaseButton
                   second
@@ -162,55 +164,79 @@
             </div>
           </td>
         </tr>
-        <br/>
+        <br :key="'br'+index" v-if="true"/>
         <template v-for="(hit, index) in experiment.hits">
-          <tr :key="hit.HITId + 'header'">
-            <td style="white-space: nowrap">
+          <tr :key="hit.HITId + 'body'" v-if="true">
+            <td style="white-space: nowrap" v-click-outside="closeActiveHIT">
               <input :id="hit.HITId" class="toggle" type="checkbox" @click="toggleActiveHIT(hit.HITId)"/>
-              <label :style="{whiteSpace: 'nowrap', fontSize: hit.HITId.includes('-') ? '10px' : '12px'}" :for="hit.HITId" class="lbl-toggle">{{ hit.HITId }}</label>
+              <label :style="{whiteSpace: 'nowrap', fontSize: hit.HITId.includes('-') ? '10px' : '12px', marginTop: index == 0 ? '40px' : ''}" :for="hit.HITId" class="lbl-toggle">{{ hit.HITId }}</label>
             </td>
             <td>
-              Status: 
-              <span :style="{color: hit.HITStatus == 'pending' ? 'orange' : hit.HITStatus == 'failed' ? 'red' : 'green', lineHeight: '20px' }">
-                {{ hit.HITStatus }}
-              </span> </br>
-              <span style="white-space: nowrap; line-height: 20px" v-if="hit.HITStatus!= 'pending'">
-                created at: {{parseCreationTime(hit.creationTime)}} </br>
-                expires after: {{experiment.hitExpiresAfter}} days
-              </span>         
+              <table class="hitDetails">
+                <tr v-if="index==0" style="height: 24">
+                  <td style="width: 25%">
+                    Status
+                  </td>
+                  <td style="width: 25%">
+                    Creation Date
+                  </td>
+                  <td style="width: 25%">
+                    Creation Time
+                  </td>
+                  <td style="width: 25%">
+                    Expires after (days)
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <span :style="{color: hit.HITStatus == 'pending' ? 'orange' : hit.HITStatus == 'failed' ? 'red' : 'green', lineHeight: '20px', width: '25%' }">
+                      {{ hit.HITStatus }}
+                   </span>
+                  </td>
+                  <td style="width: 25%">
+                    {{ hit.HITStatus == 'pending' ? parseScheduledDate(hit) : parseCreationDate(hit.creationTime) }}
+                  </td>
+                  <td style="width: 25%">
+                    {{ hit.HITStatus == 'pending' ? parseScheduledTime(hit) : parseCreationTime(hit.creationTime) }}
+                  </td>
+                  <td style="width: 25%">
+                    {{experiment.hitExpiresAfter}}
+                  </td>
+                </tr>
+              </table>      
             </td>
-            <td v-if="hit.HITStatus=='pending' || hit.HITStatus=='failed'" colspan="4">scheduled for: {{hit.scheduledDateTime}}</td>
-            <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center">{{ hit.available }}</td>
-            <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center">{{ hit.pending }}</td>
-            <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center">{{ hit.waitingForApproval }}</td>
-            <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center">{{ hit.completed }}</td>
+            <td v-if="hit.HITStatus=='pending' || hit.HITStatus == 'failed'" colspan="4" style="text-align: left; padding-left: 25px;"><p :style="{marginTop: index == 0 ? '40px' : ''}">{{hit.available.slice(0,5)}}</p></td>
+            <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center" ><p :style="{marginTop: index == 0 ? '42px' : ''}">{{ hit.available }}</p></td>
+            <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center" ><p :style="{marginTop: index == 0 ? '42px' : ''}">{{ hit.pending }}</p></td>
+            <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center" ><p :style="{marginTop: index == 0 ? '42px' : ''}">{{ hit.waitingForApproval }}</p></td>
+            <td v-if="hit.HITStatus!='pending' && hit.HITStatus!='failed'" class="align-center" ><p :style="{marginTop: index == 0 ? '42px' : ''}">{{ hit.completed }}</p></td>
             <td class="button">
-                <BaseButton :noBorderRight="hitStatus(hit)=='undefined'" prime square fullWidth @click="onHitClick(hit, experiment)">
+                <BaseButton :style="{marginTop: index == 0 ? '40px' : ''}" :noBorderRight="hitStatus(hit)=='unknown'" prime square fullWidth @click="onHitClick(hit, experiment)">
                   Fullscreen
                 </BaseButton>
             </td>
             <td v-if="hitStatus(hit)=='failed'" class="button">
-              <BaseButton prime red square fullWidth @click="onCancelHitClick(hit)">
+              <BaseButton :style="{marginTop: index == 0 ? '40px' : ''}" prime red square fullWidth @click="onCancelHitClick(hit)">
                 Delete
               </BaseButton>
             </td>
             <td v-if="hitStatus(hit)=='cancelable'" class="button">
-              <BaseButton prime red square fullWidth @click="onCancelHitClick(hit)">
+              <BaseButton :style="{marginTop: index == 0 ? '40px' : ''}" prime red square fullWidth @click="onCancelHitClick(hit)">
                 Cancel
               </BaseButton>
             </td>
             <td v-if="hitStatus(hit)=='expireable'" class="button">
-              <BaseButton  prime orange square fullWidth @click="onExpireHitClick(experiment, hit)">
-                Expire
+              <BaseButton  :style="{marginTop: index == 0 ? '40px' : ''}" prime orange square fullWidth @click="onExpireHitClick(experiment, hit)">
+                End
               </BaseButton>
             </td>
             <td v-if="hitStatus(hit)=='deleteable'" class="button">
-              <BaseButton  prime square red fullWidth @click="onDeleteHitClick(experiment, hit)">
+              <BaseButton  :style="{marginTop: index == 0 ? '40px' : ''}" prime square red fullWidth @click="onDeleteHitClick(experiment, hit)">
                 Delete
               </BaseButton>
             </td>
             <td v-if="hitStatus(hit)=='approvable'" class="button">
-              <BaseButton prime grayLight square fullWidth @click="onNotifyApprovable()">
+              <BaseButton :style="{marginTop: index == 0 ? '40px' : ''}" prime grayLight square fullWidth @click="onNotifyApprovable()">
                 Handle
               </BaseButton>
             </td>
@@ -226,6 +252,15 @@
           </tr>
 
         </template>
+        <tr column-span="all" v-if="(index+1)<experiments.length" :key="'firstMargin' + index">
+          <td style="height: 40px; font-size: 2px " colspan="9">&nbsp;</td>
+        </tr>
+        <tr class="hr" column-span="all" v-if="(index+1)<experiments.length" :key="'hr' + index">
+          <td style="height: 1px; font-size: 2px " colspan="9">&nbsp;</td>
+        </tr>
+        <tr  column-span="all" v-if="(index+1)<experiments.length" :key="'secondMargin' + index">
+          <td style="height: 40px; font-size: 2px " colspan="9">&nbsp;</td>
+        </tr>
       </template>
     </table>
   </div>
@@ -242,6 +277,25 @@ import { Experiment, Hit, Assignment } from '../../lib/types'
 import api from '@/api'
 //@ts-ignore
 import Datetime from 'vuejs-datetimepicker';
+//@ts-ignore
+import vClickOutside from 'v-click-outside'
+
+type TableData = {
+  activeExperimentIdForExperimentMenu: string,
+  activeExperimentIdForHandleWorkersMenu: string,
+  activeHITId: string,
+  emailSubject: string,
+  emailMessage: string,
+  modalIsVisible: string,
+  showScheduleNewHIT: string,
+  showHandleWorkers: string,
+  scheduledDateTime: string,
+  handleWorkersVisible: boolean,
+  showTimeInformation: boolean,
+  activeExperiment: Experiment | undefined,
+  workerID: string,
+  awardid: string,
+}
 
 export default Vue.extend({
   name: 'Tags',
@@ -251,18 +305,25 @@ export default Vue.extend({
     BaseModal,
     WorkersInline,
     Datetime
-},
+  },
+  directives: {
+    clickOutside: vClickOutside.directive
+  },
   props: {
     experiments: {
-      type: Array,
+      type: Array as () => Experiment[],
       default: null,
     },
     parsedQualificationIDs: {
       type: String,
       default: ''
+    },
+    refreshIntervalId: {
+      type: Number,
+      default: 0
     }
   },
-  data: () => ({
+  data: () :TableData => ({
     activeExperimentIdForExperimentMenu: '',
     activeExperimentIdForHandleWorkersMenu: '',
     activeHITId: '',
@@ -280,12 +341,26 @@ export default Vue.extend({
 
   }),
   methods: {
-    parseCreationTime(dateTime: string) {
-      return new Date(dateTime).toLocaleDateString("en-US") + ' ' + new Date(dateTime).toLocaleTimeString("en-US")
+    parseCreationTime(dateTime: number) {
+      return new Date(dateTime).toLocaleTimeString("en-US")
+    },
+    parseCreationDate(dateTime: number) {
+      return new Date(dateTime).toLocaleDateString("en-US")
+    },
+    parseScheduledDate(hit: Hit) {
+      return new Date(hit.scheduledDateTime as string).toLocaleDateString("en-US")
+    },
+    parseScheduledTime(hit: Hit){
+      return new Date(hit.scheduledDateTime as string).toLocaleTimeString("en-US")
     },
     toggleActiveExperimentForExperimentMenu(experiment: Experiment) {
+      console.log('toggle invoked')
       if(this.activeExperimentIdForExperimentMenu == experiment._id) this.activeExperimentIdForExperimentMenu = ""
       else this.activeExperimentIdForExperimentMenu = experiment._id
+    },
+    closeExperimentMenu() {
+      console.log('close invoked')
+      this.activeExperimentIdForExperimentMenu = ""
     },
     toggleActiveExperimentForHandleWorkersMenu(experiment: Experiment) {
       if (this.activeExperimentIdForHandleWorkersMenu == experiment._id) {
@@ -305,6 +380,7 @@ export default Vue.extend({
       this.activeExperimentIdForHandleWorkersMenu = ""
     },
     onExperimentEditClick(experiment: Experiment) {
+      clearInterval(this.refreshIntervalId)
       this.$router.push({
         name: 'Settings',
         query: { id: experiment._id },
@@ -312,6 +388,7 @@ export default Vue.extend({
       })
     },
     onExperimentOverviewClick(experiment: Experiment) {
+      clearInterval(this.refreshIntervalId)
       const hitList = experiment.hits.map(hit => hit.HITId).toString()
       this.$router.push({
         name: 'Workers',
@@ -322,9 +399,27 @@ export default Vue.extend({
           experimentId: experiment._id
         }
       })
+    },
+    async onExperimentDeleteClick(id: string) {
+      const res = await api.deleteExperiment({ id })
 
+      if (!res.success) {
+        this.$toasted.error(res.message, {
+          position: 'bottom-right',
+          duration: 3000,
+        })
+      }
+      else {
+        this.$emit('reload')
+        this.$toasted.success(`Deleted the experiment with the id: ${id}`,
+        {
+          position: 'bottom-right',
+          duration: 3000,
+        })
+      }
     },
     onHitClick(hit: Hit, experiment: Experiment) {
+      clearInterval(this.refreshIntervalId)
       this.$router.push({
         name: 'Workers',
         params: {},
@@ -373,7 +468,7 @@ export default Vue.extend({
     onRejectWorkersClick() {
       this.$emit('showRejectAssignments')
     },
-    async onQualifyAllClick(experiment: Experiment): Promise<void> {
+    async  onQualifyAllClick(experiment: Experiment): Promise<void> {
       this.awardid = experiment.awardQualificationId
       const qualifiable = []
       for (const HIT of experiment.hits) {
@@ -442,6 +537,9 @@ export default Vue.extend({
       if(this.activeHITId == HITId) this.activeHITId = ""
       else this.activeHITId = HITId
     },
+    closeActiveHIT() {
+      this.activeHITId = ""
+    },
     closeModal() {
         this.modalIsVisible = ''
     },
@@ -504,6 +602,11 @@ export default Vue.extend({
   tr {
     width: 100%;
     margin-top: 10px;
+    &.hr {
+      border: 0;
+      height: 1px; 
+      background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+    }
   }
   td {
     padding: 0 10px;
@@ -512,7 +615,9 @@ export default Vue.extend({
   td.button {
     padding: 0 10px 0 0
   }
-
+table.hitDetails > tr {
+  text-align: center;
+}
 .Overview input[type='checkbox'] {
   display: none;
 }
@@ -625,5 +730,8 @@ export default Vue.extend({
 
 .align-center {
   text-align: center
+}
+#tj-datetime-input{
+  cursor: pointer;
 }
 </style>

@@ -2,7 +2,7 @@
   <div class="Settings">
     <BaseHeadline
       :route="route"
-      :title="settings.internalName || 'Add experiment'"
+      title="Add experiment"
       :description="`You are in ${settings.endpoint} mode`"
     />
 
@@ -59,7 +59,7 @@ import BaseHeadline from '@/components/BaseHeadline.vue'
 import BaseModal from '@/components/BaseModal.vue'
 import Container from '@/components/settings/Container.vue'
 import api from '@/api'
-import { Experiment } from '@/lib/types'
+import { Experiment, SettingsGroup } from '@/lib/types'
 
 type SettingsData =  {
     modalIsVisible: boolean,
@@ -68,16 +68,7 @@ type SettingsData =  {
       name: string,
     },
     settings: Partial<Experiment>,
-    settingsInput: {title: string, items: 
-      {
-        name: string, 
-        value: string | boolean, 
-        disabled?: boolean, 
-        info?: string,
-        hint?: string,
-        type?: string,
-      }[]
-    }[],
+    settingsInput: SettingsGroup[],
     _qualificationIDs: string
 }
 
@@ -180,20 +171,36 @@ export default Vue.extend({
             value: '',
             info: 'e.g. 9 for 9 assignments',
           },
+          {
+            name: 'Assignments Goal',
+            value: '',
+            info: 'e.g. 150 if no new HITs should be automatically created once 150 assignments are submitted',
+          },
         ],
       },
       {
-        title: 'Qualification and Rewards',
+        title: 'Rewards and Entrypoint',
         items: [
           {
-            name: 'Award Qualification name',
+            name: 'Reward per Assignment',
             value: '',
-            info: 'Fill in if you want to qualify your workers',
+            info: 'e.g. 3.5 for 3.5$',
           },
           {
-            name: 'Award Qualification description',
+            name: 'Entrypoint',
             value: '',
-            info: 'Fill in if you want to qualify your workers',
+            info: 'Please fill in the URL of the HITs of your Experiment (iframe). See <a href="https://docs.aws.amazon.com/AWSMechTurk/latest/AWSMturkAPI/ApiReference_QuestionAnswerDataArticle.html" target="_blank">MTurk Question and Answer Data Guide</a> and <a href="https://manual.limesurvey.org/LimeSurvey_Manual/de">Limesurvey Manual</a> for more Information.  ',
+          },
+        ],
+      },
+      {
+        title: 'Qualifications and HIT settings',
+        items: [
+          {
+            name: 'Generate a Qualification ID for this Experiment',
+            value: false,
+            type: 'checkbox',
+            info: 'The Qualification ID can be assigned to workers to mark them as having allready participated. The ID will be generated from the experiment name and the experiment description.'
           },
           {
             name: 'Award Qualification ID',
@@ -206,28 +213,26 @@ export default Vue.extend({
             name: 'Automaticaly assign Qualification',
             info: `Automaticaly assign the Qualification to workers that participated on it (every minute periodicaly and before a new HIT is created).`,
             type: 'checkbox',
-            value: false,
+            value: true,
+          },
+
+          {
+            name: 'Automaticaly expire HITs',
+            info: `Automaticaly expire all running HITs once a new HIT for the experiment is created.`,
+            type: 'checkbox',
+            value: true,
           },
           {
-            name: 'Reward per Assignment',
-            value: '',
-            info: 'e.g. 3.5 for 3.5$',
+            name: 'Automaticaly start HITs',
+            value: false,
+            type: 'checkbox',
+            info: 'Automaticaly end each HIT once 80% of the assignments are finished and start a new one.'
           },
         ],
       },
       {
-        title: 'Requirements and Entrypoint',
+        title: 'Requirements',
         items: [
-          {
-            name: 'Guard Hit by additional QualificationIDs',
-            value: '',
-            info: 'Please type in the Qualification IDs a Worker needs to participate on the HITs of this experiment. Seperate different IDs with a comma.',
-          },
-          {
-            name: 'Exclude Workers by QualificationID',
-            value: '',
-            info: 'Please type in any additional Qualification IDs on which to exclude workers from HITs of this experiment. Seperate different IDs with a comma.',
-          },
           {
             name: 'Default Requirements',
             info: 'Workers must be US-based,have 95% approval and more than 1.000 approved hits.',
@@ -237,14 +242,8 @@ export default Vue.extend({
           {
             name: 'Guard Hit by Qualification',
             info: `Make the qualification ID from this experiment an exclusion criteria for every HIT of the experiment.`,
-
             type: 'checkbox',
             value: false,
-          },
-          {
-            name: 'Entrypoint',
-            value: '',
-            info: 'URL of the HITs of your Experiment (iframe)',
           },
         ],
       },
@@ -259,9 +258,53 @@ export default Vue.extend({
     },
   },
   beforeMount() {
-    this._qualificationIDs = this.$route.params.qualificationIDs
+    const experiments = this.$route.params.qualificationIDs.split(';')
+    const requirements = this.settingsInput.filter((group) => {
+      return group.title == 'Requirements'
+    })[0]
+    console.log(experiments)
+    experiments.map((experiment) => {
+      console.log('length:',experiment.split(':'))
+      const name = experiment.split(':')[0]
+      const id = experiment.split(':')[1]
+      
+      if (!id || id == '' || id.trim().length == 0) return
+      requirements.items.push({
+        name: `Exclude${id}`,
+        value: false,
+        info: `Exclude Workers from experiment ${name} (with the qualification id ${id})`,
+        type: 'checkbox',
+        isQualificationId: true
+      })
+      if (id && id != '') requirements.items.push({
+        name: `Include${id}`,
+        value: false,
+        info: `Make the participation on experiment ${name} a requirement for this experiment (only workers with the qualification id ${id}) can participate.`,
+        type: 'checkbox',
+        isQualificationId: true
+      })
+    })
+
+    // requirements.items.push({
+    //         name: 'Guard Hit by additional QualificationIDs',
+    //         value: '',
+    //         info: 'Please type in the Qualification IDs a Worker needs to participate on the HITs of this experiment. Seperate different IDs with a comma.',
+    //       },
+    //       {
+    //         name: 'Exclude Workers by QualificationIDs',
+    //         value: '',
+    //         info: 'Please type in any additional Qualification IDs on which to exclude workers from HITs of this experiment. Seperate different IDs with a comma.',
+    //       },)
+
+    
+    this.settingsInput.map((group) => {
+      if (group.title == 'Requirements for this Experiment') return requirements
+      else return group
+    })
+
   },
   mounted() {
+    console.log(this.$route.params)
     this.loadExperimentSettings()
   },
   methods: {
@@ -281,7 +324,7 @@ export default Vue.extend({
       if (!this.validateSettings(settings)) {
         this.$toasted.error('Please fill out all required fields', {
           position: 'bottom-right',
-          duration: 5000,
+          duration: 10000,
         })
       }
       else {
@@ -295,7 +338,7 @@ export default Vue.extend({
         } else {
           this.$toasted.error(res.message, {
             position: 'bottom-right',
-            duration: 5000,
+            duration: 10000,
           })
         }
       }
@@ -306,7 +349,7 @@ export default Vue.extend({
         this.$toasted.error(
           'Please pass a value for the assignment duration.', {
             position: 'bottom-right',
-            duration: 5000
+            duration: 10000
           }
         )
         isValid = false
@@ -315,7 +358,7 @@ export default Vue.extend({
         this.$toasted.error(
           'Please pass a value for the assignments per Hit.', {
             position: 'bottom-right',
-            duration: 5000
+            duration: 10000
           }
         )
         isValid = false
@@ -324,7 +367,7 @@ export default Vue.extend({
         this.$toasted.error(
           'Please pass a value for the description.', {
             position: 'bottom-right',
-            duration: 5000
+            duration: 10000
           }
         )
         isValid = false
@@ -333,7 +376,7 @@ export default Vue.extend({
         this.$toasted.error(
           'Please pass a value for the endpoint.', {
             position: 'bottom-right',
-            duration: 5000
+            duration: 10000
           }
         )
         isValid = false
@@ -342,7 +385,7 @@ export default Vue.extend({
         this.$toasted.error(
           'Please pass a value for the experiment Name.', {
             position: 'bottom-right',
-            duration: 5000
+            duration: 10000
           }
         )
         isValid = false
@@ -351,7 +394,7 @@ export default Vue.extend({
         this.$toasted.error(
           'Please pass a date for the expiration of the HIT.', {
             position: 'bottom-right',
-            duration: 5000
+            duration: 10000
           }
         )
         isValid = false
@@ -360,7 +403,7 @@ export default Vue.extend({
         this.$toasted.error(
           'Please pass a value for the title of the HIT.', {
             position: 'bottom-right',
-            duration: 5000
+            duration: 10000
           }
         )
         isValid = false
@@ -369,7 +412,25 @@ export default Vue.extend({
         this.$toasted.error(
           'Please pass a value for the reward per Assignment.', {
             position: 'bottom-right',
-            duration: 5000
+            duration: 10000
+          }
+        )
+        isValid = false
+      }
+      if ((!settings.assignmentsGoal && settings.automaticalyStartHits) || (settings.assignmentsGoal && !settings.automaticalyStartHits)) {
+        this.$toasted.error(
+          'If you choose to automatically end HITs once 80% of the assignments are finished please tick the corresponding box and set a goal of total assignments.', {
+            position: 'bottom-right',
+            duration: 10000
+          }
+        )
+        isValid = false
+      }
+      if (settings.generateAQualificationIdForThisExperiment && !settings.automaticalyAssignQualification  && settings.automaticalyStartHits) {
+        this.$toasted.error(
+          'If you choose to gernerate a qualificationID and you want to automaticaly start HITs please automaticaly assign qualification to workers.', {
+            position: 'bottom-right',
+            duration: 10000
           }
         )
         isValid = false

@@ -9,8 +9,12 @@
       { 'is-hidden': hidden },
     ]"
   >
-    <div class="TitleWrapper" :style="{borderRadius: roundBorder ? '25px 25px 0 0 ' : ''}">
-      <h2 class="Title">{{ title }}</h2>
+    <div class="TitleWrapper" :style="{borderRadius: roundBorder ? '25px 25px 0 0 ' : '', display: mainTable ? 'flex' : '', justifyContent: 'space-between'}">
+      <h2 :class="['Title', { 'is-main-Table' : mainTable}]" :stlye="{lineHeight: mainTable ? '50px !important' : ''}">{{ title }}</h2>
+      <div class="buttonsWrapper" v-if="mainTable">
+        <span style="margin-right: 20px;"><BaseButton @click="$emit('reload')"><fa  class="fa-lg" icon="arrows-rotate"/>&nbsp; &nbsp; REFRESH</BaseButton></span>
+        <span ><BaseButton @click="$emit('addExperiment')"><fa  class="fa-lg" icon="plus"/>&nbsp; &nbsp; NEW EXPERIMENT</BaseButton></span>
+      </div>
     </div>
 
     <slot></slot>
@@ -18,9 +22,13 @@
 </template>
 <script lang='ts'>
 import Vue from 'vue'
+import BaseButton from './BaseButton.vue';
 
 export default Vue.extend({
   name: 'BaseWrapper',
+  components: {
+    BaseButton,
+},
   props: {
     title: {
       type: String,
@@ -38,7 +46,11 @@ export default Vue.extend({
       type: Boolean,
       default: false,
     },
-    roundBorder: Boolean
+    roundBorder: Boolean,
+    mainTable: {
+      type: Boolean,
+      default: false
+    }
   },
 })
 </script>
@@ -118,6 +130,19 @@ export default Vue.extend({
   .Table {
     width: calc(100% + #{$outdent * 2});
     transform: translateX(-$outdent);
+  }
+
+  .buttonsWrapper {
+    display: flex; 
+    flex-direction: row; 
+    margin-top: 20px; 
+    margin-bottom: 20px;
+  }
+
+
+  .is-main-Table{
+    line-height: 50px;
+    color: white;
   }
 
   @media (min-width: breakpoint(tablet-portrait)) {

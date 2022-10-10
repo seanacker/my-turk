@@ -44,7 +44,10 @@ app.post('/login', async (req, res) => {
     mturk = new AWS.MTurk();
     let balance = await getBalance(mturk);
     loadScheduledHITs()
+    qualifyAllAutoQualifiedAssignments
     setInterval(() => qualifyAllAutoQualifiedAssignments(), 600000)
+    refreshAllAutoStartedHITs()
+    setInterval(() => refreshAllAutoStartedHITs(), 600000)
     return res.send({
       success: true,
       balance: balance,
@@ -87,7 +90,7 @@ app.post('/listHITs', async (req, res) => {
   if (result) {
     return res.send({
       success: true,
-      message: 'added experiment',
+      message: 'received all hits',
       data: result
     });
   } else {
@@ -98,21 +101,39 @@ app.post('/listHITs', async (req, res) => {
   }
 })
 
+app.post('/getQualificationIDs', async (req, res) => {
+  let result = await mongo.findData({}, 'QualificationIDs');
+  if (result) {
+    return res.send({
+      success: true,
+      message: 'got all qualification IDs',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: 'Something went wrong calling /getQualificationIDs. Retrieved error from DB: ' + result.error.message
+    });
+  }
+})
+
 
 app.post('/saveExperiment', async (req, res) => {
+  
   let data = req.body;
   let id = data.id;
 
   delete data.experiment._id;
   data.experiment.endpoint = endpoint.indexOf("sandbox") == -1 ? "production" : "sandbox";
-  const { awardQualificationName, awardQualificationDescription, awardQualificationId } = data.experiment;
+  const { experimentName, description, generateAQualificationIdForThisExperiment, awardQualificationId } = data.experiment;
 
-  if (awardQualificationName && awardQualificationDescription && !awardQualificationId) {
-    let result = await createQualificationType(awardQualificationName, awardQualificationDescription).catch(err => ({ error: err }));
+  if (generateAQualificationIdForThisExperiment && !awardQualificationId) {
+    let result = await createQualificationType(experimentName, description).catch(err => ({ error: err }));
 
     if (!result.error) {
       console.log(result.QualificationType.QualificationTypeId);
       data.experiment.awardQualificationId = result.QualificationType.QualificationTypeId;
+      mongo.insertData({experimentName, qualificationTypeId: result.QualificationType.QualificationTypeId}, "QualificationIDs")
     }
     else {
       return res.send({
@@ -191,9 +212,10 @@ app.post('/getExperiments', async (req, res) => {
 
         console.log("Searching for HIT ", hit.HITId);
         let mHIT = {}
-        if (hit.HITStatus == 'pending' || hit.HITStatus =='failed') {
+        if (hit.HITStatus == 'pending' || hit.HITStatus =='failed' || hit.HITStatus == 'Disposed') {
           result[i].hits[j] = hit
         }
+        else if (!hit.HITId) continue
         else {
           if (mHITs.hasOwnProperty(hit.HITId)) {
             mHIT = mHITs[hit.HITId];
@@ -291,96 +313,29 @@ app.post('/deleteExperiment', async (req, res) => {
 
 
 app.post('/createHIT', async (req, res) => {
-  let data = req.body;
-
-  const lifetimeInSeconds = data.experiment.hitExpiresAfter * 60 * 60 * 24;
-  console.log(`params.experiment`, lifetimeInSeconds);
-
-  let createHITOptions = {
-    AssignmentDurationInSeconds: data.experiment.assignmentDurationInMinutes * 60,
-    Description: data.experiment.description,
-    Reward: data.experiment.rewardPerAssignment,
-    Title: data.experiment.title,
-    AutoApprovalDelayInSeconds: lifetimeInSeconds,
-    Keywords: data.experiment.keywords,
-    LifetimeInSeconds: lifetimeInSeconds,
-    MaxAssignments: data.experiment.assignmentsPerHit,
-    //////////////////////////////////////////////////////////////////////////
-    // there is a major issue here, needs to be turned back and investigated//
-    //////////////////////////////////////////////////////////////////////////
-    Question: `<?xml version=\"1.0\"?>\n<HTMLQuestion xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd\">\n  <HTMLContent><![CDATA[<html><head><title>HIT</title><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/></head><body><!-- You must include this JavaScript file -->\r\n<script src=\"https://assets.crowd.aws/crowd-html-elements.js\"></script>\r\n\r\n<!-- For the full list of available Crowd HTML Elements and their input/output documentation,\r\n      please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->\r\n\r\n<!-- You must include crowd-form so that your task submits answers to MTurk -->\r\n<crowd-form answer-format=\"flatten-objects\">\r\n\r\n  <crowd-instructions link-text=\"View instructions\" link-type=\"button\">\r\n    <short-summary>\r\n      <p>Provide a brief instruction here</p>\r\n    </short-summary>\r\n\r\n    <detailed-instructions>\r\n      <h3>Provide more detailed instructions here</h3>\r\n      <p>Include additional information</p>\r\n    </detailed-instructions>\r\n\r\n    <positive-example>\r\n      <p>Provide an example of a good answer here</p>\r\n      <p>Explain why it's a good answer</p>\r\n    </positive-example>\r\n\r\n    <negative-example>\r\n      <p>Provide an example of a bad answer here</p>\r\n      <p>Explain why it's a bad answer</p>\r\n    </negative-example>\r\n  </crowd-instructions>\r\n\r\n  <div>\r\n    <p>What is your favorite color for a bird?</p>\r\n    <crowd-input name=\"favoriteColor\" placeholder=\"example: pink\" required></crowd-input>\r\n  </div>\r\n\r\n  <div>\r\n    <p>Check this box if you like birds</p>\r\n    <crowd-checkbox name=\"likeBirds\" checked=\"true\" required></crowd-checkbox>\r\n  </div>\r\n\r\n  <div>\r\n    <p>On a scale of 1-10, how much do you like birds?</p>\r\n    <crowd-slider name=\"howMuch\" min=\"1\" max=\"10\" step=\"1\" pin=\"true\" required></crowd-slider>\r\n  </div>\r\n\r\n  <div>\r\n    <p>Write a short essay describing your favorite bird</p>\r\n    <crowd-text-area name=\"essay\" rows=\"4\" placeholder=\"Lorem ipsum...\" required></crowd-text-area>\r\n  </div>\r\n</crowd-form></body></html>]]></HTMLContent>\n  <FrameHeight>0</FrameHeight>\n</HTMLQuestion>\n`
-  };
-  var requirements = {
-    QualificationRequirements: []
-  }
-  if (data.experiment.defaultRequirements) {
-    requirements = {
-      
-      QualificationRequirements: [
-        {
-          Comparator: 'GreaterThanOrEqualTo',
-          QualificationTypeId: '000000000000000000L0',
-          IntegerValues: [95]
-        },
-        {
-          QualificationTypeId: '00000000000000000071',
-          Comparator: 'EqualTo',
-          LocaleValues: [
-            {
-              Country: 'US'
-            }
-          ]
-        },
-        {
-          QualificationTypeId: '00000000000000000040',
-          Comparator: 'GreaterThanOrEqualTo',
-          IntegerValues: [1000]
-        }
-      ]
-    };
-  }
-  console.log("Guard is " + data.experiment.guardHitbyQualification);
-  if (data.experiment.guardHitByQualification) {
-    requirements.QualificationRequirements.push(
-      {
-        QualificationTypeId: data.experiment.awardQualificationId,
-        Comparator: 'DoesNotExist',
-      }
-    );
-  }
-  if (data.experiment.guardHitByAdditionalQualificationids) {
-    for (const id of data.experiment.guardHitByAdditionalQualificationids.split(',')) {
-      requirements.QualificationRequirements.push(
-        {
-          QualificationTypeId: id,
-          Comparator: 'Exists'
-        }
-      )
-    }
-  }
-  if (data.experiment.excludeWorkersByQualificationid) {
-    for (const id of data.experiment.excludeWorkersByQualificationid.split(',')) {
-      requirements.QualificationRequirements.push(
-        {
-          QualificationTypeId: id,
-          Comparator: 'DoesNotExist'
-        }
-      )
-    }
-  }
-  createHITOptions = Object.assign(createHITOptions, requirements);
-  let result
+  const data = req.body
+  const createHITOptions = parseHITOptionsfromExperiment(data.experiment)
   const now = Date.now()
   // delay to utc
   const target = Date.parse(data.scheduledDateTime)
   const delay =  target - now 
+  if (data.scheduledDateTime != '0' && delay >= 0)  {
+    requirements.available = `0 / ${data.experiment.assignmentsPerHit}`
+  }
+  let result
+
   if (data.scheduledDateTime == '0' || delay < 0) {
+    if(data.experiment.automaticalyExpireHits) {
+      expireAllRunningHITs(data.experiment) 
+    }
     result = await createHIT(createHITOptions).catch(err => ({ error: err }));
   }
   else {
     const HITId = uuid()
     //hack since nodejs.settimeout doesnt return a number but instead a complex object which cant be sent vie res.send
-    const timeout = +setTimeout(() => {scheduleHIT({HIT: createHITOptions, HITId})}, delay) 
+    const timeout = +setTimeout(async () => {
+      scheduleHIT({HIT: createHITOptions, HITId}, data.experiment)
+    }, delay) 
     result = {HIT: {...createHITOptions, HITStatus: 'pending', scheduledDateTime: data.scheduledDateTime, HITId, timeoutId: timeout}, error: false}
     
   }
@@ -597,7 +552,7 @@ app.post('/qualifyWorker', async (req, res) => {
   if (!result.error) {
     return res.send({
       success: true,
-      message: 'Qualification assigned',
+      message: `Qualification assigned (Worker id: ${data.workerID})`,
       data: result
     });
   } else {
@@ -1009,7 +964,11 @@ const rejectAssignment = ({ id, feedback }) => {
   });
 };
 
-const scheduleHIT = async (HIT) => {
+const scheduleHIT = async (HIT, experiment) => {
+  if(experiment.automaticalyExpireHits) {
+    const updatedExperiment = await updateExperimentsFromMyTurk(experiment._id)
+    expireAllRunningHITs(updatedExperiment) 
+  }
   const experiments = await mongo.findData(data={},"experiments")
   var containingExperiment = experiments.filter((experiment) => {
     if (!experiment.hits) return false
@@ -1072,7 +1031,7 @@ const loadScheduledHITs = async () => {
                 Question: HIT.Question,
                 QualificationRequirements: HIT.QualificationRequirements,
               },
-              HITId: HIT.HITId})}, delay)
+              HITId: HIT.HITId}), experiment}, delay)
             // to be able to cancel the HIT we need to update the scheduleId in the db
             HIT.scheduleId = scheduleId
             updateHIT(HIT)
@@ -1112,12 +1071,12 @@ const qualifyAllAutoQualifiedAssignments = async () => {
     const awardQualificationID = experiment.awardQualificationId
     experiment.hits.map(async (hit) => {
       if (hit.HITStatus != 'pending' && hit.HITStatus != 'failed'){
-        const assignmentRes = listAssignments({HITId: hit.HITId})
-        if (assignmentRes.success && assignmentRes.data) {
-          console.log("qualifiable data: ",assignmentRes.data)
-          assignmentRes.data.map( async (assignment) => {
+        const assignmentRes = await listAssignments({HITId: hit.HITId})
+        if (!assignmentRes.error && assignmentRes.Assignments) {
+          console.log("qualifiable data: ",assignmentRes.Assignments)
+          assignmentRes.Assignments.map( async (assignment) => {
             if (assignment.AssignmentStatus == "Submitted") {
-              qualifyWorker({
+              qualify({
                 awardQualificationID: awardQualificationID,
                 workerID: assignment.WorkerId,
               })
@@ -1126,6 +1085,149 @@ const qualifyAllAutoQualifiedAssignments = async () => {
         }
       }
     })
+  })
+}
+
+parseHITOptionsfromExperiment = (experiment) => {
+  const lifetimeInSeconds = experiment.hitExpiresAfter * 60 * 60 * 24
+
+  let createHITOptions = {
+    AssignmentDurationInSeconds: experiment.assignmentDurationInMinutes * 60,
+    Description: experiment.description,
+    Reward: experiment.rewardPerAssignment,
+    Title: experiment.title,
+    AutoApprovalDelayInSeconds: lifetimeInSeconds,
+    Keywords: experiment.keywords,
+    LifetimeInSeconds: lifetimeInSeconds,
+    MaxAssignments: experiment.assignmentsPerHit,
+    //////////////////////////////////////////////////////////////////////////
+    // there is a major issue here, needs to be turned back and investigated//
+    //////////////////////////////////////////////////////////////////////////
+    Question: `<?xml version=\"1.0\"?>\n<HTMLQuestion xmlns=\"http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd\">\n  <HTMLContent><![CDATA[<html><head><title>HIT</title><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"/></head><body><!-- You must include this JavaScript file -->\r\n<script src=\"https://assets.crowd.aws/crowd-html-elements.js\"></script>\r\n\r\n<!-- For the full list of available Crowd HTML Elements and their input/output documentation,\r\n      please refer to https://docs.aws.amazon.com/sagemaker/latest/dg/sms-ui-template-reference.html -->\r\n\r\n<!-- You must include crowd-form so that your task submits answers to MTurk -->\r\n<crowd-form answer-format=\"flatten-objects\">\r\n\r\n  <crowd-instructions link-text=\"View instructions\" link-type=\"button\">\r\n    <short-summary>\r\n      <p>Provide a brief instruction here</p>\r\n    </short-summary>\r\n\r\n    <detailed-instructions>\r\n      <h3>Provide more detailed instructions here</h3>\r\n      <p>Include additional information</p>\r\n    </detailed-instructions>\r\n\r\n    <positive-example>\r\n      <p>Provide an example of a good answer here</p>\r\n      <p>Explain why it's a good answer</p>\r\n    </positive-example>\r\n\r\n    <negative-example>\r\n      <p>Provide an example of a bad answer here</p>\r\n      <p>Explain why it's a bad answer</p>\r\n    </negative-example>\r\n  </crowd-instructions>\r\n\r\n  <div>\r\n    <p>What is your favorite color for a bird?</p>\r\n    <crowd-input name=\"favoriteColor\" placeholder=\"example: pink\" required></crowd-input>\r\n  </div>\r\n\r\n  <div>\r\n    <p>Check this box if you like birds</p>\r\n    <crowd-checkbox name=\"likeBirds\" checked=\"true\" required></crowd-checkbox>\r\n  </div>\r\n\r\n  <div>\r\n    <p>On a scale of 1-10, how much do you like birds?</p>\r\n    <crowd-slider name=\"howMuch\" min=\"1\" max=\"10\" step=\"1\" pin=\"true\" required></crowd-slider>\r\n  </div>\r\n\r\n  <div>\r\n    <p>Write a short essay describing your favorite bird</p>\r\n    <crowd-text-area name=\"essay\" rows=\"4\" placeholder=\"Lorem ipsum...\" required></crowd-text-area>\r\n  </div>\r\n</crowd-form></body></html>]]></HTMLContent>\n  <FrameHeight>0</FrameHeight>\n</HTMLQuestion>\n`
+  };
+  var requirements = {
+    QualificationRequirements: []
+  }
+  if (experiment.defaultRequirements) {
+    requirements = {
+      
+      QualificationRequirements: [
+        {
+          Comparator: 'GreaterThanOrEqualTo',
+          QualificationTypeId: '000000000000000000L0',
+          IntegerValues: [95]
+        },
+        {
+          QualificationTypeId: '00000000000000000071',
+          Comparator: 'EqualTo',
+          LocaleValues: [
+            {
+              Country: 'US'
+            }
+          ]
+        },
+        {
+          QualificationTypeId: '00000000000000000040',
+          Comparator: 'GreaterThanOrEqualTo',
+          IntegerValues: [1000]
+        }
+      ]
+    };
+  }
+  console.log("Guard is " + experiment.guardHitbyQualification);
+  if (experiment.guardHitByQualification) {
+    requirements.QualificationRequirements.push(
+      {
+        QualificationTypeId: experiment.awardQualificationId,
+        Comparator: 'DoesNotExist',
+      }
+    );
+  }
+  const keys = Object.keys(experiment)
+  for (const key of keys){
+    if (key.includes('include')){
+      const id = key.split(' ')[1]
+      requirements.QualificationRequirements.push(
+        {
+          QualificationTypeId: id,
+          Comparator: 'Exists'
+        }
+      )
+    }
+  }
+  for (const key of keys){
+    if (key.includes('exclude')){
+      const id = key.split(' ')[1]
+      requirements.QualificationRequirements.push(
+        {
+          QualificationTypeId: id,
+          Comparator: 'DoesNotExist'
+        }
+      )
+    }
+  }
+  return Object.assign(createHITOptions, requirements);
+}
+
+refreshAllAutoStartedHITs = async () => {
+  const experiments = await mongo.findData(data={},"experiments")
+  const experimentsToRestart = experiments.filter((experiment) => {
+    return experiment.automaticalyStartHits && experiment.NumberOfAssignmentsCompleted < parseInt(experiment.assignmentsGoals)
+  })
+  experimentsToRestart.map(async (experiment) => {
+    const runningHIT = experiment.hits.filter(hit => hit.HITStatus == 'Assignable')
+    if (!runningHIT && experiment.hits) {
+      qualifyAllAutoQualifiedAssignments()
+      const currentHITs = experiment.hits
+      const createHITOptions = parseHITOptionsfromExperiment(experiment)
+      const result = await createHIT(createHITOptions).catch(err => ({ error: err }));
+      if(!result.errror) {
+        console.log(`created new HIT for exeriment ${experiment.experimentName}`)
+        currentHITs.push(result.HIT)
+        experiment.hits = currentHITs
+        mongo.updateData({ _id: ObjectId(experiment._id) }, experiment)
+      }
+      return
+    }
+    experiment.hits.map(async (hit) => {
+      if (hit.HITStatus == 'Assignable') {
+        const assignmentRes = await listAssignments({HITId: hit.HITId}).catch(err => ({ error: err }));
+        if (!assignmentRes.error && assignmentRes.Assignments && assignmentRes.Assignments.length > 0.8 * parseInt(experiment.assignmentsPerHit)) {
+          let currentHITs = experiment.hits
+          qualifyAllAutoQualifiedAssignments()
+          const expireHITRes = await expireHIT({HITId: hit.HITId}).catch(err => ({ error: err })); 
+          console.log(expireHITRes)                 
+          const createHITOptions = parseHITOptionsfromExperiment(experiment)
+          const result = await createHIT(createHITOptions).catch(err => ({ error: err }));
+          console.log(result)
+          const expiredHIT = await getHIT({HITId: hit.HITId}).catch(err => ({ error: err }));
+          console.log(expiredHIT)
+          if(!expiredHIT.error){
+            console.log(`expired hit with hitid ${hit.HITId}`)
+            currentHITs = currentHITs.map((current) => {
+              if (current.HITId == expiredHIT.HIT.HITId) return expiredHIT.HIT
+              else return current
+            })
+          }
+          if(!result.errror) {
+            console.log(`created new HIT for exeriment ${experiment.experimentName}`)
+            currentHITs.push(result.HIT)
+            experiment.hits = currentHITs
+            mongo.updateData({ _id: ObjectId(experiment._id) }, experiment)
+          }
+          return
+        }
+      }
+    })  
+  })
+}
+
+const expireAllRunningHITs = (experiment) => {
+  const hits = experiment.hits
+  hits.map((hit) => {
+    if(hit.HITStatus == 'Assignable' || hit.HITStatus == 'Unassignable' || hit.HITStatus == 'Reviewable' || hit.HITStatus == 'NotReviewed'){
+      expireHIT({HITId: hit.HITId})
+    }
   })
 }
 
@@ -1148,5 +1250,107 @@ const notifyWorkers = ({ subject, message, workerIDs }) => {
     });
   });
 };
+
+
+const updateExperimentsFromMyTurk = async (experimentId) => {
+  const experiments = await mongo.findData({ _id: ObjectId(experimentId)})
+
+  if (experiments) {
+    const experiment = experiments[0]
+    let hits = experiment.hits;      
+    let exp = {};
+
+    exp.available = 0;
+    exp.pending = 0;
+    exp.waitingForApproval = 0;
+    exp.completed = 0;
+    exp.maxAssignments = 0;
+
+    console.log("requesting HIT list");
+    let hitRes = (await listHITs({MaxResults: 100}).catch(err => ({ error: err })));
+    let mHITList = [];
+    if (!hitRes.error) {
+      mHITList = hitRes.HITs;
+      console.log("Got HITList with " + mHITList.length + " entries");
+    } else {
+      console.log("error while requesting HITlist: " + hitRes.error);
+    }    
+    let mHITs = {}
+    for (var j = 0; j<mHITList.length; j++) {
+      var hitDetail = mHITList[j];
+      mHITs[hitDetail.HITId] = hitDetail;
+    }
+    console.log("HITlist split into HITs");
+
+    for (var j = 0; hits && j < hits.length; j++) {
+      let hit = hits[j];
+
+      console.log("Searching for HIT ", hit.HITId);
+      let mHIT = {}
+      if (hit.HITStatus == 'pending' || hit.HITStatus =='failed') {
+        experiment.hits[j] = hit
+      }
+      else {
+        if (mHITs.hasOwnProperty(hit.HITId)) {
+          mHIT = mHITs[hit.HITId];
+          console.log("HIT found with id " + mHIT.HITId);
+        } else {
+          console.log("HIT not found in list, request via getHIT")
+          mHIT = (await getHIT({HITId: hit.HITId}).catch(err => ({ error: err }))).HIT;
+        }
+
+
+        if (mHIT) {
+          let hitID = mHIT.HITId;
+          let maxAssignments = mHIT.MaxAssignments;
+          let available = mHIT.NumberOfAssignmentsAvailable;
+          let pending = mHIT.NumberOfAssignmentsPending;
+          let completed = mHIT.NumberOfAssignmentsCompleted;
+          let creationTime = mHIT.CreationTime;
+          let title = mHIT.Title;
+          let waitingForApproval =
+            maxAssignments - available - completed - pending;
+          let HITStatus = mHIT.HITStatus;
+
+          mHIT = {
+            HITId: hitID,
+            title: title,
+            available: `${available} / ${maxAssignments}`,
+            pending: `${pending} / ${maxAssignments}`,
+            waitingForApproval: `${waitingForApproval} / ${maxAssignments}`,
+            completed: `${completed} / ${maxAssignments}`,
+            creationTime: creationTime,
+            HITStatus: HITStatus
+          };
+
+          experiment.hits[j] = mHIT;
+
+          exp.available = exp.available + available;
+          exp.pending = exp.pending + pending;
+          exp.waitingForApproval = exp.waitingForApproval + waitingForApproval;
+          exp.completed = exp.completed + completed;
+          exp.maxAssignments = exp.maxAssignments + maxAssignments;
+
+          experiment.available = `${exp.available} / ${exp.maxAssignments}`;
+          experiment.pending = `${exp.pending} / ${exp.maxAssignments}`;
+          experiment.waitingForApproval = `${exp.waitingForApproval} / ${
+            exp.maxAssignmentsupdateHIT
+            }`;
+          experiment.completed = `${exp.completed} / ${exp.maxAssignments}`;
+        } else {
+          experiment.hits = [];
+          experiment.available = `${exp.available} / ${exp.maxAssignments}`;
+          experiment.pending = `${exp.pending} / ${exp.maxAssignments}`;
+          experiment.waitingForApproval = `${exp.waitingForApproval} / ${
+            exp.maxAssignments
+            }`;
+          experiment.completed = `${exp.completed} / ${exp.maxAssignments}`;
+        }
+      }      
+    }
+    mongo.updateData({_id: ObjectId(experiment._id)}, experiment)
+    return experiment
+  }
+}
 
 module.exports = app ;

@@ -2,11 +2,10 @@
   <div class="BaseCheckbox">
     <input
       v-model="mValue"
-      :checked="mValue"
       type="checkbox"
       @click="handleCheck"
     />
-    <label class="Label">{{ label }}</label>
+    <label v-if="!isQualificationId" class="Label">{{ label }}</label>
     <label class="Info" :for="info">{{ info }}</label>
   </div>
 </template>
@@ -31,7 +30,12 @@ export default Vue.extend({
     value: {
       type: Boolean,
       default: false,
+    },
+    isQualificationId: {
+      type: Boolean,
+      default: false
     }
+
   },
   computed: {
     mValue: {
@@ -52,8 +56,12 @@ export default Vue.extend({
   methods: {
     handleCheck(): void {
       const key = this.label.toLowerCase()
-
-this.$emit('keyPress', {
+      if (key.includes('makeTheParticipationOn' || key.includes('excludeWorkersFrom'))) {
+        this.$emit('keyPress', {
+          [key]: this.label
+        })
+      }
+      else this.$emit('keyPress', {
         [key]: this.mValue,
       })
     },
@@ -76,6 +84,7 @@ this.$emit('keyPress', {
     transform: translateY(-30px);
     font-size: rem(12px);
     transition: all 0.2s ease-out;
+    font-weight: bold;
   }
 
   input,

@@ -15,31 +15,29 @@ export type APIRes = {
 }
 
 export type Experiment = {
-  _id: string
-  experimentName: string,
-  title: string,
-  description: string,
-  entrypoint: string,
-  available: string,
-  pending: string,
-  waitingForApproval: string,
-  completed: string,
-  keywords: string,
-  awardQualificationName: string,
-  awardQualificationDescription: string,
-  awardQualificationId: string,
-  hitExpiresAfter: string,
+  _id: string,
   assignmentDurationInMinutes: string,
+  assignmentsGoal: string,
   assignmentsPerHit: string,
+  automaticalyAssignQualification: boolean,
+  automaticalyStartHits: boolean,
+  available: string,
+  awardQualificationId: string,
+  completed: string,
   defaultRequirements: boolean,
-  guardHitByQualification: boolean,
-  rewardPerAssignment: string,
-  hits: Hit[],
+  description: string,
   endpoint: string,
-  guardHitByAdditionalQualificationids: string[] | string
-  excludeWorkersByQualificationid: string[] | string,
-  automaticalyAssignQualification: boolean
-  
+  entrypoint: string,
+  experimentName: string,
+  generateAQualificationIdForThisExperiment?: boolean,
+  guardHitByQualification: boolean,
+  hitExpiresAfter: string,
+  hits: Hit[],
+  keywords: string,
+  pending: string,
+  rewardPerAssignment: string,
+  title: string,
+  waitingForApproval: string,
 }
 
 export type Hit = {
@@ -130,5 +128,18 @@ export type Assignment = {
   AssignmentId: string,
   WorkerId: string,
   HITId: string
+}
+
+export type SettingsGroup = {
+  title: string,
+  items: {
+    name: string,
+    value: string | boolean,
+    info: string,
+    disabled?: boolean,
+    hint?: string,
+    type?: string,
+    isQualificationId?: boolean
+  }[],
 }
 

@@ -9,7 +9,6 @@
         <h3           
           class="GroupTitle" 
           v-html="group.title"></h3>
-        <i v-if="group.title == 'Requirements and Entrypoint'"  v-html="'<br/><i>Your Existing Experiments have the following qualification IDs: <br/> </br>' + parsedQualificationIDs + '</i></br>'" style="padding-left: 20px;"></i>
         <template v-for="(item, i) in group.items">
           <BaseCheckbox
             v-if="item.type && item.type === 'checkbox'"
@@ -19,7 +18,8 @@
             :info="item.info"
             :hint="item.hint"
             @keyPress="handleKeyPress"
-          />
+            :isQualificationId="item.isQualificationId"
+          />          
           <BaseInput
             v-else
             :key="i + '-input'"
@@ -45,7 +45,6 @@ import { Experiment } from '@/lib/types'
 
 type SettingsContainerData = {
   settings: Partial<Experiment>,
-    parsedQualificationIDs: string,
   modes: {
     sandbox: boolean,
     production: boolean,
@@ -84,7 +83,6 @@ export default Vue.extend({
   },
   data: (): SettingsContainerData => ({
     settings: {},
-    parsedQualificationIDs: '',
     modes: {
       sandbox: true,
       production: false,
@@ -117,9 +115,6 @@ export default Vue.extend({
         this.modes[val] = true
       },
     },
-  },
-  beforeMount() {
-    this.parsedQualificationIDs = this.qualificationIDs.split(';').join(' <br/>')
   },
   methods: {
     handleKeyPress(option: any) {

@@ -86,6 +86,9 @@ export default {
   },
   cancelScheduledHIT: (payload: Payload): Promise<APIRes> => {
     return sendData('cancelScheduledHIT', payload)
+  },
+  getQualificationIDs: (payload: Payload):  Promise<APIRes> => {
+    return sendData('getQualificationIDs',payload)
   }
 }
 
