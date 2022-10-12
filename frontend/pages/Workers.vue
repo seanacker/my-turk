@@ -6,7 +6,7 @@
       :description="isExperimentView ? null : `Started: ${date}`"
       :meta="isExperimentView ? `ExperimentID: ${experimentId}` : `HIT: ${HITId}`"
     />
-    <BaseWrapper :title="'Workers waiting for approval (' +  submitted.length + ')'" gray-dark>
+    <BaseWrapper :title="'Workers waiting for approval (' +  submitted?.length + ')'" gray-dark>
       <TableSubmitted
         :workers="submitted"
         :isExperimentView="isExperimentView"
@@ -15,10 +15,10 @@
         @onQualify="handleQualify"
       />
     </BaseWrapper>
-    <BaseWrapper :title="'Workers approved (' + approved.length +')' " green>
+    <BaseWrapper :title="'Workers approved (' + approved?.length +')' " green>
       <TableApproved :workers="approved" :isExperimentView="isExperimentView"/>
     </BaseWrapper>
-    <BaseWrapper :title="'Workers rejected (' + rejected.length + ')'" red>
+    <BaseWrapper :title="'Workers rejected (' + rejected?.length + ')'" red>
       <TableRejected :workers="rejected" :isExperimentView="isExperimentView"/>
     </BaseWrapper>
     <BaseButton prime title="refresh" @click="refreshPage" />
@@ -35,7 +35,7 @@
       <BaseTextarea
         name="feedback"
         :style="{marginBottom: '15px', marginTop: '50px'}"
-        label="Leave your own Feedback"
+        label="Please fill in the Message you want to leave for the worker"
         :value="approvalFeedback"
         :onSave="true"
         @keyPress="setApprovalFeedbackFromText"
@@ -72,7 +72,7 @@
       <BaseTextarea
         name="feedback"
         :style="{marginBottom: '15px', marginTop: '50px'}"
-        label="Leave your own Feedback"
+        label="Please fill in the Message you want to leave for the worker"
         :value="rejectFeedback"
         :onSave="true"
         @keyPress="setRectionFeedbackFromText"

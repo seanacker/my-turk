@@ -84,10 +84,6 @@
         Fill in a list of <b>AssignmentIDs</b> you want to accept.
         The List should be seperated by any non-alphabetic character.
       </p>
-      <div style="display: flex; flex-direction: column">
-        Submitted Workers:
-        
-      </div>
       <BaseTextarea 
         name="assignmentids"
         label="AssignmentIDs"
@@ -96,7 +92,7 @@
       <BaseTextarea
         name="feedback"
         :style="{marginBottom: '15px', marginTop: '50px'}"
-        label="Leave your own Feedback"
+        label="Please fill in the Message you want to leave for the worker"
         :value="approvalFeedback"
         :onSave="true"
         @keyPress="setApprovalFeedbackFromText"
@@ -149,7 +145,7 @@
       <BaseTextarea
         name="feedback"
         :style="{marginBottom: '15px', marginTop: '50px'}"
-        label="Leave your own Feedback"
+        label="Please fill in the Message you want to leave for the worker"
         :value="rejectFeedback"
         :onSave="true"
         @keyPress="setRectionFeedbackFromText"
@@ -263,9 +259,11 @@ export default Vue.extend({
         this.experiments.sandbox = result.data.sandbox || []
       }
       const qualificationIDs = await api.getQualificationIDs({})
+      console.log("ids: ", qualificationIDs)
       for (const qualificationID of qualificationIDs.data) {
         this.parsedQualificationIDs += (qualificationID.experimentName + ': ' + qualificationID.qualificationTypeId + ';')
       }
+      console.log(this.parsedQualificationIDs)
     },
     async addExperiment(): Promise<void> {
       const res = await api.addExperiment({})
@@ -484,8 +482,10 @@ export default Vue.extend({
             position: 'bottom-right',
             duration: 5000,
           })
+        
         })
       }
+      this.refreshPage()
     },
     async rejectAssignments()  {
       if (this.rejectIDs.length == 0){
@@ -498,6 +498,7 @@ export default Vue.extend({
       if (this.saveMessage) {
         const messageRes = await api.createMessage({message: this.rejectFeedback, type: 'reject'})
         if (messageRes.success) {
+        this.refreshPage()
           this.$toasted.show(messageRes.message, {
             type: 'success',
             position: 'bottom-right',

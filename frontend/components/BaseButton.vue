@@ -14,6 +14,7 @@
       { 'is-full-width': fullWidth},
       { 'no-border-right': noBorderRight },
       { 'no-border-bottom': noBorderBottom },
+      { 'is-disabled': disabled}
 
     ]"
     :style="{backgroundColor: disabled ? 'grey' : white ? 'white' : '', marginRight: marginRight}"
@@ -127,6 +128,13 @@ export default Vue.extend({
     transform: translateY(-3px);
   }
 
+  &.is-disabled {
+    &:hover {
+      box-shadow: none !important;
+      transform: none !important;
+    }
+  }
+
   &.is-square {
     padding: 12px 20px;
     border-radius: 0;
@@ -176,6 +184,7 @@ export default Vue.extend({
       box-shadow: 0px 5px 20px 0 rgba(color(gray-light), 0.5);
     }
   }
+
 
   &.is-second {
     background-color: transparent;

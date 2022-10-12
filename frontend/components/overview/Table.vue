@@ -51,13 +51,11 @@
             />
           </BaseModal>
         <tr :key="experiment._id" v-if="true">
-          <td v-click-outside="closeExperimentMenu">
-            <input :id="experiment._id" class="toggle" type="checkbox" />
-            <label @click="toggleActiveExperimentForExperimentMenu(experiment)"  :for="experiment._id" class="lbl-toggle" style="text-align: left; font-size: 20px">{{experiment.experimentName}}</label>
+          <td v-click-outside="closeExperimentMenu" v-bind:id="experiment._id">
+            <span style="font-weight: bold; font-size: 16px"> <fa @click="toggleActiveExperimentForExperimentMenu(experiment)"  class="fa-lg" icon="bars"></fa>&nbsp;&nbsp;{{experiment.experimentName}}</span>
             <div  v-if="activeExperimentIdForExperimentMenu==experiment._id" class="experimentMenuWrapper">
               <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px', borderBottom: '1px solid black', cursor: 'pointer'}" class="hoverable">EDIT</span>
-              <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px', borderBottom: '1px solid black', cursor: 'pointer'}" class="hoverable">OVERVIEW</span>
-              <span @click="onExperimentDeleteClick(experiment._id)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px', backgroundColor: '#ff5555', color: 'black', cursor: 'pointer'}" class="hoverable">DELETE</span>
+              <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px', cursor: 'pointer'}" class="hoverable">OVERVIEW</span>
             </div>
           </td>
           <td>
@@ -72,7 +70,7 @@
                 v-if="experiment.endpoint !== 'development'"
                 prime
                 square
-                title="new hit (UTC)"
+                title="new hit"
                 fullWidth                
                 @click="onNewHITClick(experiment)"
               
@@ -166,16 +164,20 @@
         </tr>
         <br :key="'br'+index" v-if="true"/>
         <template v-for="(hit, index) in experiment.hits">
-          <tr :key="hit.HITId + 'body'" v-if="true">
-            <td style="white-space: nowrap" v-click-outside="closeActiveHIT">
-              <input :id="hit.HITId" class="toggle" type="checkbox" @click="toggleActiveHIT(hit.HITId)"/>
-              <label :style="{whiteSpace: 'nowrap', fontSize: hit.HITId.includes('-') ? '10px' : '12px', marginTop: index == 0 ? '40px' : ''}" :for="hit.HITId" class="lbl-toggle">{{ hit.HITId }}</label>
+          <tr :key="hit.HITId + 'body'" v-if="true" >
+            <td style="white-space: nowrap" @click="toggleActiveHIT(hit.HITId)">
+              <label 
+              :style="{whiteSpace: 'nowrap', fontSize: hit.HITId.includes('-') ? '10px' : '12px', marginTop: index == 0 ? '40px' : ''}" 
+              :for="hit.HITId" class="lbl-toggle">
+                <fa :icon="activeHITId==hit.HITId ? 'angle-down' : 'angle-right'"></fa>
+                {{ hit.HITId }}
+              </label>
             </td>
             <td>
               <table class="hitDetails">
                 <tr v-if="index==0" style="height: 24">
-                  <td style="width: 25%">
-                    Status
+                  <td style="width: 25%" >
+                    <a href="https://blog.mturk.com/understanding-hit-states-d0bc9806c0ee" target="_blank">Status</a>
                   </td>
                   <td style="width: 25%">
                     Creation Date
@@ -236,14 +238,15 @@
               </BaseButton>
             </td>
             <td v-if="hitStatus(hit)=='approvable'" class="button">
-              <BaseButton :style="{marginTop: index == 0 ? '40px' : ''}" prime grayLight square fullWidth @click="onNotifyApprovable()">
-                Handle
+              <BaseButton disabled :style="{marginTop: index == 0 ? '40px' : ''}" prime grayLight square fullWidth @click="onNotifyApprovable()">
+                Delete
               </BaseButton>
             </td>
           </tr>
           <tr v-if="activeHITId==hit.HITId" class="collapsible-content" :key="hit.HITId + 'workers'">
             <td colspan="100%" :style="{paddingLeft: '50px'}">
               <WorkersInline
+                v-click-outside="closeActiveHIT"
                 :HITId="hit.HITId"
                 :awardid="experiment.awardQualificationId"
                 :experimentID="experiment._id"
@@ -295,6 +298,7 @@ type TableData = {
   activeExperiment: Experiment | undefined,
   workerID: string,
   awardid: string,
+  showStatusInfo: string
 }
 
 export default Vue.extend({
@@ -338,7 +342,7 @@ export default Vue.extend({
     activeExperiment: undefined,
     workerID: '',
     awardid: '',
-
+    showStatusInfo: ''
   }),
   methods: {
     parseCreationTime(dateTime: number) {
@@ -354,26 +358,21 @@ export default Vue.extend({
       return new Date(hit.scheduledDateTime as string).toLocaleTimeString("en-US")
     },
     toggleActiveExperimentForExperimentMenu(experiment: Experiment) {
-      console.log('toggle invoked')
-      if(this.activeExperimentIdForExperimentMenu == experiment._id) this.activeExperimentIdForExperimentMenu = ""
-      else this.activeExperimentIdForExperimentMenu = experiment._id
+      setTimeout(() => {
+        
+      console.log('toggle invoked', experiment)
+      this.activeExperimentIdForExperimentMenu = experiment._id
+      console.log(this.activeExperimentIdForExperimentMenu)
+      }, 200)
     },
     closeExperimentMenu() {
-      console.log('close invoked')
       this.activeExperimentIdForExperimentMenu = ""
     },
     toggleActiveExperimentForHandleWorkersMenu(experiment: Experiment) {
-      if (this.activeExperimentIdForHandleWorkersMenu == experiment._id) {
-        this.activeExperimentIdForHandleWorkersMenu = ""
-        this.handleWorkersVisible = false
-      }
-      else if (this.activeExperimentIdForHandleWorkersMenu == "") {
-        this.activeExperimentIdForHandleWorkersMenu = experiment._id
+      setTimeout(() => {
         this.handleWorkersVisible = true
-      }
-      else {
         this.activeExperimentIdForHandleWorkersMenu = experiment._id
-      }
+      }, 200)
     },
     closeHandleWorkersMenu(experiment: Experiment) {
       this.handleWorkersVisible = false
@@ -534,11 +533,13 @@ export default Vue.extend({
       return 'unknown'
     },
     toggleActiveHIT(HITId: string) {
-      if(this.activeHITId == HITId) this.activeHITId = ""
-      else this.activeHITId = HITId
+      setTimeout(() => {
+        this.activeHITId = HITId
+      
+      }, 10)  
     },
-    closeActiveHIT() {
-      this.activeHITId = ""
+    closeActiveHIT(event: any) { 
+      if(event.target.className != 'lbl-toggle') this.activeHITId = ""
     },
     closeModal() {
         this.modalIsVisible = ''
@@ -644,27 +645,8 @@ table.hitDetails > tr {
   color: #7c5a0b;
 }
 
-.lbl-toggle::before {
-  content: ' ';
-  display: inline-block;
 
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 5px solid currentColor;
 
-  vertical-align: middle;
-  margin-right: 0.7rem;
-  transform: translateY(-2px);
-
-  transition: transform 0.2s ease-out;
-}
-
-.toggle:checked ~ .lbl-toggle::before {
-  //border-right: 5px solid transparent;
-  //border-top: 5px solid currentColor;
-  //border-left: 5px solid transparent;
-  transform: rotate(90deg);
-}
 
 .collapsible-content {
   overflow: scroll;

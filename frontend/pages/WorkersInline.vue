@@ -33,7 +33,7 @@
     >
       <BaseTextarea
         name="feedback"
-        label="Leave your own Feedback"
+        label="Please fill in the Message you want to leave for the worker"
         :style="{marginBottom: '15px', marginTop: '50px'}"
         :onSave="true"
         :value="approvalFeedback"
@@ -67,7 +67,7 @@
     >
       <BaseTextarea
         name="feedback"
-        label="Leave your own Feedback"
+        label="Please fill in the Message you want to leave for the worker"
         :style="{marginBottom: '15px', marginTop: '50px'}"
         :value="rejectFeedback"
         @keyPress="setRejectionFeedback"
@@ -142,7 +142,9 @@ export default Vue.extend({
     },
     submitted: [],
     approved: [],
-    rejected: []
+    rejected: [],
+    approveMessages: [],
+    rejectMessages: []
   }),
   async mounted(): Promise<void> {
     console.log('Stored QualifivationID: ' + this.awardid)

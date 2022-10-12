@@ -7,7 +7,7 @@
         :style="{marginTop: '0', lineHeight: '1', marginRight: '5px'}">save this Message</p>
       <input
         type="checkbox"
-        :style="{marginTop: '0', padding: '0', width: 'auto', backgroundColor: 'transparent', display: 'block'}"
+        :style="{marginTop: '0', padding: '0', width: 'auto', backgroundColor: 'transparent', display: 'block', marginBottom: '10px'}"
         :value="false"
         @click="toggleSaveMessage()"
       />
@@ -78,6 +78,7 @@ export default Vue.extend({
     transform: translateY(-30px);
     font-size: rem(12px);
     transition: all 0.2s ease-out;
+    font-weight: bold;
   }
 
   .Save {
