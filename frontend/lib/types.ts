@@ -125,6 +125,7 @@ export type Message = {
 }
 
 export type Assignment = {
+  AssignmentStatus?: "Approved" | "Submitted" | "Rejected"
   AssignmentId: string,
   WorkerId: string,
   HITId: string

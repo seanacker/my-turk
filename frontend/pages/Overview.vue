@@ -166,6 +166,19 @@
         </select>
       </div>
     </BaseModal>
+    <BaseModal
+      :visible="showDeleteHitModal"
+      title="Delete HIT"
+      :cancel="{ label: 'cancel' }"
+      :accept="{ label: 'Delete', type: 'warning' }"
+      @onAccept="actuallyDeleteHIT"
+      @onCancel="showDeleteHitModal=false"
+      >
+      <p>
+        Do you actually want to delete HIT {{hitToDelete?.HITId}}<br/>
+        This HIT will be removed from the Database and MTurk and all of its assignments will be subtracted from the total numbers of the experiment      
+      </p>
+    </BaseModal>
   </div>
 </template>
 <script lang="ts">
@@ -200,7 +213,10 @@ type OverviewData = {
   approveMessages: Message[],
   rejectMessages: Message[],
   parsedQualificationIDs: string,
-  refreshIntervalId: any
+  refreshIntervalId: any,
+  hitToDelete: Hit | undefined,
+  experimentContainingHitToDelete: Experiment | undefined
+  showDeleteHitModal: boolean
 }
 
 export default Vue.extend({
@@ -237,7 +253,10 @@ export default Vue.extend({
     approveMessages: [],
     rejectMessages: [],
     parsedQualificationIDs: "",
-    refreshIntervalId: undefined
+    refreshIntervalId: undefined,
+    hitToDelete: undefined,
+    experimentContainingHitToDelete: undefined,
+    showDeleteHitModal: false
   }),
   async mounted() {
     await this.getExperiments()
@@ -349,9 +368,19 @@ export default Vue.extend({
       }
       this.refreshPage()
     },
+
     async deleteHIT(experiment: Experiment, hit: Hit) {
-      
-      console.log("deleted HIT", hit)
+      this.hitToDelete = hit
+      this.experimentContainingHitToDelete = experiment
+      this.showDeleteHitModal = true
+    },
+    async actuallyDeleteHIT() {
+      const hit = this.hitToDelete
+      let experiment = this.experimentContainingHitToDelete
+      if (!hit || !experiment) return false
+      this.showDeleteHitModal = false
+      this.hitToDelete = undefined
+      this.experimentContainingHitToDelete = undefined
       const deleteRes = await api.deleteHIT({HITId: hit.HITId})
       console.log(deleteRes)
         if (deleteRes.success) {

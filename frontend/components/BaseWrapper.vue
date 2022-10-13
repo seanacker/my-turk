@@ -147,7 +147,6 @@ export default Vue.extend({
 
   @media (min-width: breakpoint(tablet-portrait)) {
     width: auto;
-    transform: translateX(0);
     padding: 20px 40px;
   }
 }

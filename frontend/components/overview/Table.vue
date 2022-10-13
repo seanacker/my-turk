@@ -25,6 +25,7 @@
       </tr>
       <template v-for="(experiment, index) in experiments" bold>
         <BaseModal
+            style="position: fixed; top: 0; left: 0"
             :visible="modalIsVisible==experiment._id"
             v-if="true"
             :key="experiment._id + 'Emailmodal'"
@@ -34,7 +35,7 @@
             :style="{width:'100%', margin: 'auto'}"
             @onAccept="notifyWorkers(experiment)"
             @onCancel="closeModal"
-          > This email will be send to all workers that have <b>finished a HIT for {{experiment.experimentName}}</b>
+          > This email will be send to all approved workers from experiment <b>{{experiment.experimentName}}</b>
             <BaseTextarea
               name="subject"
               :style="{marginBottom: '15px', marginTop: '50px', height: '40px'}"
@@ -50,13 +51,15 @@
               @keyPress="setEmailMessage"
             />
           </BaseModal>
-        <tr :key="experiment._id" v-if="true">
-          <td v-click-outside="closeExperimentMenu" v-bind:id="experiment._id">
-            <span style="font-weight: bold; font-size: 16px"> <fa @click="toggleActiveExperimentForExperimentMenu(experiment)"  class="fa-lg" icon="bars"></fa>&nbsp;&nbsp;{{experiment.experimentName}}</span>
-            <div  v-if="activeExperimentIdForExperimentMenu==experiment._id" class="experimentMenuWrapper">
-              <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px', borderBottom: '1px solid black', cursor: 'pointer'}" class="hoverable">EDIT</span>
-              <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px', cursor: 'pointer'}" class="hoverable">OVERVIEW</span>
-            </div>
+        <tr 
+          :key="experiment._id" 
+          v-if="true"
+          style="height: 75px; background-color: beige; "
+          >
+          <td v-bind:id="'title' + experiment._id">
+            <span style="font-weight: bold; font-size: 16px; cursor: pointer;" @click="toggleActiveExperiment(experiment)"> 
+              <fa   style="cursor: pointer;" class="fa-lg" :icon="activeExperimentId==experiment._id || activeExperimentId == 'true'? 'angle-down' : 'angle-right' " ></fa>&nbsp;&nbsp;{{experiment.experimentName}}
+            </span>       
           </td>
           <td>
             {{ experiment.description }}
@@ -68,7 +71,8 @@
           <td class="button align-center">
             <BaseButton
                 v-if="experiment.endpoint !== 'development'"
-                prime
+                second
+                white
                 square
                 title="new hit"
                 fullWidth                
@@ -76,7 +80,7 @@
               
               >
               </BaseButton>
-            <div class="scheduleWrapper" :style="{border: '1px solid black'}">              
+            <div class="scheduleWrapper" :style="{border: '1px solid black'}" :id="'schedule' + experiment._id">              
               <Datetime style="cursor: pointer;" v-if="showScheduleNewHIT==experiment._id" v-model="scheduledDateTime" readonly></Datetime>              
                 <div v-if="showScheduleNewHIT==experiment._id" :style="{display: 'flex', flexDirection: 'column'}">
                   <i :style="{backgroundColor: 'white', padding: '10px 0', }">
@@ -108,24 +112,34 @@
               </div>
             </td>
             <td class="button">
-              <BaseButton
-                v-if="experiment.endpoint !== 'development'"
-                prime
-                square              
-                title="qualify all"
-                fullWidth
-                @click="onQualifyAllClick(experiment)"
+              <BaseButton 
+                @click="onExperimentOverviewClick(experiment)" 
+                second
+                white
+                square
+                title="overview"
+                fullWidth />
+            </td>
+            <td class="button">
+              <BaseButton 
+                @click="onExperimentEditClick(experiment)" 
+                second
+                white
+                square
+                title="edit"
+                fullWidth  
               />
             </td>
             <td class="button" v-click-outside="closeHandleWorkersMenu">      
               <BaseButton
-                    prime 
+              second
+                white
                     square
                     title="handle workers"                 
                     fullWidth
                     @click="toggleActiveExperimentForHandleWorkersMenu(experiment)"
                   />
-              <div class="handleWorkersWrapper" v-if="handleWorkersVisible && activeExperimentIdForHandleWorkersMenu == experiment._id">
+              <div class="handleWorkersWrapper" v-if="handleWorkersVisible && (activeExperimentIdForHandleWorkersMenu == experiment._id || activeExperimentId == 'true')">
                 <BaseButton
                   second
                   square                
@@ -152,22 +166,23 @@
                   @click="onRejectWorkersClick()"
                 />
                 <BaseButton
-                  second 
+                  v-if="experiment.endpoint !== 'development'"
+                  second
                   square
-                  white                
-                  title="close"
+                  white         
+                  title="qualify all"
                   fullWidth
-                  @click="closeHandleWorkersMenu(experiment)"
+                  @click="onQualifyAllClick(experiment)"
                 />
             </div>
           </td>
         </tr>
-        <br :key="'br'+index" v-if="true"/>
-        <template v-for="(hit, index) in experiment.hits">
-          <tr :key="hit.HITId + 'body'" v-if="true" >
+        <br :key="'br'+index" v-if="activeExperimentId==experiment._id || activeExperimentId == 'true'"/>
+        <template v-for="(hit, index) in experiment.hits" >
+          <tr :key="hit.HITId + 'body'" v-if="activeExperimentId==experiment._id || activeExperimentId == 'true'" >
             <td style="white-space: nowrap" @click="toggleActiveHIT(hit.HITId)">
               <label 
-              :style="{whiteSpace: 'nowrap', fontSize: hit.HITId.includes('-') ? '10px' : '12px', marginTop: index == 0 ? '40px' : ''}" 
+              :style="{whiteSpace: 'nowrap', fontSize: hit.HITId.includes('-') ? '10px' : '12px', marginTop: index == 0 ? '40px' : '', paddingLeft: '20px'}" 
               :for="hit.HITId" class="lbl-toggle">
                 <fa :icon="activeHITId==hit.HITId ? 'angle-down' : 'angle-right'"></fa>
                 {{ hit.HITId }}
@@ -237,8 +252,8 @@
                 Delete
               </BaseButton>
             </td>
-            <td v-if="hitStatus(hit)=='approvable'" class="button">
-              <BaseButton disabled :style="{marginTop: index == 0 ? '40px' : ''}" prime grayLight square fullWidth @click="onNotifyApprovable()">
+            <td v-if="hitStatus(hit)=='approvable'" class="button" @click="onNotifyApprovable()">
+              <BaseButton disabled :style="{marginTop: index == 0 ? '40px' : ''}" prime grayLight square fullWidth >
                 Delete
               </BaseButton>
             </td>
@@ -246,7 +261,6 @@
           <tr v-if="activeHITId==hit.HITId" class="collapsible-content" :key="hit.HITId + 'workers'">
             <td colspan="100%" :style="{paddingLeft: '50px'}">
               <WorkersInline
-                v-click-outside="closeActiveHIT"
                 :HITId="hit.HITId"
                 :awardid="experiment.awardQualificationId"
                 :experimentID="experiment._id"
@@ -284,7 +298,7 @@ import Datetime from 'vuejs-datetimepicker';
 import vClickOutside from 'v-click-outside'
 
 type TableData = {
-  activeExperimentIdForExperimentMenu: string,
+  activeExperimentId: string,
   activeExperimentIdForHandleWorkersMenu: string,
   activeHITId: string,
   emailSubject: string,
@@ -328,7 +342,7 @@ export default Vue.extend({
     }
   },
   data: () :TableData => ({
-    activeExperimentIdForExperimentMenu: '',
+    activeExperimentId: 'true',
     activeExperimentIdForHandleWorkersMenu: '',
     activeHITId: '',
     emailSubject: '',
@@ -357,16 +371,12 @@ export default Vue.extend({
     parseScheduledTime(hit: Hit){
       return new Date(hit.scheduledDateTime as string).toLocaleTimeString("en-US")
     },
-    toggleActiveExperimentForExperimentMenu(experiment: Experiment) {
-      setTimeout(() => {
-        
-      console.log('toggle invoked', experiment)
-      this.activeExperimentIdForExperimentMenu = experiment._id
-      console.log(this.activeExperimentIdForExperimentMenu)
-      }, 200)
+    toggleActiveExperiment(experiment: Experiment) {
+      if(this.activeExperimentId == experiment._id || this.activeExperimentId == 'true') this.activeExperimentId = ''
+      else this.activeExperimentId = experiment._id
     },
     closeExperimentMenu() {
-      this.activeExperimentIdForExperimentMenu = ""
+      this.activeExperimentId = ""
     },
     toggleActiveExperimentForHandleWorkersMenu(experiment: Experiment) {
       setTimeout(() => {
@@ -374,7 +384,7 @@ export default Vue.extend({
         this.activeExperimentIdForHandleWorkersMenu = experiment._id
       }, 200)
     },
-    closeHandleWorkersMenu(experiment: Experiment) {
+    closeHandleWorkersMenu() {
       this.handleWorkersVisible = false
       this.activeExperimentIdForHandleWorkersMenu = ""
     },
@@ -533,13 +543,8 @@ export default Vue.extend({
       return 'unknown'
     },
     toggleActiveHIT(HITId: string) {
-      setTimeout(() => {
-        this.activeHITId = HITId
-      
-      }, 10)  
-    },
-    closeActiveHIT(event: any) { 
-      if(event.target.className != 'lbl-toggle') this.activeHITId = ""
+      if (this.activeHITId == HITId) this.activeHITId = ''
+      else this.activeHITId = HITId 
     },
     closeModal() {
         this.modalIsVisible = ''
@@ -559,7 +564,9 @@ export default Vue.extend({
       for (const hit of hitList) {
         const assignmentRes = await api.listAssignments({ HITId: hit.HITId })
         if (assignmentRes.success) {
-          assignmentRes.data.map((assignment: Assignment) => workerIDs.push(assignment.WorkerId))
+          assignmentRes.data.map((assignment: Assignment) => {
+          if (assignment.AssignmentStatus == "Approved") workerIDs.push(assignment.WorkerId)
+        })
         }     
       }
       this.closeModal()

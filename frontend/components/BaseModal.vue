@@ -88,7 +88,6 @@ export default Vue.extend({
 </script>
 <style lang="scss">
 .BaseModal {
-  position: relative;
   position: fixed;
   z-index: zIndex(modal);
   width: 100%;
