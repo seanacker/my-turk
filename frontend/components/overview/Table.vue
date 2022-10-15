@@ -82,12 +82,10 @@
               </BaseButton>
             <div class="scheduleWrapper" :style="{border: '1px solid black'}" :id="'schedule' + experiment._id">              
               <Datetime style="cursor: pointer;" v-if="showScheduleNewHIT==experiment._id" v-model="scheduledDateTime" readonly></Datetime>              
-                <div v-if="showScheduleNewHIT==experiment._id" :style="{display: 'flex', flexDirection: 'column'}">
+                <div v-if="showScheduleNewHIT==experiment._id" :style="{display: 'flex', flexDirection: 'column', textAlign: 'center'}">
                   <i :style="{backgroundColor: 'white', padding: '10px 0', }">
-                    <b>Los Angeles:</b> {{convertTZ('America/Los_Angeles')}}
-                  </i>
-                  <i :style="{backgroundColor: 'white', padding: '10px 0'}">
-                    <b>New York:</b> {{convertTZ('America/New_York')}}
+                   This is in Eastern Daylight Time, <br/>
+                   the standard timezone of MTurk
                   </i>
                 </div >
                 <div :style="{display: 'flex'}">
@@ -177,7 +175,6 @@
             </div>
           </td>
         </tr>
-        <br :key="'br'+index" v-if="activeExperimentId==experiment._id || activeExperimentId == 'true'"/>
         <template v-for="(hit, index) in experiment.hits" >
           <tr :key="hit.HITId + 'body'" v-if="activeExperimentId==experiment._id || activeExperimentId == 'true'" >
             <td style="white-space: nowrap" @click="toggleActiveHIT(hit.HITId)">
@@ -195,10 +192,10 @@
                     <a href="https://blog.mturk.com/understanding-hit-states-d0bc9806c0ee" target="_blank">Status</a>
                   </td>
                   <td style="width: 25%">
-                    Creation Date
+                    Creation Date (EDT)
                   </td>
                   <td style="width: 25%">
-                    Creation Time
+                    Creation Time (EDT)
                   </td>
                   <td style="width: 25%">
                     Expires after (days)
@@ -359,34 +356,15 @@ export default Vue.extend({
     showStatusInfo: ''
   }),
   methods: {
-    parseCreationTime(dateTime: number) {
-      return new Date(dateTime).toLocaleTimeString("en-US")
-    },
-    parseCreationDate(dateTime: number) {
-      return new Date(dateTime).toLocaleDateString("en-US")
-    },
-    parseScheduledDate(hit: Hit) {
-      return new Date(hit.scheduledDateTime as string).toLocaleDateString("en-US")
-    },
-    parseScheduledTime(hit: Hit){
-      return new Date(hit.scheduledDateTime as string).toLocaleTimeString("en-US")
-    },
+    //Experiment Methods
+
+    // UI
     toggleActiveExperiment(experiment: Experiment) {
       if(this.activeExperimentId == experiment._id || this.activeExperimentId == 'true') this.activeExperimentId = ''
       else this.activeExperimentId = experiment._id
     },
     closeExperimentMenu() {
       this.activeExperimentId = ""
-    },
-    toggleActiveExperimentForHandleWorkersMenu(experiment: Experiment) {
-      setTimeout(() => {
-        this.handleWorkersVisible = true
-        this.activeExperimentIdForHandleWorkersMenu = experiment._id
-      }, 200)
-    },
-    closeHandleWorkersMenu() {
-      this.handleWorkersVisible = false
-      this.activeExperimentIdForHandleWorkersMenu = ""
     },
     onExperimentEditClick(experiment: Experiment) {
       clearInterval(this.refreshIntervalId)
@@ -409,146 +387,52 @@ export default Vue.extend({
         }
       })
     },
-    async onExperimentDeleteClick(id: string) {
-      const res = await api.deleteExperiment({ id })
+    toggleActiveExperimentForHandleWorkersMenu(experiment: Experiment) {
+      setTimeout(() => {
+        this.handleWorkersVisible = true
+        this.activeExperimentIdForHandleWorkersMenu = experiment._id
+      }, 200)
+    },
+    closeHandleWorkersMenu() {
+      this.handleWorkersVisible = false
+      this.activeExperimentIdForHandleWorkersMenu = ""
+    },
+    closeModal() {
+        this.modalIsVisible = ''
+    },
+    onScheduleNewHitClick(experiment: Experiment) {
+      this.showScheduleNewHIT = experiment._id
+    },
+    onCloseNewHITClick() {
+      this.showScheduleNewHIT = ''
+      this.scheduledDateTime = ''
+    },
 
-      if (!res.success) {
-        this.$toasted.error(res.message, {
-          position: 'bottom-right',
-          duration: 3000,
-        })
-      }
-      else {
-        this.$emit('reload')
-        this.$toasted.success(`Deleted the experiment with the id: ${id}`,
-        {
-          position: 'bottom-right',
-          duration: 3000,
-        })
-      }
+    // New HIT and HIT scheduling
+    convertTZ(tzString: string) {
+      const scheduledFor = this.scheduledDateTime.replace(' (now)', '')
+      return (scheduledFor != "" ? new Date(scheduledFor) : new Date()).toLocaleString("en-US", {timeZone: tzString});   
     },
-    onHitClick(hit: Hit, experiment: Experiment) {
-      clearInterval(this.refreshIntervalId)
-      this.$router.push({
-        name: 'Workers',
-        params: {},
-        query: {      
-          HITId: hit.HITId,
-          awardQualificationID: experiment.awardQualificationId,
-        },
-      })
-    },
-    onCancelHitClick(hit: Hit) {
-      this.$emit('cancelHIT', hit)
-    },
-    onExpireHitClick(experiment: Experiment, hit: Hit) {
-      this.$emit('expireHIT', experiment, hit)
-    },
-    onDeleteHitClick(experiment: Experiment, hit: Hit) {
-      this.$emit('deleteHIT', experiment, hit)
-    },
+
     onNewHITClick(experiment: Experiment) {
       if(this.showScheduleNewHIT==experiment._id) {
         this.showScheduleNewHIT = ""
         return 
       }     
       this.showScheduleNewHIT=experiment._id
-      const date = new Date(new Date().getTime()  + (2 * 60 * 60 * 1000))
-      this.scheduledDateTime= date.toISOString().slice(0,16).replace('T', ' ') + ' (now)'
+      const date = new Date(new Date().getTime()  - (5 * 60 * 60 * 1000))
+      this.scheduledDateTime= date.toISOString().slice(0,16).replace('T', ' ') 
 
-    },
-    onNotifyApprovable() {
-      this.$toasted.show(
-        "There is still assignments that need to be approved or rejected. Please handle those before further actions can be taken!", 
-        {
-          type: 'error',
-          position: 'bottom-right',
-          duration: 5000,
-        })
     },
     onSubmitNewHitClick(experiment: Experiment) {
       this.$emit('createHIT', experiment, this.scheduledDateTime)
       this.showScheduleNewHIT = ''
       this.scheduledDateTime = ''
     },
-    onApproveWorkersClick(rewardPerAssignment: string, awardQualificationID: string) {
-      this.$emit('showAcceptAssignments', rewardPerAssignment, awardQualificationID)
-    },
-    onRejectWorkersClick() {
-      this.$emit('showRejectAssignments')
-    },
-    async  onQualifyAllClick(experiment: Experiment): Promise<void> {
-      this.awardid = experiment.awardQualificationId
-      const qualifiable = []
-      for (const HIT of experiment.hits) {
-        const res = await api.listAssignments({HITId: HIT.HITId})
-        if (res.success){
-          const assignments = res.data
-          for (const assignment of assignments){
-            const id = assignment.WorkerId
-            console.log("assignment:",assignment)
-            qualifiable.push(id)
-        }
-      }
-      if (qualifiable != null) {
-        console.log('Qualifying all Workers: ')
-        for (const id of qualifiable) {
-          console.log(
-            'Asking for Qualifying Worker ' +
-              id +
-              ' with Qualification ' +
-              this.awardid
-          )
-          this.qualifyWorker(id, true)
-        }
-      }
-    }
-    },
-    async qualifyWorker(workerID: string, notify = false): Promise<void> {
-      const awardid = this.awardid || ''
-      console.log(
-        'Qualifying Worker ' + workerID + ' with Qualification ' + awardid
-      )
 
-      const res = await api.qualifyWorker({
-        awardQualificationID: awardid,
-        workerID,
-      })
-      if (notify){
-        if (res.success) {
-          // await this.getWorkers()
-          console.log('Qualified ' + workerID)
-          this.$toasted.show(res.message, {
-            type: 'success',
-            position: 'bottom-right',
-            duration: 3000,
-          })
-        } else {
-          this.$toasted.show(res.message, {
-            type: 'error',
-            position: 'bottom-right',
-            duration: 3000,
-          })
-        }
-      }
-    },
-    hitStatus(hit: Hit) {
-      const pending = parseInt(hit.pending.split('/')[0])
-      const waitingForApproval = parseInt(hit.waitingForApproval.split('/')[0])
-      if (hit.HITStatus == "failed") return 'failed'
-      if (hit.HITStatus == "pending") return 'cancelable'
-      if (hit.HITStatus == "Assignable") return 'expireable'
-      if (waitingForApproval == 0 && pending == 0) return 'deleteable'     
-      if (hit.HITStatus == "Reviewable" || hit.HITStatus == "Reviewing") return 'approvable'
-      return 'unknown'
-    },
-    toggleActiveHIT(HITId: string) {
-      if (this.activeHITId == HITId) this.activeHITId = ''
-      else this.activeHITId = HITId 
-    },
-    closeModal() {
-        this.modalIsVisible = ''
-    },
+
+    
+    // Notifying Workers
     setEmailSubject(val: any): void {
       this.emailSubject = val.subject
     },
@@ -572,7 +456,6 @@ export default Vue.extend({
       this.closeModal()
       this.activeExperimentIdForHandleWorkersMenu = ""
       if(workerIDs) {
-        console.log("workerIds:", workerIDs.flat())
         const notificationRes = await api.notifyWorkers({subject: this.emailSubject, message: this.emailMessage, workerIDs: workerIDs.flat()})
         if(notificationRes.success) {
           this.$toasted.success(notificationRes.message, {
@@ -588,17 +471,122 @@ export default Vue.extend({
         }
       }
     },
-    onScheduleNewHitClick(experiment: Experiment) {
-      this.showScheduleNewHIT = experiment._id
+
+
+
+    // HIT Methods
+    onHitClick(hit: Hit, experiment: Experiment) {
+      clearInterval(this.refreshIntervalId)
+      this.$router.push({
+        name: 'Workers',
+        params: {},
+        query: {      
+          HITId: hit.HITId,
+          awardQualificationID: experiment.awardQualificationId,
+        },
+      })
     },
-    onCloseNewHITClick() {
-      this.showScheduleNewHIT = ''
-      this.scheduledDateTime = ''
+    onCancelHitClick(hit: Hit) {
+      this.$emit('cancelHIT', hit)
     },
-    convertTZ(tzString: string) {
-      const scheduledFor = this.scheduledDateTime.replace(' (now)', '')
-      return (scheduledFor != "" ? new Date(scheduledFor) : new Date()).toLocaleString("en-US", {timeZone: tzString});   
+    onExpireHitClick(experiment: Experiment, hit: Hit) {
+      this.$emit('expireHIT', experiment, hit)
     },
+    onDeleteHitClick(experiment: Experiment, hit: Hit) {
+      this.$emit('deleteHIT', experiment, hit)
+    },
+
+    onNotifyApprovable() {
+      this.$toasted.show(
+        "There is still assignments that need to be approved or rejected. Please handle those before further actions can be taken!", 
+        {
+          type: 'error',
+          position: 'bottom-right',
+          duration: 5000,
+        })
+    },
+
+    onApproveWorkersClick(rewardPerAssignment: string, awardQualificationID: string) {
+      this.$emit('showAcceptAssignments', rewardPerAssignment, awardQualificationID)
+    },
+    onRejectWorkersClick() {
+      this.$emit('showRejectAssignments')
+    },
+    async  onQualifyAllClick(experiment: Experiment): Promise<void> {
+      this.awardid = experiment.awardQualificationId
+      const qualifiable = []
+      for (const HIT of experiment.hits) {
+        const res = await api.listAssignments({HITId: HIT.HITId})
+        if (res.success){
+          const assignments = res.data
+          for (const assignment of assignments){
+            const id = assignment.WorkerId
+            qualifiable.push(id)
+        }
+      }
+      if (qualifiable != null) {
+        for (const id of qualifiable) {
+          this.qualifyWorker(id, true)
+        }
+      }
+    }
+    },
+    async qualifyWorker(workerID: string, notify = false): Promise<void> {
+      const awardid = this.awardid || ''
+
+      const res = await api.qualifyWorker({
+        awardQualificationID: awardid,
+        workerID,
+      })
+      if (notify){
+        if (res.success) {
+          this.$toasted.show(res.message, {
+            type: 'success',
+            position: 'bottom-right',
+            duration: 3000,
+          })
+        } else {
+          this.$toasted.show(res.message, {
+            type: 'error',
+            position: 'bottom-right',
+            duration: 3000,
+          })
+        }
+      }
+    },
+    parseCreationTime(dateTime: number) {
+      const utcTime = new Date(dateTime)
+      const utcOffsetSinceZero = utcTime.getTime()
+      const usEastOneOffsetSinceZero = utcOffsetSinceZero - 7 * 60 * 60 * 1000 
+      return new Date(usEastOneOffsetSinceZero).toLocaleTimeString("en-US")
+    },
+    parseCreationDate(dateTime: number) {
+      const utcTime = new Date(dateTime)
+      const utcOffsetSinceZero = utcTime.getTime()
+      const usEastOneOffsetSinceZero = utcOffsetSinceZero - 7 * 60 * 60 * 1000 
+      return new Date(usEastOneOffsetSinceZero).toLocaleDateString("en-US")
+    },
+    parseScheduledDate(hit: Hit) {
+      return new Date(hit.scheduledDateTime as string).toLocaleDateString("en-US")
+    },
+    parseScheduledTime(hit: Hit){
+      return new Date(hit.scheduledDateTime as string).toLocaleTimeString("en-US")
+    },
+    hitStatus(hit: Hit) {
+      const pending = parseInt(hit.pending.split('/')[0])
+      const waitingForApproval = parseInt(hit.waitingForApproval.split('/')[0])
+      if (hit.HITStatus == "failed") return 'failed'
+      if (hit.HITStatus == "pending") return 'cancelable'
+      if (hit.HITStatus == "Assignable") return 'expireable'
+      if (waitingForApproval == 0 && pending == 0) return 'deleteable'     
+      if (hit.HITStatus == "Reviewable" || hit.HITStatus == "Reviewing") return 'approvable'
+      return 'unknown'
+    },
+    toggleActiveHIT(HITId: string) {
+      if (this.activeHITId == HITId) this.activeHITId = ''
+      else this.activeHITId = HITId 
+    },
+ 
   }
 })
 </script>
@@ -722,5 +710,6 @@ table.hitDetails > tr {
 }
 #tj-datetime-input{
   cursor: pointer;
+  text-align: center
 }
 </style>

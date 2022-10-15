@@ -315,13 +315,13 @@ app.post('/createHIT', async (req, res) => {
   const now = Date.now()
   // delay to utc
   const target = Date.parse(data.scheduledDateTime)
-  const delay =  target - now 
-  if (data.scheduledDateTime != '0' && delay >= 0)  {
+  const delay =  target - now +  (7 * 60 * 60 * 1000)
+  // The HIT only gets scheduled if the delay is more then one minute
+  if ( delay > 60000)  {
     createHITOptions.available = `0 / ${data.experiment.assignmentsPerHit}`
   }
   let result
-
-  if (data.scheduledDateTime == '0' || delay < 0) {
+  if ( delay < 60000) {
     if(data.experiment.automaticalyExpireHits) {
       expireAllRunningHITs(data.experiment) 
     }

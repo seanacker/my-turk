@@ -147,7 +147,6 @@ export default Vue.extend({
     rejectMessages: []
   }),
   async mounted(): Promise<void> {
-    console.log('Stored QualifivationID: ' + this.awardid)
     await this.getMessages()
     await this.getWorkers()
   },
@@ -162,8 +161,6 @@ export default Vue.extend({
 
       const res = await api.listAssignments({ HITId })
       this.clearWorkers()
-
-      console.log(res)
 
       if (res.success) {
         const assignments = res.data
@@ -220,9 +217,6 @@ export default Vue.extend({
           }
         }
       }
-      console.log(this.submitted)
-      console.log(this.approved)
-      console.log(this.rejected)
     },
     handleApprove({ workerID, assignmentID }: { workerID: string, assignmentID: string}): void {
       this.modalApproveIsVisible = true
@@ -238,38 +232,17 @@ export default Vue.extend({
     },
     handleQualifyAll(): void {
       if (this.submitted != null){
-        console.log('Qualifying submitted Workers: ')
         for (const worker of this.submitted) {
-          console.log(
-            'Asking for Qualifying Worker ' +
-              worker.id +
-              ' with Qualification ' +
-              this.awardid
-          )
           this.qualifyWorker(worker.id)
         }
       }
       if (this.approved != null){
-        console.log('Qualifying approved Workers: ')
         for (const worker of this.approved) {
-          console.log(
-            'Asking for Qualifying Worker ' +
-              worker.id +
-              ' with Qualification ' +
-              this.awardid
-          )
           this.qualifyWorker(worker.id)
         }
       }
       if (this.rejected != null){
-        console.log('Qualifying rejected Workers: ')
         for (const worker of this.rejected) {
-          console.log(
-            'Asking for Qualifying Worker ' +
-              worker.id +
-              ' with Qualification ' +
-              this.awardid
-          )
           this.qualifyWorker(worker.id)
         }
       }
@@ -278,9 +251,6 @@ export default Vue.extend({
       // this.modalRejectIsVisible = true
       this.workerID = workerID
       const awardid = this.awardid || ''
-      console.log(
-        'Qualifying Worker ' + workerID + ' with Qualification ' + awardid
-      )
 
       const res = await api.qualifyWorker({
         awardQualificationID: awardid,
@@ -289,7 +259,6 @@ export default Vue.extend({
 
       if (res.success) {
         // await this.getWorkers()
-        console.log('Qualified ' + workerID)
         this.$toasted.show(res.message, {
           type: 'success',
           position: 'bottom-right',
@@ -342,7 +311,6 @@ export default Vue.extend({
     async rejectAssignment(): Promise<void> {
       const id = this.assignmentID
       const feedback = this.rejectFeedback
-      console.log(feedback)
       const res = await api.rejectAssignment({ id, feedback })
       if (res.success) {
         this.closeModal()

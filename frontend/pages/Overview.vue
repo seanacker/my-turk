@@ -268,21 +268,16 @@ export default Vue.extend({
       this.parsedQualificationIDs = ""
       const result = await api.getExperiments({ groupBy: 'endpoint' })
       this.prodIsHidden = result.endpoint === 'sandbox'
-      console.log(this.prodIsHidden)
       this.sandIsHidden = result.endpoint === 'production'
-      console.log(this.sandIsHidden)
       if (result.success) {
-        console.log('data: ', result.data)
         this.experiments = result.data
         this.experiments.production = result.data.production || []
         this.experiments.sandbox = result.data.sandbox || []
       }
       const qualificationIDs = await api.getQualificationIDs({})
-      console.log("ids: ", qualificationIDs)
       for (const qualificationID of qualificationIDs.data) {
         this.parsedQualificationIDs += (qualificationID.experimentName + ': ' + qualificationID.qualificationTypeId + ';')
       }
-      console.log(this.parsedQualificationIDs)
     },
     async addExperiment(): Promise<void> {
       const res = await api.addExperiment({})
@@ -311,16 +306,13 @@ export default Vue.extend({
       this.getExperiments()
     },
     async createHIT(experiment: Experiment, scheduledDateTime: string) {
-      if (scheduledDateTime.includes('now')) scheduledDateTime = '0'
       const res = await api.createHIT({experiment, scheduledDateTime})
-      console.log("createhit:res:",res)
       if (res.success) {
         this.$toasted.success(res.message, {
           position: 'bottom-right',
           duration: 3000,
         })
         const hit = res.data.HIT
-        console.log("createhit:hit:", hit)
         experiment = this.addHITtoExperiment(experiment, hit)
 
         const id = experiment._id
@@ -348,7 +340,6 @@ export default Vue.extend({
           duration: 3000,
         })
       }
-      console.log("cancel scheduled hit method called")
       api.cancelScheduledHIT(hit)
       this.refreshPage()
     },
@@ -382,7 +373,6 @@ export default Vue.extend({
       this.hitToDelete = undefined
       this.experimentContainingHitToDelete = undefined
       const deleteRes = await api.deleteHIT({HITId: hit.HITId})
-      console.log(deleteRes)
         if (deleteRes.success) {
           this.$toasted.success(deleteRes.message, {
             position: 'bottom-right',
@@ -454,13 +444,11 @@ export default Vue.extend({
         return value != ""
       })
       this.priceForAccepting = this.rewardPerAssignmentForModal ? (parseInt(this.rewardPerAssignmentForModal)) * this.acceptIDs.length : undefined
-      console.log("price in function: ", this.priceForAccepting)
     },
     setRejectIDs(value: any) {
       this.rejectIDs = value.assignmentids.split(/[^A-Za-z0-9]/).filter((value: string) => {
         return value != ""
       })
-      console.log(this.rejectIDs)
     },
     async acceptAssignments() {
       if (this.acceptIDs.length == 0){
@@ -489,7 +477,6 @@ export default Vue.extend({
           }
         }
       const res = await api.approveAssignments({assignmentIds: this.acceptIDs, awardQualificationID: this.awardQualificationID, feedback: this.approvalFeedback})
-      console.log("res:", res)
       this.acceptAssignmentModalVisible = false
       if (res.success) {
         this.$toasted.success(res.message, {
@@ -542,7 +529,6 @@ export default Vue.extend({
         }
       }
       const res = await api.rejectAssignments({assignmentIds: this.rejectIDs, feedback: this.rejectFeedback})
-      console.log("res:",)
       this.acceptAssignmentModalVisible = false
       if (res.success) {
         this.$toasted.success(res.message, {

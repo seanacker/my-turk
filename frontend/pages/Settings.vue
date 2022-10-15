@@ -264,9 +264,7 @@ export default Vue.extend({
     const requirements = this.settingsInput.filter((group) => {
       return group.title == 'Requirements'
     })[0]
-    console.log(experiments)
     experiments.map((experiment) => {
-      console.log('length:',experiment.split(':'))
       const name = experiment.split(':')[0]
       const id = experiment.split(':')[1]
       
@@ -321,7 +319,6 @@ export default Vue.extend({
     async handleSave() {
       const id = this.$route.query.id || ''
       const settings = this.settings
-      console.log("settings: ", settings)
       if (!this.validateSettings(settings)) {
         this.$toasted.error('Please fill out all required fields', {
           position: 'bottom-right',
@@ -427,6 +424,15 @@ export default Vue.extend({
       //   )
       //   isValid = false
       // }
+      if (!settings.generateAQualificationIdForThisExperiment && settings.guardHitByQualification) {
+        this.$toasted.error(
+          'If you want to make the HIT exclusive for workers you need to generate an ID first.', {
+            position: 'bottom-right',
+            duration: 10000
+          }
+        )
+        isValid = false
+      }
       if (settings.generateAQualificationIdForThisExperiment && !settings.automaticalyAssignQualification  && settings.automaticalyStartHits) {
         this.$toasted.error(
           'If you choose to gernerate a qualificationID and you want to automaticaly start HITs please automaticaly assign qualification to workers.', {
@@ -460,8 +466,6 @@ export default Vue.extend({
       const id = this.$route.query.id     
       if (!this.addExperiment && this.initial && id) {
         const result = await api.getExperiments({ id })
-        console.log('result', result)
-
         if (result.success && result.data[0]) {
           this.settings = result.data[0]
         }
