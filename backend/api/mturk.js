@@ -84,40 +84,6 @@ app.post('/addExperiment', async (req, res) => {
   }
 });
 
-// dev only
-app.post('/listHITs', async (req, res) => {
-  let result = (await listHITs({MaxResults: 100}).catch(err => ({ error: err })));
-  if (result) {
-    return res.send({
-      success: true,
-      message: 'received all hits',
-      data: result
-    });
-  } else {
-    return res.send({
-      success: false,
-      message: 'Something went wrong. Retrieved error from MTurk: ' + result.error.message
-    });
-  }
-})
-
-app.post('/getQualificationIDs', async (req, res) => {
-  let result = await mongo.findData({}, 'QualificationIDs');
-  if (result) {
-    return res.send({
-      success: true,
-      message: 'got all qualification IDs',
-      data: result
-    });
-  } else {
-    return res.send({
-      success: false,
-      message: 'Something went wrong calling /getQualificationIDs. Retrieved error from DB: ' + result.error.message
-    });
-  }
-})
-
-
 app.post('/saveExperiment', async (req, res) => {
   
   let data = req.body;
@@ -160,15 +126,6 @@ app.post('/saveExperiment', async (req, res) => {
   }
 });
 
-const group = key => array => {
-  return array.reduce(
-    (objectsByKeyValue, obj) => ({
-      ...objectsByKeyValue,
-      [obj[key]]: (objectsByKeyValue[obj[key]] || []).concat(obj)
-    }),
-    {}
-  );
-};
 
 app.post('/getExperiments', async (req, res) => {
   let data = req.body;
@@ -291,6 +248,48 @@ app.post('/getExperiments', async (req, res) => {
   }
 });
 
+app.post('/deleteHITFromExperiment', async (req, res) => {
+  let data = req.body;
+  const HITId = data.HITId 
+  const experiments = await mongo.findData(data={},"experiments")
+  var containingExperimentArray = experiments.filter((experiment) => {
+    if (!experiment.hits) return false
+    return experiment.hits.some((_HIT) => {
+      return HITId === _HIT.HITId
+    })
+  })
+  if (!containingExperimentArray) {
+    return res.send({
+      success: false,
+      message: 'Could not find the containing experiment'
+    })
+  }
+  const containingExperiment = containingExperimentArray[0]
+  if (!containingExperiment || !containingExperiment.hits) {
+    return res.send({
+      success: false,
+      message: 'Could not find the containing experiment',
+      error: 500
+    })
+  }
+  containingExperiment.hits = containingExperiment.hits.filter((_HIT) => {
+    if(_HIT.HITId != HITId) return _HIT
+  })
+  const result =  mongo.updateData({ _id: ObjectId(containingExperiment._id) }, containingExperiment)
+  if (result) {
+    return res.send({
+      success: true,
+      message: 'removed HIT from Experiment',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: 'Could not delete HIT from Experiment. Retrieved error message from database:' + result.error.message
+    });
+  }
+});
+
 app.post('/deleteExperiment', async (req, res) => {
   let data = req.body;
   let id = data.id || {};
@@ -310,21 +309,19 @@ app.post('/deleteExperiment', async (req, res) => {
   }
 });
 
-
-
 app.post('/createHIT', async (req, res) => {
   const data = req.body
   const createHITOptions = parseHITOptionsfromExperiment(data.experiment)
   const now = Date.now()
   // delay to utc
   const target = Date.parse(data.scheduledDateTime)
-  const delay =  target - now 
-  if (data.scheduledDateTime != '0' && delay >= 0)  {
-    requirements.available = `0 / ${data.experiment.assignmentsPerHit}`
+  const delay =  target - now +  (7 * 60 * 60 * 1000)
+  // The HIT only gets scheduled if the delay is more then one minute
+  if ( delay > 60000)  {
+    createHITOptions.available = `0 / ${data.experiment.assignmentsPerHit}`
   }
   let result
-
-  if (data.scheduledDateTime == '0' || delay < 0) {
+  if ( delay < 60000) {
     if(data.experiment.automaticalyExpireHits) {
       expireAllRunningHITs(data.experiment) 
     }
@@ -354,7 +351,24 @@ app.post('/createHIT', async (req, res) => {
   }
 });
 
+// read all HITs
+app.post('/listHITs', async (req, res) => {
+  let result = (await listHITs({MaxResults: 100}).catch(err => ({ error: err })));
+  if (result) {
+    return res.send({
+      success: true,
+      message: 'received all hits',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: 'Something went wrong. Retrieved error from MTurk: ' + result.error.message
+    });
+  }
+})
 
+// read one HIT
 app.post('/getHIT', async (req, res) => {
   let data = req.body;
   let result = await getHIT(data).catch(err => ({ error: err }));
@@ -373,6 +387,7 @@ app.post('/getHIT', async (req, res) => {
   }
 });
 
+
 app.post('/expireHIT', async (req,res) => {
   const data = req.body
   const result = await expireHIT(data).catch(err => ({ error: err}));
@@ -390,6 +405,12 @@ app.post('/expireHIT', async (req,res) => {
     });
   }
 });
+
+app.post('/cancelScheduledHIT', async(req, res)=> {
+  const data = req.body
+  clearTimeout(data.timeoutId)
+})
+
 
 app.post('/deleteHIT', async (req, res) => {
   const HITId = req.body.HITId;
@@ -415,6 +436,43 @@ app.post('/deleteHIT', async (req, res) => {
     });
   }
 });
+
+app.post('/getQualificationIDs', async (req, res) => {
+  let result = await mongo.findData({}, 'QualificationIDs');
+  if (result) {
+    return res.send({
+      success: true,
+      message: 'got all qualification IDs',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: 'Something went wrong calling /getQualificationIDs. Retrieved error from DB: ' + result.error.message
+    });
+  }
+})
+
+app.post('/createQualificationType', async (req, res) => {
+  let data = req.body;
+  let result = await createQualificationType(data).catch(err => ({
+    error: err
+  }));
+  if (!result.error) {
+    return res.send({
+      success: true,
+      message: 'qualification generated',
+      data: result
+    });
+  } else {
+    return res.send({
+      success: false,
+      message: `Could not create qualification type with data: ${data}. Retrieved error message from MTurk:` + result.error.message,
+      error: result.error.code ?? 500
+    });
+  }
+});
+
 
 app.post('/approveAssignment', async (req, res) => {
   let data = req.body;
@@ -473,9 +531,15 @@ app.post('/approveAssignments', async (req, res) => {
       data: results
     })
   } else {
+    const successMessage = results.filter((result) => {
+      return result.success
+    }).map((success) => success.message).join('.')
+    const errorMessage = results.filter((result) => {
+      return !result.success
+    }).map((error) => error.message).join('.')
     return res.send({
       success: false,
-      message: 'Some assignments could not be approved. Retrieved error message from MTurk: ' + result.error.message,
+      message: 'Some assignments could not be approved. Retrieved error message from MTurk: ' + successMessage + errorMessage,
       data: results
     });
   }
@@ -545,26 +609,6 @@ app.post('/rejectAssignment', async (req, res) => {
   }
 });
 
-app.post('/qualifyWorker', async (req, res) => {
-  let data = req.body;
-  let result = await qualify(data).catch(err => ({ error: err }));
-  console.log(result);
-  if (!result.error) {
-    return res.send({
-      success: true,
-      message: `Qualification assigned (Worker id: ${data.workerID})`,
-      data: result
-    });
-  } else {
-    return res.send({
-      success: false,
-      message: `Could not qualify worker with data: ${data}. Retrieved error message from MTurk: ` + result.error.message,
-      error: result.error.code ?? 500
-    });
-  }
-});
-
-
 app.post('/listAssignments', async (req, res) => {
   let data = req.body;
   let result = await listAssignments(data).catch(err => ({ error: err }));
@@ -585,25 +629,28 @@ app.post('/listAssignments', async (req, res) => {
   }
 });
 
-app.post('/createQualificationType', async (req, res) => {
+app.post('/qualifyWorker', async (req, res) => {
   let data = req.body;
-  let result = await createQualificationType(data).catch(err => ({
-    error: err
-  }));
+  let result = await qualify(data).catch(err => ({ error: err }));
+  console.log(result);
   if (!result.error) {
     return res.send({
       success: true,
-      message: 'qualification generated',
+      message: `Qualification assigned (Worker id: ${data.workerID})`,
       data: result
     });
   } else {
     return res.send({
       success: false,
-      message: `Could not create qualification type with data: ${data}. Retrieved error message from MTurk:` + result.error.message,
+      message: `Could not qualify worker with data: ${data}. Retrieved error message from MTurk: ` + result.error.message,
       error: result.error.code ?? 500
     });
   }
 });
+
+
+
+
 
 app.post('/createMessage', async (req, res) => {
   let data = req.body;
@@ -695,53 +742,6 @@ app.post('/notifyWorkers', async (req, res) => {
   }
 });
 
-app.post('/deleteHITFromExperiment', async (req, res) => {
-  let data = req.body;
-  const HITId = data.HITId 
-  const experiments = await mongo.findData(data={},"experiments")
-  var containingExperimentArray = experiments.filter((experiment) => {
-    if (!experiment.hits) return false
-    return experiment.hits.some((_HIT) => {
-      return HITId === _HIT.HITId
-    })
-  })
-  if (!containingExperimentArray) {
-    return res.send({
-      success: false,
-      message: 'Could not find the containing experiment'
-    })
-  }
-  const containingExperiment = containingExperimentArray[0]
-  if (!containingExperiment || !containingExperiment.hits) {
-    return res.send({
-      success: false,
-      message: 'Could not find the containing experiment',
-      error: 500
-    })
-  }
-  containingExperiment.hits = containingExperiment.hits.filter((_HIT) => {
-    if(_HIT.HITId != HITId) return _HIT
-  })
-  const result =  mongo.updateData({ _id: ObjectId(containingExperiment._id) }, containingExperiment)
-  if (result) {
-    return res.send({
-      success: true,
-      message: 'removed HIT from Experiment',
-      data: result
-    });
-  } else {
-    return res.send({
-      success: false,
-      message: 'Could not delete HIT from Experiment. Retrieved error message from database:' + result.error.message
-    });
-  }
-});
-
-app.post('/cancelScheduledHIT', async(req, res)=> {
-  const data = req.body
-  clearTimeout(data.timeoutId)
-})
-
 
 
 
@@ -753,6 +753,16 @@ const connectToMturk = () => {
   });
 
   mturk = new AWS.MTurk();
+};
+
+const group = key => array => {
+  return array.reduce(
+    (objectsByKeyValue, obj) => ({
+      ...objectsByKeyValue,
+      [obj[key]]: (objectsByKeyValue[obj[key]] || []).concat(obj)
+    }),
+    {}
+  );
 };
 
 const getBalance = () => {
@@ -768,6 +778,7 @@ const getBalance = () => {
 };
 
 const createHIT = async params => {
+  if (params.available) delete params.available
   connectToMturk();
     return new Promise((resolve, reject) => {
       mturk.createHIT(params, (err, data) => {
@@ -782,7 +793,6 @@ const createHIT = async params => {
     });
 };
 
-//// might be bugged comapare to github version
 const getHIT = (params) => {
   connectToMturk();
   
@@ -1172,10 +1182,15 @@ parseHITOptionsfromExperiment = (experiment) => {
 refreshAllAutoStartedHITs = async () => {
   const experiments = await mongo.findData(data={},"experiments")
   const experimentsToRestart = experiments.filter((experiment) => {
-    return experiment.automaticalyStartHits && experiment.NumberOfAssignmentsCompleted < parseInt(experiment.assignmentsGoals)
+    if (!experiment.completed || !experiment.assignmentsGoal || !experiment.automaticalyStartHits) return false
+    const completed = parseInt(experiment.completed[0])
+    const goal = parseInt(experiment.assignmentsGoal)
+    return experiment.automaticalyStartHits &&  completed < goal 
   })
   experimentsToRestart.map(async (experiment) => {
     const runningHIT = experiment.hits.filter(hit => hit.HITStatus == 'Assignable')
+    // If all assignments are submitted and the experiment allready started (experiment.hits is not empty)
+    // qualify everybody and start a new HIT
     if (!runningHIT && experiment.hits) {
       qualifyAllAutoQualifiedAssignments()
       const currentHITs = experiment.hits
@@ -1189,6 +1204,8 @@ refreshAllAutoStartedHITs = async () => {
       }
       return
     }
+    // If there is a HIT running, test if more the 80 % of the assignments are finished. 
+    // If so, expire the HIT, qualify everybody and start a new HIT
     experiment.hits.map(async (hit) => {
       if (hit.HITStatus == 'Assignable') {
         const assignmentRes = await listAssignments({HITId: hit.HITId}).catch(err => ({ error: err }));

@@ -62,6 +62,7 @@ import Vue from 'vue'
 
 import BaseCopy from '@/components/BaseCopy.vue'
 import BaseButton from '@/components/BaseButton.vue'
+import { Worker } from '@/lib/types'
 
 export default Vue.extend({
   name: 'TableWaiting',
@@ -71,7 +72,7 @@ export default Vue.extend({
   },
   props: {
     workers: {
-      type: Array,
+      type: Array as () => Worker[],
       default: null,
     },
     isExperimentView: {
@@ -89,16 +90,16 @@ export default Vue.extend({
       this.$emit('onReject', id)
     },
     onQualify(id: string) {
-      console.log('Qualify clicked')
       this.$emit('onQualify', id)
     },
-    async onHitClick(HITId: string, awardQualificationId: string) {
+    async onHitClick(HITId: string, awardQualificationId: string | undefined) {
+      const qualificationId = awardQualificationId ??  ''
       await this.$router.push({
         name: 'Workers',
         params: {},
         query: {      
           HITId,
-          awardQualificationId,
+          awardQualificationId : qualificationId,
         },
       }).then(() => window.location.reload())      
     },

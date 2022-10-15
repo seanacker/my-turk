@@ -83,8 +83,8 @@ export type WorkersData = {
   approved: any[] | null,
   rejected: any[] | null,
   feedback?: string,
-  approveMessages: string[],
-  rejectMessages: string[],
+  approveMessages: Message[],
+  rejectMessages: Message[],
   saveMessage: boolean | undefined
   awardQualificationId?: string
 }
@@ -125,6 +125,7 @@ export type Message = {
 }
 
 export type Assignment = {
+  AssignmentStatus?: "Approved" | "Submitted" | "Rejected"
   AssignmentId: string,
   WorkerId: string,
   HITId: string
@@ -139,7 +140,8 @@ export type SettingsGroup = {
     disabled?: boolean,
     hint?: string,
     type?: string,
-    isQualificationId?: boolean
+    isQualificationId?: boolean,
+    placeholder?: string
   }[],
 }
 

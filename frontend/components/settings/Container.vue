@@ -29,6 +29,7 @@
             :info="item.info"
             :placeholder="item.placeholder || ''"
             @keyPress="handleKeyPress"
+            style="margin-bottom: 35px"
           />
         </template>
       </div>
@@ -41,7 +42,7 @@ import Vue from 'vue'
 import BaseCheckbox from '@/components/BaseCheckbox.vue'
 import BaseInput from '@/components/BaseInput.vue'
 import BaseWrapper from '@/components/BaseWrapper.vue'
-import { Experiment } from '@/lib/types'
+import { Experiment, SettingsGroup } from '@/lib/types'
 
 type SettingsContainerData = {
   settings: Partial<Experiment>,
@@ -65,8 +66,8 @@ export default Vue.extend({
   },
   props: {
     groups: {
-      type: Array,
-      default: () => [],
+      type: Object as () => SettingsGroup[],
+      default: () => {},
     },
     endpoint: {
       type: String,

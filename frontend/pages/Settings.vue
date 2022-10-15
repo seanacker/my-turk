@@ -25,7 +25,7 @@
       <BaseButton
         prime
         square
-        title="Save Settings"
+        :title="addExperiment ? 'Create Experiment' : 'Save Settings'"
         :green="true"
         @click="handleSave"
       />
@@ -34,7 +34,7 @@
       <BaseButton
         prime
         square
-        title="Save Settings"
+        :title="addExperiment ? 'Create Experiment' : 'Save Settings'"
         :green="true"
         @click="handleSave"
       />
@@ -69,7 +69,8 @@ type SettingsData =  {
     },
     settings: Partial<Experiment>,
     settingsInput: SettingsGroup[],
-    _qualificationIDs: string
+    _qualificationIDs: string,
+    addExperiment?: Boolean,
 }
 
 export default Vue.extend({
@@ -108,7 +109,6 @@ export default Vue.extend({
         }
       },
     },
-    addExperiment: Boolean,
     initial: {
       type: Boolean,
       default: true,
@@ -117,6 +117,7 @@ export default Vue.extend({
   data: (): SettingsData => ({
     _qualificationIDs: '',
     modalIsVisible: false,
+    addExperiment: false,
     route: {
       path: 'Overview',
       name: 'back to Overview',
@@ -169,12 +170,7 @@ export default Vue.extend({
           {
             name: 'Assignments per HIT',
             value: '',
-            info: 'e.g. 9 for 9 assignments',
-          },
-          {
-            name: 'Assignments Goal',
-            value: '',
-            info: 'e.g. 150 if no new HITs should be automatically created once 150 assignments are submitted',
+            info: 'e.g. 9 for 9 assignments. If you set more then 9 assignments per HIT, the fee per assignment rises.',
           },
         ],
       },
@@ -200,25 +196,25 @@ export default Vue.extend({
             name: 'Generate a Qualification ID for this Experiment',
             value: false,
             type: 'checkbox',
-            info: 'The Qualification ID can be assigned to workers to mark them as having allready participated. The ID will be generated from the experiment name and the experiment description.'
+            info: 'The Qualification ID can be assigned to workers to mark them as having already participated. The ID will be generated from the experiment name and the experiment description.'
           },
           {
             name: 'Award Qualification ID',
             value: '',
             disabled: true,
             info:
-              'This is auto-generated from the qualification name and the qualification description by MTurk once the experiment is saved. It is the value used to ex- or include workers from HITs. ',
+              'This is auto-generated from the experiment name and the experiment description by MTurk once the experiment is saved. It is the value used to ex- or include workers from HITs. ',
           },
           {
             name: 'Automaticaly assign Qualification',
-            info: `Automaticaly assign the Qualification to workers that participated on it (every minute periodicaly and before a new HIT is created).`,
+            info: `Assign the Qualification to workers that participated on it (every minute periodicaly and before a new HIT is created).`,
             type: 'checkbox',
             value: true,
           },
 
           {
             name: 'Automaticaly expire HITs',
-            info: `Automaticaly expire all running HITs once a new HIT for the experiment is created.`,
+            info: `Expire all running HITs once a new HIT for the experiment is created (this is only needed if you want to manually schedule the HITs and therefore dont check the next setting).`,
             type: 'checkbox',
             value: true,
           },
@@ -226,7 +222,12 @@ export default Vue.extend({
             name: 'Automaticaly start HITs',
             value: false,
             type: 'checkbox',
-            info: 'Automaticaly end each HIT once 80% of the assignments are finished and start a new one.'
+            info: 'End each HIT once 80% of the assignments are finished and start a new one.'
+          },
+          {
+            name: 'Assignments Goal',
+            value: '',
+            info: 'e.g. 150 if no new HITs should be automatically created once 150 assignments are submitted',
           },
         ],
       },
@@ -259,12 +260,11 @@ export default Vue.extend({
   },
   beforeMount() {
     const experiments = this.$route.params.qualificationIDs.split(';')
+    this.addExperiment = this.$route.params.addExperiment == 'true' ? true : false
     const requirements = this.settingsInput.filter((group) => {
       return group.title == 'Requirements'
     })[0]
-    console.log(experiments)
     experiments.map((experiment) => {
-      console.log('length:',experiment.split(':'))
       const name = experiment.split(':')[0]
       const id = experiment.split(':')[1]
       
@@ -279,12 +279,12 @@ export default Vue.extend({
       if (id && id != '') requirements.items.push({
         name: `Include${id}`,
         value: false,
-        info: `Make the participation on experiment ${name} a requirement for this experiment (only workers with the qualification id ${id}) can participate.`,
+        info: `Make the participation on experiment ${name} (workers with the qualification id ${id}) a requirement for this experiment  can participate.`,
         type: 'checkbox',
         isQualificationId: true
       })
     })
-
+    //////////// This might be needed if additional qualification IDs from experiments that are not in the Database are requirements /////////////////
     // requirements.items.push({
     //         name: 'Guard Hit by additional QualificationIDs',
     //         value: '',
@@ -304,7 +304,6 @@ export default Vue.extend({
 
   },
   mounted() {
-    console.log(this.$route.params)
     this.loadExperimentSettings()
   },
   methods: {
@@ -320,7 +319,6 @@ export default Vue.extend({
     async handleSave() {
       const id = this.$route.query.id || ''
       const settings = this.settings
-      console.log("settings: ", settings)
       if (!this.validateSettings(settings)) {
         this.$toasted.error('Please fill out all required fields', {
           position: 'bottom-right',
@@ -417,9 +415,18 @@ export default Vue.extend({
         )
         isValid = false
       }
-      if ((!settings.assignmentsGoal && settings.automaticalyStartHits) || (settings.assignmentsGoal && !settings.automaticalyStartHits)) {
+      // if ((!settings.assignmentsGoal && settings.automaticalyStartHits) || (settings.assignmentsGoal && !settings.automaticalyStartHits)) {
+      //   this.$toasted.error(
+      //     'If you choose to automatically end HITs once 80% of the assignments are finished please tick the corresponding box and set a goal of total assignments.', {
+      //       position: 'bottom-right',
+      //       duration: 10000
+      //     }
+      //   )
+      //   isValid = false
+      // }
+      if (!settings.generateAQualificationIdForThisExperiment && settings.guardHitByQualification) {
         this.$toasted.error(
-          'If you choose to automatically end HITs once 80% of the assignments are finished please tick the corresponding box and set a goal of total assignments.', {
+          'If you want to make the HIT exclusive for workers you need to generate an ID first.', {
             position: 'bottom-right',
             duration: 10000
           }
@@ -459,8 +466,6 @@ export default Vue.extend({
       const id = this.$route.query.id     
       if (!this.addExperiment && this.initial && id) {
         const result = await api.getExperiments({ id })
-        console.log('result', result)
-
         if (result.success && result.data[0]) {
           this.settings = result.data[0]
         }

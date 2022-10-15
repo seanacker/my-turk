@@ -84,10 +84,6 @@
         Fill in a list of <b>AssignmentIDs</b> you want to accept.
         The List should be seperated by any non-alphabetic character.
       </p>
-      <div style="display: flex; flex-direction: column">
-        Submitted Workers:
-        
-      </div>
       <BaseTextarea 
         name="assignmentids"
         label="AssignmentIDs"
@@ -96,7 +92,7 @@
       <BaseTextarea
         name="feedback"
         :style="{marginBottom: '15px', marginTop: '50px'}"
-        label="Leave your own Feedback"
+        label="Please fill in the Message you want to leave for the worker"
         :value="approvalFeedback"
         :onSave="true"
         @keyPress="setApprovalFeedbackFromText"
@@ -149,7 +145,7 @@
       <BaseTextarea
         name="feedback"
         :style="{marginBottom: '15px', marginTop: '50px'}"
-        label="Leave your own Feedback"
+        label="Please fill in the Message you want to leave for the worker"
         :value="rejectFeedback"
         :onSave="true"
         @keyPress="setRectionFeedbackFromText"
@@ -169,6 +165,19 @@
           </option>
         </select>
       </div>
+    </BaseModal>
+    <BaseModal
+      :visible="showDeleteHitModal"
+      title="Delete HIT"
+      :cancel="{ label: 'cancel' }"
+      :accept="{ label: 'Delete', type: 'warning' }"
+      @onAccept="actuallyDeleteHIT"
+      @onCancel="showDeleteHitModal=false"
+      >
+      <p>
+        Do you actually want to delete HIT {{hitToDelete?.HITId}}<br/>
+        This HIT will be removed from the Database and MTurk and all of its assignments will be subtracted from the total numbers of the experiment      
+      </p>
     </BaseModal>
   </div>
 </template>
@@ -204,7 +213,10 @@ type OverviewData = {
   approveMessages: Message[],
   rejectMessages: Message[],
   parsedQualificationIDs: string,
-  refreshIntervalId: any
+  refreshIntervalId: any,
+  hitToDelete: Hit | undefined,
+  experimentContainingHitToDelete: Experiment | undefined
+  showDeleteHitModal: boolean
 }
 
 export default Vue.extend({
@@ -241,7 +253,10 @@ export default Vue.extend({
     approveMessages: [],
     rejectMessages: [],
     parsedQualificationIDs: "",
-    refreshIntervalId: undefined
+    refreshIntervalId: undefined,
+    hitToDelete: undefined,
+    experimentContainingHitToDelete: undefined,
+    showDeleteHitModal: false
   }),
   async mounted() {
     await this.getExperiments()
@@ -253,11 +268,8 @@ export default Vue.extend({
       this.parsedQualificationIDs = ""
       const result = await api.getExperiments({ groupBy: 'endpoint' })
       this.prodIsHidden = result.endpoint === 'sandbox'
-      console.log(this.prodIsHidden)
       this.sandIsHidden = result.endpoint === 'production'
-      console.log(this.sandIsHidden)
       if (result.success) {
-        console.log('data: ', result.data)
         this.experiments = result.data
         this.experiments.production = result.data.production || []
         this.experiments.sandbox = result.data.sandbox || []
@@ -294,16 +306,13 @@ export default Vue.extend({
       this.getExperiments()
     },
     async createHIT(experiment: Experiment, scheduledDateTime: string) {
-      if (scheduledDateTime.includes('now')) scheduledDateTime = '0'
       const res = await api.createHIT({experiment, scheduledDateTime})
-      console.log("createhit:res:",res)
       if (res.success) {
         this.$toasted.success(res.message, {
           position: 'bottom-right',
           duration: 3000,
         })
         const hit = res.data.HIT
-        console.log("createhit:hit:", hit)
         experiment = this.addHITtoExperiment(experiment, hit)
 
         const id = experiment._id
@@ -331,7 +340,6 @@ export default Vue.extend({
           duration: 3000,
         })
       }
-      console.log("cancel scheduled hit method called")
       api.cancelScheduledHIT(hit)
       this.refreshPage()
     },
@@ -351,11 +359,20 @@ export default Vue.extend({
       }
       this.refreshPage()
     },
+
     async deleteHIT(experiment: Experiment, hit: Hit) {
-      
-      console.log("deleted HIT", hit)
+      this.hitToDelete = hit
+      this.experimentContainingHitToDelete = experiment
+      this.showDeleteHitModal = true
+    },
+    async actuallyDeleteHIT() {
+      const hit = this.hitToDelete
+      let experiment = this.experimentContainingHitToDelete
+      if (!hit || !experiment) return false
+      this.showDeleteHitModal = false
+      this.hitToDelete = undefined
+      this.experimentContainingHitToDelete = undefined
       const deleteRes = await api.deleteHIT({HITId: hit.HITId})
-      console.log(deleteRes)
         if (deleteRes.success) {
           this.$toasted.success(deleteRes.message, {
             position: 'bottom-right',
@@ -427,13 +444,11 @@ export default Vue.extend({
         return value != ""
       })
       this.priceForAccepting = this.rewardPerAssignmentForModal ? (parseInt(this.rewardPerAssignmentForModal)) * this.acceptIDs.length : undefined
-      console.log("price in function: ", this.priceForAccepting)
     },
     setRejectIDs(value: any) {
       this.rejectIDs = value.assignmentids.split(/[^A-Za-z0-9]/).filter((value: string) => {
         return value != ""
       })
-      console.log(this.rejectIDs)
     },
     async acceptAssignments() {
       if (this.acceptIDs.length == 0){
@@ -462,7 +477,6 @@ export default Vue.extend({
           }
         }
       const res = await api.approveAssignments({assignmentIds: this.acceptIDs, awardQualificationID: this.awardQualificationID, feedback: this.approvalFeedback})
-      console.log("res:", res)
       this.acceptAssignmentModalVisible = false
       if (res.success) {
         this.$toasted.success(res.message, {
@@ -484,8 +498,10 @@ export default Vue.extend({
             position: 'bottom-right',
             duration: 5000,
           })
+        
         })
       }
+      this.refreshPage()
     },
     async rejectAssignments()  {
       if (this.rejectIDs.length == 0){
@@ -498,6 +514,7 @@ export default Vue.extend({
       if (this.saveMessage) {
         const messageRes = await api.createMessage({message: this.rejectFeedback, type: 'reject'})
         if (messageRes.success) {
+        this.refreshPage()
           this.$toasted.show(messageRes.message, {
             type: 'success',
             position: 'bottom-right',
@@ -512,7 +529,6 @@ export default Vue.extend({
         }
       }
       const res = await api.rejectAssignments({assignmentIds: this.rejectIDs, feedback: this.rejectFeedback})
-      console.log("res:",)
       this.acceptAssignmentModalVisible = false
       if (res.success) {
         this.$toasted.success(res.message, {

@@ -50,7 +50,6 @@ export default Vue.extend({
     // TODO: write mixin functions
     async handleLogin(credentials: Credentials): Promise<void> {
       const res = await api.login(credentials) as APIRes
-      console.log(res)
       if (res.success) {
         const apiRes = res as APIRes
         localStorage.setItem('token', JSON.stringify(apiRes.token))

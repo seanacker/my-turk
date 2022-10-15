@@ -106,7 +106,6 @@ export default Vue.extend({
       this.$emit('login', { awsAccessKeyId, awsSecretAccessKey, endpoint })
     },
     handleSelectChange(val: { endpoint: string }) {
-      console.log('Changed endpoint to ' + JSON.stringify(val))
       this.endpoint = val.endpoint
     },
   },

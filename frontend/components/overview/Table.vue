@@ -25,6 +25,7 @@
       </tr>
       <template v-for="(experiment, index) in experiments" bold>
         <BaseModal
+            style="position: fixed; top: 0; left: 0"
             :visible="modalIsVisible==experiment._id"
             v-if="true"
             :key="experiment._id + 'Emailmodal'"
@@ -34,7 +35,7 @@
             :style="{width:'100%', margin: 'auto'}"
             @onAccept="notifyWorkers(experiment)"
             @onCancel="closeModal"
-          > This email will be send to all workers that have <b>finished a HIT for {{experiment.experimentName}}</b>
+          > This email will be send to all approved workers from experiment <b>{{experiment.experimentName}}</b>
             <BaseTextarea
               name="subject"
               :style="{marginBottom: '15px', marginTop: '50px', height: '40px'}"
@@ -50,15 +51,15 @@
               @keyPress="setEmailMessage"
             />
           </BaseModal>
-        <tr :key="experiment._id" v-if="true">
-          <td v-click-outside="closeExperimentMenu">
-            <input :id="experiment._id" class="toggle" type="checkbox" />
-            <label @click="toggleActiveExperimentForExperimentMenu(experiment)"  :for="experiment._id" class="lbl-toggle" style="text-align: left; font-size: 20px">{{experiment.experimentName}}</label>
-            <div  v-if="activeExperimentIdForExperimentMenu==experiment._id" class="experimentMenuWrapper">
-              <span @click="onExperimentEditClick(experiment)" :style="{textAlign: 'center', paddingTop: '5px', paddingBottom: '5px', borderBottom: '1px solid black', cursor: 'pointer'}" class="hoverable">EDIT</span>
-              <span @click="onExperimentOverviewClick(experiment)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px', borderBottom: '1px solid black', cursor: 'pointer'}" class="hoverable">OVERVIEW</span>
-              <span @click="onExperimentDeleteClick(experiment._id)" :style="{textAlign: 'center', paddingBottom: '5px', paddingTop: '5px', backgroundColor: '#ff5555', color: 'black', cursor: 'pointer'}" class="hoverable">DELETE</span>
-            </div>
+        <tr 
+          :key="experiment._id" 
+          v-if="true"
+          style="height: 75px; background-color: beige; "
+          >
+          <td v-bind:id="'title' + experiment._id">
+            <span style="font-weight: bold; font-size: 16px; cursor: pointer;" @click="toggleActiveExperiment(experiment)"> 
+              <fa   style="cursor: pointer;" class="fa-lg" :icon="activeExperimentId==experiment._id || activeExperimentId == 'true'? 'angle-down' : 'angle-right' " ></fa>&nbsp;&nbsp;{{experiment.experimentName}}
+            </span>       
           </td>
           <td>
             {{ experiment.description }}
@@ -70,22 +71,21 @@
           <td class="button align-center">
             <BaseButton
                 v-if="experiment.endpoint !== 'development'"
-                prime
+                second
+                white
                 square
-                title="new hit (UTC)"
+                title="new hit"
                 fullWidth                
                 @click="onNewHITClick(experiment)"
               
               >
               </BaseButton>
-            <div class="scheduleWrapper" :style="{border: '1px solid black'}">              
+            <div class="scheduleWrapper" :style="{border: '1px solid black'}" :id="'schedule' + experiment._id">              
               <Datetime style="cursor: pointer;" v-if="showScheduleNewHIT==experiment._id" v-model="scheduledDateTime" readonly></Datetime>              
-                <div v-if="showScheduleNewHIT==experiment._id" :style="{display: 'flex', flexDirection: 'column'}">
+                <div v-if="showScheduleNewHIT==experiment._id" :style="{display: 'flex', flexDirection: 'column', textAlign: 'center'}">
                   <i :style="{backgroundColor: 'white', padding: '10px 0', }">
-                    <b>Los Angeles:</b> {{convertTZ('America/Los_Angeles')}}
-                  </i>
-                  <i :style="{backgroundColor: 'white', padding: '10px 0'}">
-                    <b>New York:</b> {{convertTZ('America/New_York')}}
+                   This is in Eastern Daylight Time, <br/>
+                   the standard timezone of MTurk
                   </i>
                 </div >
                 <div :style="{display: 'flex'}">
@@ -110,24 +110,34 @@
               </div>
             </td>
             <td class="button">
-              <BaseButton
-                v-if="experiment.endpoint !== 'development'"
-                prime
-                square              
-                title="qualify all"
-                fullWidth
-                @click="onQualifyAllClick(experiment)"
+              <BaseButton 
+                @click="onExperimentOverviewClick(experiment)" 
+                second
+                white
+                square
+                title="overview"
+                fullWidth />
+            </td>
+            <td class="button">
+              <BaseButton 
+                @click="onExperimentEditClick(experiment)" 
+                second
+                white
+                square
+                title="edit"
+                fullWidth  
               />
             </td>
             <td class="button" v-click-outside="closeHandleWorkersMenu">      
               <BaseButton
-                    prime 
+              second
+                white
                     square
                     title="handle workers"                 
                     fullWidth
                     @click="toggleActiveExperimentForHandleWorkersMenu(experiment)"
                   />
-              <div class="handleWorkersWrapper" v-if="handleWorkersVisible && activeExperimentIdForHandleWorkersMenu == experiment._id">
+              <div class="handleWorkersWrapper" v-if="handleWorkersVisible && (activeExperimentIdForHandleWorkersMenu == experiment._id || activeExperimentId == 'true')">
                 <BaseButton
                   second
                   square                
@@ -154,34 +164,38 @@
                   @click="onRejectWorkersClick()"
                 />
                 <BaseButton
-                  second 
+                  v-if="experiment.endpoint !== 'development'"
+                  second
                   square
-                  white                
-                  title="close"
+                  white         
+                  title="qualify all"
                   fullWidth
-                  @click="closeHandleWorkersMenu(experiment)"
+                  @click="onQualifyAllClick(experiment)"
                 />
             </div>
           </td>
         </tr>
-        <br :key="'br'+index" v-if="true"/>
-        <template v-for="(hit, index) in experiment.hits">
-          <tr :key="hit.HITId + 'body'" v-if="true">
-            <td style="white-space: nowrap" v-click-outside="closeActiveHIT">
-              <input :id="hit.HITId" class="toggle" type="checkbox" @click="toggleActiveHIT(hit.HITId)"/>
-              <label :style="{whiteSpace: 'nowrap', fontSize: hit.HITId.includes('-') ? '10px' : '12px', marginTop: index == 0 ? '40px' : ''}" :for="hit.HITId" class="lbl-toggle">{{ hit.HITId }}</label>
+        <template v-for="(hit, index) in experiment.hits" >
+          <tr :key="hit.HITId + 'body'" v-if="activeExperimentId==experiment._id || activeExperimentId == 'true'" >
+            <td style="white-space: nowrap" @click="toggleActiveHIT(hit.HITId)">
+              <label 
+              :style="{whiteSpace: 'nowrap', fontSize: hit.HITId.includes('-') ? '10px' : '12px', marginTop: index == 0 ? '40px' : '', paddingLeft: '20px'}" 
+              :for="hit.HITId" class="lbl-toggle">
+                <fa :icon="activeHITId==hit.HITId ? 'angle-down' : 'angle-right'"></fa>
+                {{ hit.HITId }}
+              </label>
             </td>
             <td>
               <table class="hitDetails">
                 <tr v-if="index==0" style="height: 24">
-                  <td style="width: 25%">
-                    Status
+                  <td style="width: 25%" >
+                    <a href="https://blog.mturk.com/understanding-hit-states-d0bc9806c0ee" target="_blank">Status</a>
                   </td>
                   <td style="width: 25%">
-                    Creation Date
+                    Creation Date (EDT)
                   </td>
                   <td style="width: 25%">
-                    Creation Time
+                    Creation Time (EDT)
                   </td>
                   <td style="width: 25%">
                     Expires after (days)
@@ -235,9 +249,9 @@
                 Delete
               </BaseButton>
             </td>
-            <td v-if="hitStatus(hit)=='approvable'" class="button">
-              <BaseButton :style="{marginTop: index == 0 ? '40px' : ''}" prime grayLight square fullWidth @click="onNotifyApprovable()">
-                Handle
+            <td v-if="hitStatus(hit)=='approvable'" class="button" @click="onNotifyApprovable()">
+              <BaseButton disabled :style="{marginTop: index == 0 ? '40px' : ''}" prime grayLight square fullWidth >
+                Delete
               </BaseButton>
             </td>
           </tr>
@@ -281,7 +295,7 @@ import Datetime from 'vuejs-datetimepicker';
 import vClickOutside from 'v-click-outside'
 
 type TableData = {
-  activeExperimentIdForExperimentMenu: string,
+  activeExperimentId: string,
   activeExperimentIdForHandleWorkersMenu: string,
   activeHITId: string,
   emailSubject: string,
@@ -295,6 +309,7 @@ type TableData = {
   activeExperiment: Experiment | undefined,
   workerID: string,
   awardid: string,
+  showStatusInfo: string
 }
 
 export default Vue.extend({
@@ -324,7 +339,7 @@ export default Vue.extend({
     }
   },
   data: () :TableData => ({
-    activeExperimentIdForExperimentMenu: '',
+    activeExperimentId: 'true',
     activeExperimentIdForHandleWorkersMenu: '',
     activeHITId: '',
     emailSubject: '',
@@ -338,46 +353,18 @@ export default Vue.extend({
     activeExperiment: undefined,
     workerID: '',
     awardid: '',
-
+    showStatusInfo: ''
   }),
   methods: {
-    parseCreationTime(dateTime: number) {
-      return new Date(dateTime).toLocaleTimeString("en-US")
-    },
-    parseCreationDate(dateTime: number) {
-      return new Date(dateTime).toLocaleDateString("en-US")
-    },
-    parseScheduledDate(hit: Hit) {
-      return new Date(hit.scheduledDateTime as string).toLocaleDateString("en-US")
-    },
-    parseScheduledTime(hit: Hit){
-      return new Date(hit.scheduledDateTime as string).toLocaleTimeString("en-US")
-    },
-    toggleActiveExperimentForExperimentMenu(experiment: Experiment) {
-      console.log('toggle invoked')
-      if(this.activeExperimentIdForExperimentMenu == experiment._id) this.activeExperimentIdForExperimentMenu = ""
-      else this.activeExperimentIdForExperimentMenu = experiment._id
+    //Experiment Methods
+
+    // UI
+    toggleActiveExperiment(experiment: Experiment) {
+      if(this.activeExperimentId == experiment._id || this.activeExperimentId == 'true') this.activeExperimentId = ''
+      else this.activeExperimentId = experiment._id
     },
     closeExperimentMenu() {
-      console.log('close invoked')
-      this.activeExperimentIdForExperimentMenu = ""
-    },
-    toggleActiveExperimentForHandleWorkersMenu(experiment: Experiment) {
-      if (this.activeExperimentIdForHandleWorkersMenu == experiment._id) {
-        this.activeExperimentIdForHandleWorkersMenu = ""
-        this.handleWorkersVisible = false
-      }
-      else if (this.activeExperimentIdForHandleWorkersMenu == "") {
-        this.activeExperimentIdForHandleWorkersMenu = experiment._id
-        this.handleWorkersVisible = true
-      }
-      else {
-        this.activeExperimentIdForHandleWorkersMenu = experiment._id
-      }
-    },
-    closeHandleWorkersMenu(experiment: Experiment) {
-      this.handleWorkersVisible = false
-      this.activeExperimentIdForHandleWorkersMenu = ""
+      this.activeExperimentId = ""
     },
     onExperimentEditClick(experiment: Experiment) {
       clearInterval(this.refreshIntervalId)
@@ -400,24 +387,94 @@ export default Vue.extend({
         }
       })
     },
-    async onExperimentDeleteClick(id: string) {
-      const res = await api.deleteExperiment({ id })
+    toggleActiveExperimentForHandleWorkersMenu(experiment: Experiment) {
+      setTimeout(() => {
+        this.handleWorkersVisible = true
+        this.activeExperimentIdForHandleWorkersMenu = experiment._id
+      }, 200)
+    },
+    closeHandleWorkersMenu() {
+      this.handleWorkersVisible = false
+      this.activeExperimentIdForHandleWorkersMenu = ""
+    },
+    closeModal() {
+        this.modalIsVisible = ''
+    },
+    onScheduleNewHitClick(experiment: Experiment) {
+      this.showScheduleNewHIT = experiment._id
+    },
+    onCloseNewHITClick() {
+      this.showScheduleNewHIT = ''
+      this.scheduledDateTime = ''
+    },
 
-      if (!res.success) {
-        this.$toasted.error(res.message, {
-          position: 'bottom-right',
-          duration: 3000,
+    // New HIT and HIT scheduling
+    convertTZ(tzString: string) {
+      const scheduledFor = this.scheduledDateTime.replace(' (now)', '')
+      return (scheduledFor != "" ? new Date(scheduledFor) : new Date()).toLocaleString("en-US", {timeZone: tzString});   
+    },
+
+    onNewHITClick(experiment: Experiment) {
+      if(this.showScheduleNewHIT==experiment._id) {
+        this.showScheduleNewHIT = ""
+        return 
+      }     
+      this.showScheduleNewHIT=experiment._id
+      const date = new Date(new Date().getTime()  - (5 * 60 * 60 * 1000))
+      this.scheduledDateTime= date.toISOString().slice(0,16).replace('T', ' ') 
+
+    },
+    onSubmitNewHitClick(experiment: Experiment) {
+      this.$emit('createHIT', experiment, this.scheduledDateTime)
+      this.showScheduleNewHIT = ''
+      this.scheduledDateTime = ''
+    },
+
+
+    
+    // Notifying Workers
+    setEmailSubject(val: any): void {
+      this.emailSubject = val.subject
+    },
+    setEmailMessage(val: any): void {
+      this.emailMessage = val.message
+    },
+    async notifyWorkers(experiment: Experiment) {
+      
+      const activeExperiment = (this.experiments as Experiment[]).filter((iterExperiment: Experiment) => iterExperiment._id == experiment._id
+      )[0]
+      const hitList = activeExperiment.hits
+      let workerIDs: string[] = []
+      for (const hit of hitList) {
+        const assignmentRes = await api.listAssignments({ HITId: hit.HITId })
+        if (assignmentRes.success) {
+          assignmentRes.data.map((assignment: Assignment) => {
+          if (assignment.AssignmentStatus == "Approved") workerIDs.push(assignment.WorkerId)
         })
+        }     
       }
-      else {
-        this.$emit('reload')
-        this.$toasted.success(`Deleted the experiment with the id: ${id}`,
-        {
-          position: 'bottom-right',
-          duration: 3000,
-        })
+      this.closeModal()
+      this.activeExperimentIdForHandleWorkersMenu = ""
+      if(workerIDs) {
+        const notificationRes = await api.notifyWorkers({subject: this.emailSubject, message: this.emailMessage, workerIDs: workerIDs.flat()})
+        if(notificationRes.success) {
+          this.$toasted.success(notificationRes.message, {
+            position: 'bottom-right',
+            duration: 3000,
+          })
+        }
+        else {
+          this.$toasted.error(notificationRes.message, {
+            position: 'bottom-right',
+            duration: 3000,
+          })
+        }
       }
     },
+
+
+
+    // HIT Methods
     onHitClick(hit: Hit, experiment: Experiment) {
       clearInterval(this.refreshIntervalId)
       this.$router.push({
@@ -438,16 +495,7 @@ export default Vue.extend({
     onDeleteHitClick(experiment: Experiment, hit: Hit) {
       this.$emit('deleteHIT', experiment, hit)
     },
-    onNewHITClick(experiment: Experiment) {
-      if(this.showScheduleNewHIT==experiment._id) {
-        this.showScheduleNewHIT = ""
-        return 
-      }     
-      this.showScheduleNewHIT=experiment._id
-      const date = new Date(new Date().getTime()  + (2 * 60 * 60 * 1000))
-      this.scheduledDateTime= date.toISOString().slice(0,16).replace('T', ' ') + ' (now)'
 
-    },
     onNotifyApprovable() {
       this.$toasted.show(
         "There is still assignments that need to be approved or rejected. Please handle those before further actions can be taken!", 
@@ -457,11 +505,7 @@ export default Vue.extend({
           duration: 5000,
         })
     },
-    onSubmitNewHitClick(experiment: Experiment) {
-      this.$emit('createHIT', experiment, this.scheduledDateTime)
-      this.showScheduleNewHIT = ''
-      this.scheduledDateTime = ''
-    },
+
     onApproveWorkersClick(rewardPerAssignment: string, awardQualificationID: string) {
       this.$emit('showAcceptAssignments', rewardPerAssignment, awardQualificationID)
     },
@@ -477,19 +521,11 @@ export default Vue.extend({
           const assignments = res.data
           for (const assignment of assignments){
             const id = assignment.WorkerId
-            console.log("assignment:",assignment)
             qualifiable.push(id)
         }
       }
       if (qualifiable != null) {
-        console.log('Qualifying all Workers: ')
         for (const id of qualifiable) {
-          console.log(
-            'Asking for Qualifying Worker ' +
-              id +
-              ' with Qualification ' +
-              this.awardid
-          )
           this.qualifyWorker(id, true)
         }
       }
@@ -497,9 +533,6 @@ export default Vue.extend({
     },
     async qualifyWorker(workerID: string, notify = false): Promise<void> {
       const awardid = this.awardid || ''
-      console.log(
-        'Qualifying Worker ' + workerID + ' with Qualification ' + awardid
-      )
 
       const res = await api.qualifyWorker({
         awardQualificationID: awardid,
@@ -507,8 +540,6 @@ export default Vue.extend({
       })
       if (notify){
         if (res.success) {
-          // await this.getWorkers()
-          console.log('Qualified ' + workerID)
           this.$toasted.show(res.message, {
             type: 'success',
             position: 'bottom-right',
@@ -523,6 +554,24 @@ export default Vue.extend({
         }
       }
     },
+    parseCreationTime(dateTime: number) {
+      const utcTime = new Date(dateTime)
+      const utcOffsetSinceZero = utcTime.getTime()
+      const usEastOneOffsetSinceZero = utcOffsetSinceZero - 7 * 60 * 60 * 1000 
+      return new Date(usEastOneOffsetSinceZero).toLocaleTimeString("en-US")
+    },
+    parseCreationDate(dateTime: number) {
+      const utcTime = new Date(dateTime)
+      const utcOffsetSinceZero = utcTime.getTime()
+      const usEastOneOffsetSinceZero = utcOffsetSinceZero - 7 * 60 * 60 * 1000 
+      return new Date(usEastOneOffsetSinceZero).toLocaleDateString("en-US")
+    },
+    parseScheduledDate(hit: Hit) {
+      return new Date(hit.scheduledDateTime as string).toLocaleDateString("en-US")
+    },
+    parseScheduledTime(hit: Hit){
+      return new Date(hit.scheduledDateTime as string).toLocaleTimeString("en-US")
+    },
     hitStatus(hit: Hit) {
       const pending = parseInt(hit.pending.split('/')[0])
       const waitingForApproval = parseInt(hit.waitingForApproval.split('/')[0])
@@ -534,63 +583,10 @@ export default Vue.extend({
       return 'unknown'
     },
     toggleActiveHIT(HITId: string) {
-      if(this.activeHITId == HITId) this.activeHITId = ""
-      else this.activeHITId = HITId
+      if (this.activeHITId == HITId) this.activeHITId = ''
+      else this.activeHITId = HITId 
     },
-    closeActiveHIT() {
-      this.activeHITId = ""
-    },
-    closeModal() {
-        this.modalIsVisible = ''
-    },
-    setEmailSubject(val: any): void {
-      this.emailSubject = val.subject
-    },
-    setEmailMessage(val: any): void {
-      this.emailMessage = val.message
-    },
-    async notifyWorkers(experiment: Experiment) {
-      
-      const activeExperiment = (this.experiments as Experiment[]).filter((iterExperiment: Experiment) => iterExperiment._id == experiment._id
-      )[0]
-      const hitList = activeExperiment.hits
-      let workerIDs: string[] = []
-      for (const hit of hitList) {
-        const assignmentRes = await api.listAssignments({ HITId: hit.HITId })
-        if (assignmentRes.success) {
-          assignmentRes.data.map((assignment: Assignment) => workerIDs.push(assignment.WorkerId))
-        }     
-      }
-      this.closeModal()
-      this.activeExperimentIdForHandleWorkersMenu = ""
-      if(workerIDs) {
-        console.log("workerIds:", workerIDs.flat())
-        const notificationRes = await api.notifyWorkers({subject: this.emailSubject, message: this.emailMessage, workerIDs: workerIDs.flat()})
-        if(notificationRes.success) {
-          this.$toasted.success(notificationRes.message, {
-            position: 'bottom-right',
-            duration: 3000,
-          })
-        }
-        else {
-          this.$toasted.error(notificationRes.message, {
-            position: 'bottom-right',
-            duration: 3000,
-          })
-        }
-      }
-    },
-    onScheduleNewHitClick(experiment: Experiment) {
-      this.showScheduleNewHIT = experiment._id
-    },
-    onCloseNewHITClick() {
-      this.showScheduleNewHIT = ''
-      this.scheduledDateTime = ''
-    },
-    convertTZ(tzString: string) {
-      const scheduledFor = this.scheduledDateTime.replace(' (now)', '')
-      return (scheduledFor != "" ? new Date(scheduledFor) : new Date()).toLocaleString("en-US", {timeZone: tzString});   
-    },
+ 
   }
 })
 </script>
@@ -644,27 +640,8 @@ table.hitDetails > tr {
   color: #7c5a0b;
 }
 
-.lbl-toggle::before {
-  content: ' ';
-  display: inline-block;
 
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 5px solid currentColor;
 
-  vertical-align: middle;
-  margin-right: 0.7rem;
-  transform: translateY(-2px);
-
-  transition: transform 0.2s ease-out;
-}
-
-.toggle:checked ~ .lbl-toggle::before {
-  //border-right: 5px solid transparent;
-  //border-top: 5px solid currentColor;
-  //border-left: 5px solid transparent;
-  transform: rotate(90deg);
-}
 
 .collapsible-content {
   overflow: scroll;
@@ -733,5 +710,6 @@ table.hitDetails > tr {
 }
 #tj-datetime-input{
   cursor: pointer;
+  text-align: center
 }
 </style>

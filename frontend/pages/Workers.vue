@@ -6,7 +6,7 @@
       :description="isExperimentView ? null : `Started: ${date}`"
       :meta="isExperimentView ? `ExperimentID: ${experimentId}` : `HIT: ${HITId}`"
     />
-    <BaseWrapper :title="'Workers waiting for approval (' +  submitted.length + ')'" gray-dark>
+    <BaseWrapper :title="'Workers waiting for approval (' +  submitted?.length + ')'" gray-dark>
       <TableSubmitted
         :workers="submitted"
         :isExperimentView="isExperimentView"
@@ -15,10 +15,10 @@
         @onQualify="handleQualify"
       />
     </BaseWrapper>
-    <BaseWrapper :title="'Workers approved (' + approved.length +')' " green>
+    <BaseWrapper :title="'Workers approved (' + approved?.length +')' " green>
       <TableApproved :workers="approved" :isExperimentView="isExperimentView"/>
     </BaseWrapper>
-    <BaseWrapper :title="'Workers rejected (' + rejected.length + ')'" red>
+    <BaseWrapper :title="'Workers rejected (' + rejected?.length + ')'" red>
       <TableRejected :workers="rejected" :isExperimentView="isExperimentView"/>
     </BaseWrapper>
     <BaseButton prime title="refresh" @click="refreshPage" />
@@ -35,7 +35,7 @@
       <BaseTextarea
         name="feedback"
         :style="{marginBottom: '15px', marginTop: '50px'}"
-        label="Leave your own Feedback"
+        label="Please fill in the Message you want to leave for the worker"
         :value="approvalFeedback"
         :onSave="true"
         @keyPress="setApprovalFeedbackFromText"
@@ -72,7 +72,7 @@
       <BaseTextarea
         name="feedback"
         :style="{marginBottom: '15px', marginTop: '50px'}"
-        label="Leave your own Feedback"
+        label="Please fill in the Message you want to leave for the worker"
         :value="rejectFeedback"
         :onSave="true"
         @keyPress="setRectionFeedbackFromText"
@@ -286,38 +286,17 @@ export default Vue.extend({
     },
     handleQualifyAll(): void {
       if (this.submitted != null) {
-        console.log('Qualifying submitted Workers: ')
         for (const worker of this.submitted) {
-          console.log(
-            'Asking for Qualifying Worker ' +
-              worker.id +
-              ' with Qualification ' +
-              this.awardQualificationID
-          )
           this.qualifyWorker(worker.id)
         }
       }
       if (this.approved != null) {
-        console.log('Qualifying approved Workers: ')
         for (const worker of this.approved) {
-          console.log(
-            'Asking for Qualifying Worker ' +
-              worker.id +
-              ' with Qualification ' +
-              this.awardQualificationID
-          )
           this.qualifyWorker(worker.id)
         }
       }
       if (this.rejected != null) {
-        console.log('Qualifying rejected Workers: ')
         for (const worker of this.rejected) {
-          console.log(
-            'Asking for Qualifying Worker ' +
-              worker.id +
-              ' with Qualification ' +
-              this.awardQualificationID
-          )
           this.qualifyWorker(worker.id)
         }
       }
@@ -326,18 +305,10 @@ export default Vue.extend({
       // this.modalRejectIsVisible = true
       this.workerID = workerID
       const awardQualificationID = this.awardQualificationID || ''
-      console.log(
-        'Qualifying Worker ' +
-          workerID +
-          ' with Qualification ' +
-          awardQualificationID
-      )
-
       const res = await api.qualifyWorker({ awardQualificationID, workerID })
 
       if (res.success) {
         // await this.getWorkers()
-        console.log('Qualified ' + workerID)
         this.$toasted.show(res.message, {
           type: 'success',
           position: 'bottom-right',
@@ -423,7 +394,6 @@ export default Vue.extend({
       }
       const id = this.assignmentID
       const feedback = this.rejectFeedback
-      console.log(feedback)
       const res = await api.rejectAssignment({ id, feedback })
 
       if (res.success) {        
