@@ -137,7 +137,7 @@
                     fullWidth
                     @click="toggleActiveExperimentForHandleWorkersMenu(experiment)"
                   />
-              <div class="handleWorkersWrapper" v-if="handleWorkersVisible && (activeExperimentIdForHandleWorkersMenu == experiment._id || activeExperimentId == 'true')">
+              <div class="handleWorkersWrapper" v-if="handleWorkersVisible && (activeExperimentIdForHandleWorkersMenu == experiment._id || activeExperimentIdForHandleWorkersMenu == 'true')">
                 <BaseButton
                   second
                   square                
@@ -177,13 +177,15 @@
         </tr>
         <template v-for="(hit, index) in experiment.hits" >
           <tr :key="hit.HITId + 'body'" v-if="activeExperimentId==experiment._id || activeExperimentId == 'true'" >
-            <td style="white-space: nowrap" @click="toggleActiveHIT(hit.HITId)">
+            <td style="white-space: nowrap">
               <label 
               :style="{whiteSpace: 'nowrap', fontSize: hit.HITId.includes('-') ? '10px' : '12px', marginTop: index == 0 ? '40px' : '', paddingLeft: '20px'}" 
               :for="hit.HITId" class="lbl-toggle">
-                <fa :icon="activeHITId==hit.HITId ? 'angle-down' : 'angle-right'"></fa>
-                {{ hit.HITId }}
+                <fa :icon="activeHITId==hit.HITId ? 'angle-down' : 'angle-right'" @click="toggleActiveHIT(hit.HITId)"></fa>
+                <span @click="toggleActiveHIT(hit.HITId)">{{ hit.HITId }}</span>
+                <BaseCopy :value="hit.HITId"></BaseCopy>
               </label>
+              
             </td>
             <td>
               <table class="hitDetails">
